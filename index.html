@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>토블 : 성경을 톺아보다</title>
+
+<!-- iOS 홈 화면 앱(웹앱)으로 추가했을 때 전체화면 · 상태바 · 아이콘 설정 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="토블">
+<meta name="theme-color" content="#8a6d3b">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAClklEQVR4nO2Wz25bRRTGv+/MXP+Nk9qNQx1CpVI2bNgjhNgi8RaIbV+EN+Ep+gBs6I4F/0SrpCVN7MTutZ07cz4WTrNIbSdGigSiZ3E1ozl3fjPf+Y40/P7JF7jLsDvd/X8IEKC7AzhZT15P7uSdAKJrcDYbjGbRfYO/bp+aDaftGoBs5K2V2gBA4bxZAKA2KMSNAJIgCVAQcgbAEAgCkFzC+sKvBJgFSZ5TylVOlbtbCM3WNoBpee45m1kIRYiFhUjS3ZeSlgMkLyfjEIvWVne790Fv72F//+O9/cede7uAxmenx4e/HR/+evrqz7Phy3I8zKmqN9q08C5jCcDdm63Ol998199/3Gg029u9enOLZIg10gT19h4ePPpU0nw6eTM+nU2nr49+//HpD+VkZBavMa4DSHpO7Z37n3/9LZQnw6PqYjYrz+Uea82i1gSUqnk1L2lG2k5vcNAbfPLZVz//9HQyOg71QloLuJTIfV6OAKRqLok0GM2MpEDSFrtLSuliXk5oppyBJQ24rsiAQK5pWxIEaWYWsCLvxk4mwOsYXpoX4LJDbwLgmtntYn2jcav74GpMYD4dA2p3dgVcucVz+scAeKreekKEyV1QTpXgiwvxEr05QPKF4YiFa2KIdQsmKMZGThfuSS6HINhqpVcAyFq9BYsAAc/VfFaO35w/P3n1h6TdB4/a291GqxMaDcAAQVrltmUA0lN6/suz0cnh8K8Xw9cvRidHk9FxORlV8ymAot5stnc69/o79wfd/kG3/2G3/1FK1VKtuOrZknOVLhZdRgsxhGghkrZQz3PKOXlOi4RY1EMsNpEICLFWFI3FWBIgSZK/XS1CrF3JclWwDQCQXHn1oi4/N8W/7NnyHvCfBPwNqKZCXL4QPDIAAAAASUVORK5CYII=">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #faf7f2; --card: #ffffff; --ink: #2b2620; --ink-soft: #6b6156;
+    --accent: #8a6d3b; --accent-soft: #f0e7d8; --line: #e6ddd0; --note-bg: #f6f1e7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { touch-action: manipulation; } /* 더블탭 확대·300ms 탭 지연 제거 (iOS 대응) */
+  body {
+    background: var(--bg); color: var(--ink); font-family: 'Noto Sans KR', sans-serif; line-height: 1.7;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  button, [role="button"] { touch-action: manipulation; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 80px; }
+
+  header { padding: 30px 0 16px; text-align: center; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  header .app-name { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+  header h1 { font-family: 'Noto Serif KR', serif; font-size: 28px; font-weight: 700; }
+  header .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  header .mode-note { margin-top: 10px; font-size: 12px; color: var(--ink-soft); background: var(--note-bg); display: inline-block; padding: 6px 14px; border-radius: 14px; }
+
+  .read-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; padding-top: 16px; }
+
+  .sect { margin: 26px 10px 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+  .sect::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .verse { font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 1.95; padding: 6px 10px; border-radius: 8px; cursor: default; transition: background .15s; position: relative; }
+  .verse .num { font-family: 'Noto Sans KR', sans-serif; font-size: 12px; color: var(--accent); font-weight: 700; vertical-align: super; margin-right: 5px; }
+  .vtext { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .verse.select-armed .vtext { -webkit-user-select: text; user-select: text; }
+  .verse.select-armed { background: var(--accent-soft); }
+  .verse.has-note { cursor: pointer; }
+  .verse.has-note .num::after { content: "✦"; font-size: 9px; margin-left: 3px; vertical-align: middle; }
+  .verse.open { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .verse .clear-hl { font-size: 13px; color: var(--ink-soft); opacity: .4; margin-left: 4px; cursor: pointer; vertical-align: super; user-select: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; }
+  .vtext mark { padding: 0 1px; border-radius: 2px; }
+  .hl-yellow { background: #fdf0a8; }
+  .hl-green { background: #cfe8c9; }
+  .hl-pink { background: #f6cfd9; }
+  .hl-blue { background: #c9dcf0; }
+
+  #hl-popup { position: fixed; z-index: 100; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 8px 10px; box-shadow: 0 6px 20px rgba(43,38,32,.18); display: none; gap: 8px; align-items: center; }
+  #hl-popup .swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+  #hl-popup .swatch.y { background: #fdf0a8; } #hl-popup .swatch.g { background: #cfe8c9; }
+  #hl-popup .swatch.p { background: #f6cfd9; } #hl-popup .swatch.b { background: #c9dcf0; }
+  #hl-popup .swatch.x { background: var(--card); border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+
+  aside { position: sticky; top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; max-height: calc(100vh - 32px); overflow: hidden; }
+  .side-tabs { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
+  .tab-row { display: flex; gap: 6px; justify-content: center; }
+  .side-tabs button { flex: 0 0 72px; width: 72px; min-height: 40px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-soft); padding: 10px 4px; border-radius: 18px; font-size: 12.5px; font-family: inherit; cursor: pointer; transition: all .15s; text-align: center; }
+  .side-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .side-body { overflow-y: auto; padding: 18px 20px 22px; }
+  .side-view { display: none; }
+  .side-view.active { display: block; }
+
+  .side-body h3 { font-family: 'Noto Serif KR', serif; font-size: 17px; color: var(--accent); margin-bottom: 4px; }
+  .verse-ref { font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+  .note-body { font-size: 14px; }
+  .note-body p { margin-bottom: 10px; }
+  .refs { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-soft); }
+  .refs strong { color: var(--accent); }
+  .grammar { margin-top: 12px; padding: 10px 12px; background: var(--card); border-radius: 8px; border-left: 3px solid var(--accent); font-size: 12.5px; color: var(--ink); }
+  .grammar .g-label { font-size: 11px; font-weight: 700; letter-spacing: .5px; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
+  .default-guide { font-size: 13.5px; color: var(--ink-soft); }
+  .default-guide .mark2 { color: var(--accent); font-weight: 700; }
+  .outline { margin-top: 14px; }
+  .outline li { list-style: none; font-size: 13px; padding: 7px 10px; margin-bottom: 6px; background: var(--note-bg); border-radius: 8px; display: flex; justify-content: space-between; }
+  .outline li span:last-child { color: var(--ink-soft); font-size: 12px; }
+
+  .card { background: var(--note-bg); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+  .card h2 { font-family: 'Noto Serif KR', serif; font-size: 16px; margin-bottom: 8px; color: var(--accent); }
+  .card p { font-size: 13.5px; margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fact { background: var(--card); border-radius: 8px; padding: 9px 11px; }
+  .fact .k { font-size: 11px; color: var(--ink-soft); margin-bottom: 1px; }
+  .fact .v { font-size: 13.5px; font-weight: 600; }
+
+  .debate { display: flex; flex-direction: column; gap: 8px; }
+  .debate-side { background: var(--card); border-radius: 8px; padding: 10px 12px; border-left: 3px solid var(--accent); }
+  .debate-side .d-label { font-size: 11.5px; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+  .debate-side p { font-size: 12.5px; margin-bottom: 0; }
+
+  .timeline { position: relative; padding-left: 22px; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+  .t-item { position: relative; padding-bottom: 14px; }
+  .t-item:last-child { padding-bottom: 0; }
+  .t-item::before { content: ""; position: absolute; left: -21px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 3px solid var(--card); }
+  .t-item .t-title { font-weight: 700; font-size: 13.5px; }
+  .t-item .t-desc { font-size: 12.5px; color: var(--ink-soft); }
+
+  .person { display: flex; gap: 12px; align-items: flex-start; background: var(--note-bg); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .person .avatar { flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; background: var(--card); color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 700; }
+  .person h3 { font-size: 14.5px; margin-bottom: 1px; color: var(--ink); font-family: 'Noto Sans KR', sans-serif; }
+  .person .role { font-size: 11.5px; color: var(--accent); margin-bottom: 4px; }
+  .person p { font-size: 12.5px; color: var(--ink); }
+  .person .vref { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; }
+
+  svg.map { width: 100%; height: auto; display: block; border-radius: 10px; }
+  .map-caption { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+  .legend { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+  .dot { width: 22px; height: 4px; border-radius: 2px; display: inline-block; flex: 0 0 22px; }
+
+  /* ---- 학습 흐름(관찰→해석→적용→학자노트) ---- */
+  .step { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px dashed var(--line); }
+  .step:last-child { border-bottom: none; }
+  .step-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+  .step-q { font-size: 13.5px; color: var(--ink); margin-bottom: 10px; line-height: 1.6; }
+  .step-input { width: 100%; min-height: 68px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-family: inherit; font-size: 13.5px; resize: vertical; background: var(--bg); color: var(--ink); }
+  .step-input:focus { outline: none; border-color: var(--accent); }
+  .step-next { margin-top: 10px; background: var(--accent); color: #fff; border: none; border-radius: 16px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .teacher-note { background: var(--note-bg); border-radius: 10px; padding: 14px 16px; border-bottom: none; }
+  .compare-hint { margin-top: 10px; font-size: 12px; color: var(--ink-soft); font-style: italic; }
+  .progress-dots { text-align: center; font-size: 10px; color: var(--line); letter-spacing: 5px; margin: 4px 0 16px; }
+  .progress-dots .on { color: var(--accent); }
+  .reset-link { display: block; text-align: right; font-size: 11px; color: var(--ink-soft); text-decoration: underline; cursor: pointer; margin: -6px 0 12px; }
+  .saved-badge { font-size: 10.5px; color: #6a8f6c; margin-top: 4px; height: 14px; }
+
+  /* ---- 구조 다이어그램 (나만의 개요 만들기) ---- */
+  .struct-hint { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; line-height: 1.6; }
+  .struct-toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .struct-btn { flex: 1; min-width: 120px; background: var(--accent); color: #fff; border: none; border-radius: 14px; padding: 9px 10px; font-size: 12.5px; cursor: pointer; }
+  .struct-btn.secondary { background: var(--card); color: var(--ink-soft); border: 1px solid var(--line); }
+  .block-card { background: var(--card); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; border-left: 5px solid var(--accent); }
+  .block-card .b-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .block-card input[type=text] { flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 13px; font-family: inherit; background: var(--bg); color: var(--ink); }
+  .block-card .range-field { display: flex; align-items: center; gap: 3px; font-size: 11.5px; color: var(--ink-soft); }
+  .block-card input[type=number] { width: 42px; border: 1px solid var(--line); border-radius: 6px; padding: 5px 3px; font-size: 12.5px; text-align: center; background: var(--bg); color: var(--ink); }
+  .block-card textarea { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 12.5px; font-family: inherit; resize: vertical; background: var(--bg); color: var(--ink); margin-top: 6px; }
+  .block-card .b-actions { display: flex; gap: 2px; }
+  .block-card .b-actions button { border: none; background: none; color: var(--ink-soft); cursor: pointer; font-size: 16px; padding: 8px 9px; min-width: 40px; min-height: 40px; }
+  .add-block-btn { width: 100%; border: 1px dashed var(--line); background: none; color: var(--ink-soft); padding: 10px; border-radius: 10px; cursor: pointer; font-size: 13px; margin-top: 2px; }
+  .my-sect-label { margin: 18px 10px 4px; font-size: 12px; font-weight: 700; padding: 4px 10px; display: inline-block; border-radius: 6px; border-left: 4px solid; background: var(--note-bg); color: var(--ink); }
+  .page.hide-author-sect .sect { display: none; }
+  .struct-reset { display: block; text-align: center; font-size: 11px; color: var(--ink-soft); text-decoration: underline; cursor: pointer; margin-top: 14px; }
+
+  /* ---- 사전 검색 탭 ---- */
+  #dict-input {
+    width: 100%; border: 1px solid var(--line); border-radius: 20px;
+    padding: 10px 16px; font-size: 14px; font-family: inherit;
+    background: var(--card); color: var(--ink); margin-bottom: 14px;
+  }
+  #dict-input:focus { outline: none; border-color: var(--accent); }
+  .dict-result-label { font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .dict-hit {
+    background: var(--note-bg); border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 8px; cursor: pointer; font-size: 13px; line-height: 1.6;
+    transition: background .15s;
+  }
+  .dict-hit:hover { background: var(--accent-soft); }
+  .dict-hit .dh-ref { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 3px; }
+  .dict-hit mark { background: #fdf0a8; padding: 0 1px; border-radius: 2px; }
+
+  /* ---- 메모 탭 ---- */
+  #verses.memo-active .verse { cursor: pointer; }
+  #verses.memo-active .verse:hover { background: var(--accent-soft); }
+  #verses.memo-active .verse:active { background: var(--accent-soft); }
+  .memo-card { background: var(--note-bg); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .memo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .memo-ref { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+  .memo-del { border: none; background: none; color: var(--ink-soft); cursor: pointer; font-size: 13px; padding: 2px 4px; }
+  .memo-del:hover { color: #b0552f; }
+  .memo-input {
+    width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; font-family: inherit; font-size: 13.5px; resize: vertical;
+    background: var(--card); color: var(--ink);
+  }
+  .memo-input:focus { outline: none; border-color: var(--accent); }
+
+  .hl-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; border-top: 1px dashed var(--line); }
+  .block-card .hl-item:first-of-type { border-top: none; padding-top: 2px; }
+  .hl-swatch { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 12px; }
+  .hl-text { flex: 1; color: var(--ink); }
+  .hl-item-del { border: none; background: none; color: var(--ink-soft); cursor: pointer; font-size: 12px; padding: 2px 4px; }
+  .hl-clear-verse { border: none; background: none; color: var(--ink-soft); cursor: pointer; font-size: 11.5px; }
+
+  /* 터치 기기: hover 대신 눌렀을 때(:active) 즉각 피드백 */
+  .verse.has-note:active { background: var(--accent-soft); }
+  .step-next:active { opacity: .8; }
+  .struct-btn:active { opacity: .8; }
+  #hl-popup .swatch:active { transform: scale(1.12); }
+  .add-block-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  @media (hover: hover) and (pointer: fine) {
+    .verse.has-note:hover { background: var(--accent-soft); }
+    .verse .clear-hl:hover { opacity: 1; color: var(--accent); }
+    #hl-popup .swatch:hover { transform: scale(1.15); }
+    #hl-popup .swatch.x:hover { color: #b0552f; border-color: #b0552f; }
+    .step-next:hover { opacity: .9; }
+    .reset-link:hover { color: var(--accent); }
+    .struct-btn:hover { opacity: .9; }
+    .block-card .b-actions button:hover { color: var(--accent); }
+    .add-block-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .struct-reset:hover { color: var(--accent); }
+    .hl-item-del:hover { color: var(--accent); }
+    .hl-clear-verse:hover { color: var(--accent); }
+  }
+
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.8; }
+
+  /* ---- 구간(장) 페이지네이션 ---- */
+  .page-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .page-tabs::-webkit-scrollbar { display: none; }
+  .page-tab {
+    flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    padding: 8px 14px; border-radius: 16px; font-size: 12.5px; font-family: inherit; cursor: pointer;
+    white-space: nowrap; touch-action: manipulation;
+  }
+  .page-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (hover: hover) and (pointer: fine) { .page-tab:hover { border-color: var(--accent); } }
+  .page-tab:active { opacity: .85; }
+
+  /* ---- 역본 선택 / 대조 보기 ---- */
+  .version-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 10px 6px; }
+  .version-pill {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    padding: 5px 12px; border-radius: 14px; font-size: 11.5px; font-family: inherit;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .version-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .version-pill.locked { opacity: .55; }
+  .version-pill .lock { margin-left: 3px; }
+  .compare-toggle-row { display: flex; align-items: center; gap: 6px; margin: 0 10px 8px; font-size: 12.5px; color: var(--ink-soft); }
+  .compare-toggle-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .compare-toggle-row input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .version-note {
+    display: none; margin: 0 10px 12px; padding: 9px 12px;
+    background: var(--note-bg); border-radius: 8px; font-size: 12px; color: var(--ink); line-height: 1.6;
+  }
+  .version-note.show { display: block; }
+  .vtext-alt {
+    display: none; font-family: 'Noto Sans KR', sans-serif; font-size: 13.5px; color: var(--ink-soft);
+    margin: 2px 10px 0 32px; padding-left: 8px; border-left: 2px solid var(--line); line-height: 1.6;
+  }
+  .page-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 26px 10px 6px; padding-top: 16px; border-top: 1px solid var(--line);
+  }
+  .page-nav button {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    padding: 10px 18px; border-radius: 20px; font-size: 13.5px; font-family: inherit; cursor: pointer;
+    touch-action: manipulation;
+  }
+  .page-nav button:disabled { opacity: .35; cursor: default; }
+  .page-nav button:not(:disabled):active { background: var(--accent-soft); }
+  #page-next:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #page-indicator { font-size: 12px; color: var(--ink-soft); }
+
+  #a2hs-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--accent); color: #fff; font-size: 12.5px; line-height: 1.5;
+    padding: 10px 14px; border-radius: 12px; margin: 14px 0 0;
+  }
+  #a2hs-banner strong { font-weight: 700; }
+  #a2hs-close { background: none; border: none; color: #fff; opacity: .85; font-size: 15px; padding: 6px 8px; cursor: pointer; flex: 0 0 auto; }
+  #a2hs-close:active { opacity: 1; }
+
+  @media (max-width: 900px) {
+    .read-layout { grid-template-columns: 1fr; }
+    .wrap { padding-bottom: 90px; }
+    body.sheet-open .wrap { padding-bottom: calc(46vh + 60px); }
+    .verse { font-size: 17px; }
+    aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none; border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none; box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50; }
+    aside::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 8px auto 0; }
+    .side-tabs { padding: 8px 14px 10px; }
+    .side-body { display: none; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+    aside.open .side-body { display: block; height: 46vh; }
+    .facts { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="a2hs-banner" style="display:none;">
+    <span id="a2hs-text"></span>
+    <button id="a2hs-close" aria-label="닫기">✕</button>
+  </div>
+
+  <header>
+    <div class="app-name">토블 : 성경을 톺아보다</div>
+    <h1>룻기</h1>
+    <div class="sub">개역한글판 · 4장 85절 · 메길로트(다섯 두루마리)</div>
+    <div class="mode-note">학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입</div>
+  </header>
+
+  <div class="read-layout">
+
+    <div id="verses">
+      <div class="page-tabs" id="page-tabs">
+        <button class="page-tab active" data-page="1">1장</button>
+        <button class="page-tab" data-page="2">2장</button>
+        <button class="page-tab" data-page="3">3장</button>
+        <button class="page-tab" data-page="4">4장</button>
+      </div>
+
+      <div class="version-bar" id="version-bar"></div>
+      <div class="compare-toggle-row">
+        <label><input type="checkbox" id="compare-toggle"> 다른 역본과 대조해서 보기</label>
+      </div>
+      <div class="version-bar" id="compare-version-bar" style="display:none;"></div>
+      <div class="version-note" id="version-note"></div>
+
+      <div class="page" data-page="1">
+        <div class="sect">가족의 이주와 상실 · 1:1–5</div>
+        <div class="verse has-note" data-n="1-1"><span class="num">1</span><span class="vtext">사사들의 치리하던 때에 그 땅에 흉년이 드니라 유다 베들레헴에 한 사람이 그 아내와 두 아들을 데리고 모압 지방에 가서 우거하였는데</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-2"><span class="num">2</span><span class="vtext">그 사람의 이름은 엘리멜렉이요 그 아내의 이름은 나오미요 그 두 아들의 이름은 말론과 기룐이니 유다 베들레헴 에브랏 사람들이더라 그들이 모압 지방에 들어가서 거기 유하더니</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-3"><span class="num">3</span><span class="vtext">나오미의 남편 엘리멜렉이 죽고 나오미와 그 두 아들이 남았으며</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-4"><span class="num">4</span><span class="vtext">그들은 모압 여자 중에서 아내를 취하였는데 하나의 이름은 오르바요 하나의 이름은 룻이더라 거기 거한지 십년 즈음에</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-5"><span class="num">5</span><span class="vtext">말론과 기룐 두 사람이 다 죽고 그 여인은 두 아들과 남편의 뒤에 남았더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+
+        <div class="sect">돌아가는 길 위에서 · 1:6–18</div>
+        <div class="verse" data-n="1-6"><span class="num">6</span><span class="vtext">그가 모압 지방에 있어서 여호와께서 자기 백성을 권고하사 그들에게 양식을 주셨다 함을 들었으므로 이에 두 자부와 함께 일어나 모압 지방에서 돌아오려 하여</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-7"><span class="num">7</span><span class="vtext">있던 곳을 떠나고 두 자부도 그와 함께하여 유다 땅으로 돌아오려고 길을 행하다가</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-8"><span class="num">8</span><span class="vtext">나오미가 두 자부에게 이르되 너희는 각각 어미의 집으로 돌아가라 너희가 죽은 자와 나를 선대한 것 같이 여호와께서 너희를 선대하시기를 원하며</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-9"><span class="num">9</span><span class="vtext">여호와께서 너희로 각각 남편의 집에서 평안함을 얻게 하시기를 원하노라 하고 그들에게 입맞추매 그들이 소리를 높여 울며</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-10"><span class="num">10</span><span class="vtext">나오미에게 이르되 아니니이다 우리는 어머니와 함께 어머니의 백성에게로 돌아가겠나이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-11"><span class="num">11</span><span class="vtext">나오미가 가로되 내 딸들아 돌아가라 너희가 어찌 나와 함께 가려느냐 나의 태중에 너희 남편될 아들들이 오히려 있느냐</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-12"><span class="num">12</span><span class="vtext">내 딸들아 돌이켜 너희 길로 가라 나는 늙었으니 남편을 두지 못할찌라 가령 내가 소망이 있다고 말한다든지 오늘 밤에 남편을 두어서 아들들을 생산한다 하자</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-13"><span class="num">13</span><span class="vtext">너희가 어찌 그것을 인하여 그들의 자라기를 기다리겠느냐 어찌 그것을 인하여 남편 두기를 멈추겠느냐 내 딸들아 그렇지 아니하니라 여호와의 손이 나를 치셨으므로 나는 너희로 인하여 더욱 마음이 아프도다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-14"><span class="num">14</span><span class="vtext">그들이 소리를 높여 다시 울더니 오르바는 그 시모에게 입맞추되 룻은 그를 붙좇았더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-15"><span class="num">15</span><span class="vtext">나오미가 또 가로되 보라 네 동서는 그 백성과 그 신에게로 돌아가나니 너도 동서를 따라 돌아가라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-16"><span class="num">16</span><span class="vtext">룻이 가로되 나로 어머니를 떠나며 어머니를 따르지 말고 돌아가라 강권하지 마옵소서 어머니께서 가시는 곳에 나도 가고 어머니께서 유숙하시는 곳에서 나도 유숙하겠나이다 어머니의 백성이 나의 백성이 되고 어머니의 하나님이 나의 하나님이 되시리니</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-17"><span class="num">17</span><span class="vtext">어머니께서 죽으시는 곳에서 나도 죽어 거기 장사될 것이라 만일 내가 죽는 일 외에 어머니와 떠나면 여호와께서 내게 벌을 내리시고 더 내리시기를 원하나이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-18"><span class="num">18</span><span class="vtext">나오미가 룻의 자기와 함께 가기로 굳게 결심함을 보고 그에게 말하기를 그치니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+
+        <div class="sect">베들레헴 귀환 · 1:19–22</div>
+        <div class="verse" data-n="1-19"><span class="num">19</span><span class="vtext">이에 그 두 사람이 행하여 베들레헴까지 이르니라 베들레헴에 이를 때에 온 성읍이 그들을 인하여 떠들며 이르기를 이가 나오미냐 하는지라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-20"><span class="num">20</span><span class="vtext">나오미가 그들에게 이르되 나를 나오미라 칭하지 말고 마라라 칭하라 이는 전능자가 나를 심히 괴롭게 하셨음이니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="1-21"><span class="num">21</span><span class="vtext">내가 풍족하게 나갔더니 여호와께서 나로 비어 돌아오게 하셨느니라 여호와께서 나를 징벌하셨고 전능자가 나를 괴롭게 하셨거늘 너희가 어찌 나를 나오미라 칭하느뇨 하니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="1-22"><span class="num">22</span><span class="vtext">나오미가 모압 지방에서 그 자부 모압 여인 룻과 함께 돌아왔는데 그들이 보리 추수 시작할 때에 베들레헴에 이르렀더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+      </div>
+
+      <div class="page" data-page="2" hidden>
+        <div class="sect">이삭 줍는 룻 · 2:1–13</div>
+        <div class="verse has-note" data-n="2-1"><span class="num">1</span><span class="vtext">나오미의 남편 엘리멜렉의 친족 중 유력한 자가 있으니 이름은 보아스더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="2-2"><span class="num">2</span><span class="vtext">모압 여인 룻이 나오미에게 이르되 나로 밭에 가게 하소서 내가 뉘게 은혜를 입으면 그를 따라서 이삭을 줍겠나이다 나오미가 그에게 이르되 내 딸아 갈찌어다 하매</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-3"><span class="num">3</span><span class="vtext">룻이 가서 베는 자를 따라 밭에서 이삭을 줍는데 우연히 엘리멜렉의 친족 보아스에게 속한 밭에 이르렀더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-4"><span class="num">4</span><span class="vtext">마침 보아스가 베들레헴에서부터 와서 베는 자들에게 이르되 여호와께서 너희와 함께 하시기를 원하노라 그들이 대답하되 여호와께서 당신에게 복 주시기를 원하나이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-5"><span class="num">5</span><span class="vtext">보아스가 베는 자들을 거느린 사환에게 이르되 이는 뉘 소녀냐</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-6"><span class="num">6</span><span class="vtext">베는 자를 거느린 사환이 대답하여 가로되 이는 나오미와 함께 모압 지방에서 돌아온 모압 소녀인데</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-7"><span class="num">7</span><span class="vtext">그의 말이 나로 베는 자를 따라 단 사이에서 이삭을 줍게 하소서 하였고 아침부터 와서는 잠시 집에서 쉰 외에 지금까지 계속하는 중이니이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-8"><span class="num">8</span><span class="vtext">보아스가 룻에게 이르되 내 딸아 들으라 이삭을 주우러 다른 밭으로 가지 말며 여기서 떠나지 말고 나의 소녀들과 함께 있으라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-9"><span class="num">9</span><span class="vtext">그들의 베는 밭을 보고 그들을 따르라 내가 그 소년들에게 명하여 너를 건드리지 말라 하였느니라 목이 마르거든 그릇에 가서 소년들의 길어 온 것을 마실찌니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="2-10"><span class="num">10</span><span class="vtext">룻이 땅에 엎드려 절하며 그에게 이르되 나는 이방 여인이어늘 당신이 어찌하여 내게 은혜를 베푸시며 나를 돌아보시나이까</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-11"><span class="num">11</span><span class="vtext">보아스가 그에게 대답하여 가로되 네 남편이 죽은 후로 네가 시모에게 행한 모든 것과 네 부모와 고국을 떠나 전에 알지 못하던 백성에게로 온 일이 내게 분명히 들렸느니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="2-12"><span class="num">12</span><span class="vtext">여호와께서 네 행한 일을 보응하시기를 원하며 이스라엘의 하나님 여호와께서 그 날개 아래 보호를 받으러 온 네게 온전한 상 주시기를 원하노라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-13"><span class="num">13</span><span class="vtext">룻이 가로되 내 주여 내가 당신께 은혜 입기를 원하나이다 나는 당신의 시녀의 하나와 같지 못하오나 당신이 이 시녀를 위로하시고 마음을 기쁘게 하는 말씀을 하셨나이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+
+        <div class="sect">보아스의 환대 · 2:14–23</div>
+        <div class="verse" data-n="2-14"><span class="num">14</span><span class="vtext">식사할 때에 보아스가 룻에게 이르되 이리로 와서 떡을 먹으며 네 떡 조각을 초에 찍으라 룻이 곡식 베는 자 곁에 앉으니 그가 볶은 곡식을 주매 룻이 배불리 먹고 남았더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-15"><span class="num">15</span><span class="vtext">룻이 이삭을 주우러 일어날 때에 보아스가 자기 소년들에게 명하여 가로되 그로 곡식 단 사이에서 줍게 하고 책망하지 말며</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-16"><span class="num">16</span><span class="vtext">또 그를 위하여 줌에서 조금씩 뽑아 버려서 그로 줍게 하고 꾸짖지 말라 하니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-17"><span class="num">17</span><span class="vtext">룻이 밭에서 저녁까지 줍고 그 주운 것을 떠니 보리가 한 에바쯤 되는지라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-18"><span class="num">18</span><span class="vtext">그것을 가지고 성읍에 들어가서 시모에게 그 주운 것을 보이고 그 배불리 먹고 남긴 것을 내어 시모에게 드리매</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-19"><span class="num">19</span><span class="vtext">시모가 그에게 이르되 오늘 어디서 주웠느냐 어디서 일을 하였느냐 너를 돌아본 자에게 복이 있기를 원하노라 룻이 누구에게서 일한 것을 시모에게 알게 하여 가로되 오늘 일하게 한 사람의 이름은 보아스니이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="2-20"><span class="num">20</span><span class="vtext">나오미가 자부에게 이르되 여호와의 복이 그에게 있기를 원하노라 그가 생존한 자와 사망한 자에게 은혜 베풀기를 그치지 아니하도다 나오미가 또 그에게 이르되 그 사람은 우리의 근족이니 우리 기업을 무를 자 중 하나이니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-21"><span class="num">21</span><span class="vtext">모압 여인 룻이 가로되 그가 내게 또 이르기를 내 추수를 다 마치기까지 너는 내 소년들에게 가까이 있으라 하더이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-22"><span class="num">22</span><span class="vtext">나오미가 자부 룻에게 이르되 내 딸아 너는 그 소녀들과 함께 나가고 다른 밭에서 사람을 만나지 아니하는 것이 좋으니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="2-23"><span class="num">23</span><span class="vtext">이에 룻이 보아스의 소녀들에게 가까이 있어서 보리 추수와 밀 추수를 마치기까지 이삭을 주우며 그 시모와 함께 거하니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+      </div>
+
+      <div class="page" data-page="3" hidden>
+        <div class="sect">나오미의 계획 · 3:1–6</div>
+        <div class="verse" data-n="3-1"><span class="num">1</span><span class="vtext">룻의 시모 나오미가 그에게 이르되 내 딸아 내가 너를 위하여 안식할 곳을 구하여 너로 복되게 하여야 하지 않겠느냐</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-2"><span class="num">2</span><span class="vtext">네가 함께 하던 시녀들을 둔 보아스는 우리의 친족이 아니냐 그가 오늘 밤에 타작 마당에서 보리를 까불리라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-3"><span class="num">3</span><span class="vtext">그런즉 너는 목욕하고 기름을 바르고 의복을 입고 타작 마당에 내려가서 그 사람이 먹고 마시기를 다 하기까지는 그에게 보이지 말고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-4"><span class="num">4</span><span class="vtext">그가 누울 때에 너는 그 눕는 곳을 알았다가 들어 가서 그 발치 이불을 들고 거기 누우라 그가 너의 할 일을 네게 고하리라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-5"><span class="num">5</span><span class="vtext">룻이 시모에게 이르되 어머니의 말씀대로 내가 다 행하리이다 하니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-6"><span class="num">6</span><span class="vtext">그가 타작 마당으로 내려가서 시모의 명대로 다 하니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+
+        <div class="sect">타작마당에서의 청혼 · 3:7–13</div>
+        <div class="verse" data-n="3-7"><span class="num">7</span><span class="vtext">보아스가 먹고 마시고 마음이 즐거워서 가서 노적가리 곁에 눕는지라 룻이 가만히 가서 그 발치 이불을 들고 거기 누웠더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-8"><span class="num">8</span><span class="vtext">밤중에 그 사람이 놀라 몸을 돌이켜 본즉 한 여인이 자기 발치에 누웠는지라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="3-9"><span class="num">9</span><span class="vtext">가로되 네가 누구뇨 대답하되 나는 당신의 시녀 룻이오니 당신의 옷자락으로 시녀를 덮으소서 당신은 우리 기업을 무를 자가 됨이니이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="3-10"><span class="num">10</span><span class="vtext">가로되 내 딸아 여호와께서 네게 복 주시기를 원하노라 네가 빈부를 물론하고 연소한 자를 좇지 아니하였으니 너의 베푼 인애가 처음보다 나중이 더하도다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-11"><span class="num">11</span><span class="vtext">내 딸아 두려워 말라 내가 네 말대로 네게 다 행하리라 네가 현숙한 여자인줄 나의 성읍 백성이 다 아느니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-12"><span class="num">12</span><span class="vtext">참으로 나는 네 기업을 무를 자나 무를 자가 나보다 더 가까운 친족이 있으니</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="3-13"><span class="num">13</span><span class="vtext">이 밤에 여기서 머무르라 아침에 그가 기업 무를 자의 책임을 네게 이행하려 하면 좋으니 그가 그 기업 무를 자의 책임을 행할 것이니라 만일 그가 기업 무를 자의 책임을 네게 이행코자 아니하면 여호와의 사심으로 맹세하노니 내가 기업 무를 자의 책임을 네게 행하리라 아침까지 누울찌니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+
+        <div class="sect">약속과 귀가 · 3:14–18</div>
+        <div class="verse" data-n="3-14"><span class="num">14</span><span class="vtext">룻이 새벽까지 그 발치에 누웠다가 사람이 피차 알아보기 어려울 때에 일어났으니 보아스의 말에 여인이 타작 마당에 들어온 것을 사람이 알지 못하여야 할 것이라 하였음이라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-15"><span class="num">15</span><span class="vtext">보아스가 가로되 네 겉옷을 가져다가 펴서 잡으라 펴서 잡으니 보리를 여섯번 되어 룻에게 이워주고 성으로 들어가니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-16"><span class="num">16</span><span class="vtext">룻이 시모에게 이르니 그가 가로되 내 딸아 어떻게 되었느냐 룻이 그 사람의 자기에게 행한 것을 다 고하고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-17"><span class="num">17</span><span class="vtext">가로되 그가 내게 이 보리를 여섯번 되어 주며 이르기를 빈손으로 네 시모에게 가지 말라 하더이다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="3-18"><span class="num">18</span><span class="vtext">이에 시모가 가로되 내 딸아 이 사건이 어떻게 되는 것을 알기까지 가만히 앉아 있으라 그 사람이 오늘날 이 일을 성취하기 전에는 쉬지 아니하리라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+      </div>
+
+      <div class="page" data-page="4" hidden>
+        <div class="sect">기업 무를 자의 법적 절차 · 4:1–12</div>
+        <div class="verse has-note" data-n="4-1"><span class="num">1</span><span class="vtext">보아스가 성문에 올라가서 거기 앉았더니 마침 보아스의 말하던 기업 무를 자가 지나는지라 보아스가 그에게 이르되 아무여 이리로 와서 앉으라 그가 와서 앉으매</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-2"><span class="num">2</span><span class="vtext">보아스가 성읍 장로 십인을 청하여 가로되 당신들은 여기 앉으라 그들이 앉으매</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-3"><span class="num">3</span><span class="vtext">보아스가 그 기업 무를 자에게 이르되 모압 지방에서 돌아온 나오미가 우리 형제 엘리멜렉의 소유지를 관할하므로</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-4"><span class="num">4</span><span class="vtext">내가 여기 앉은 자들과 내 백성의 장로들 앞에서 그것을 사라고 네게 고하여 알게 하려 하였노라 네가 무르려면 무르려니와 네가 무르지 아니하려거든 내게 고하여 알게 하라 네 다음은 나요 그 외에는 무를 자가 없느니라 그가 가로되 내가 무르리라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-5"><span class="num">5</span><span class="vtext">보아스가 가로되 네가 나오미의 손에서 그 밭을 사는 날에 곧 죽은 자의 아내 모압 여인 룻에게서 사서 그 죽은 자의 기업을 그 이름으로 잇게 하여야 할찌니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="4-6"><span class="num">6</span><span class="vtext">그 기업 무를 자가 가로되 나는 내 기업에 손해가 있을까 하여 나를 위하여 무르지 못하노니 나의 무를 권리를 네가 취하라 나는 무르지 못하겠노라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="4-7"><span class="num">7</span><span class="vtext">옛적 이스라엘 중에 모든 것을 무르거나 교환하는 일을 확정하기 위하여 사람이 그 신을 벗어 그 이웃에게 주더니 이것이 이스라엘의 증명하는 전례가 된지라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-8"><span class="num">8</span><span class="vtext">이에 그 기업 무를 자가 보아스에게 이르되 네가 너를 위하여 사라 하고 그 신을 벗는지라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-9"><span class="num">9</span><span class="vtext">보아스가 장로들과 모든 백성에게 이르되 내가 엘리멜렉과 기룐과 말론에게 있던 모든 것을 나오미의 손에서 산 일에 너희가 오늘날 증인이 되었고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-10"><span class="num">10</span><span class="vtext">또 말론의 아내 모압 여인 룻을 사서 나의 아내로 취하고 그 죽은 자의 기업을 그 이름으로 잇게 하여 그 이름이 그 형제 중과 그곳 성문에서 끊어지지 않게 함에 너희가 오늘날 증인이 되었느니라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="4-11"><span class="num">11</span><span class="vtext">성문에 있는 모든 백성과 장로들이 가로되 우리가 증인이 되노니 여호와께서 네 집에 들어가는 여인으로 이스라엘 집을 세운 라헬, 레아 두 사람과 같게 하시고 너로 에브랏에서 유력하고 베들레헴에서 유명케 하시기를 원하며</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="4-12"><span class="num">12</span><span class="vtext">여호와께서 이 소년 여자로 네게 후사를 주사 네 집으로 다말이 유다에게 낳아준 베레스의 집과 같게 하시기를 원하노라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+
+        <div class="sect">오벳의 출생과 족보 · 4:13–22</div>
+        <div class="verse has-note" data-n="4-13"><span class="num">13</span><span class="vtext">이에 보아스가 룻을 취하여 아내를 삼고 그와 동침하였더니 여호와께서 그로 잉태케 하시므로 그가 아들을 낳은지라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-14"><span class="num">14</span><span class="vtext">여인들이 나오미에게 이르되 찬송할찌로다 여호와께서 오늘날 네게 기업 무를 자가 없게 아니하셨도다 이 아이의 이름이 이스라엘 중에 유명하게 되기를 원하노라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-15"><span class="num">15</span><span class="vtext">이는 네 생명의 회복자며 네 노년의 봉양자라 곧 너를 사랑하며 일곱 아들보다 귀한 자부가 낳은 자로다</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-16"><span class="num">16</span><span class="vtext">나오미가 아기를 취하여 품에 품고 그의 양육자가 되니</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="4-17"><span class="num">17</span><span class="vtext">그 이웃 여인들이 그에게 이름을 주되 나오미가 아들을 낳았다 하여 그 이름을 오벳이라 하였는데 그는 다윗의 아비인 이새의 아비였더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse has-note" data-n="4-18"><span class="num">18</span><span class="vtext">베레스의 세계는 이러하니라 베레스는 헤스론을 낳았고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-19"><span class="num">19</span><span class="vtext">헤스론은 람을 낳았고 람은 암미나답을 낳았고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-20"><span class="num">20</span><span class="vtext">암미나답은 나손을 낳았고 나손은 살몬을 낳았고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-21"><span class="num">21</span><span class="vtext">살몬은 보아스를 낳았고 보아스는 오벳을 낳았고</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+        <div class="verse" data-n="4-22"><span class="num">22</span><span class="vtext">오벳은 이새를 낳았고 이새는 다윗을 낳았더라</span><span class="clear-hl" title="이 절 형광펜 지우기">⌫</span></div>
+      </div>
+
+      <div class="page-nav">
+        <button id="page-prev" disabled>← 이전 장</button>
+        <span id="page-indicator">1 / 4</span>
+        <button id="page-next">다음 장 →</button>
+      </div>
+    </div>
+
+    <aside id="sidepanel">
+      <div class="side-tabs">
+        <div class="tab-row">
+          <button data-view="structure">구조</button>
+          <button class="active" data-view="note">학습</button>
+          <button data-view="memo">메모</button>
+          <button data-view="dict">사전</button>
+        </div>
+        <div class="tab-row">
+          <button data-view="context">배경</button>
+          <button data-view="people">인물</button>
+          <button data-view="map">지도</button>
+        </div>
+      </div>
+      <div class="side-body">
+
+        <div class="side-view active" id="view-note"></div>
+
+        <div class="side-view" id="view-context">
+          <div class="card">
+            <h2>한눈에 보기</h2>
+            <div class="facts">
+              <div class="fact"><div class="k">저자</div><div class="v" id="fact-author">미상 (익명)</div></div>
+              <div class="fact"><div class="k">기록 시기</div><div class="v" id="fact-date">학계 논쟁 중 (아래 참조)</div></div>
+              <div class="fact"><div class="k">이야기 배경</div><div class="v">사사 시대 (주전 약 1200–1050년)</div></div>
+              <div class="fact"><div class="k">장르</div><div class="v">단편 서사 · 메길로트</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>콘텐츠 트랙</h2>
+            <p style="margin-bottom:10px;">같은 학습 구조(관찰→해석→적용) 위에, 배경·노트 콘텐츠의 서술 방식만 다르게 볼 수 있습니다.</p>
+            <div class="struct-toolbar" style="margin-bottom:0;">
+              <button class="struct-btn" id="track-academic" style="flex:1;">학술 트랙</button>
+              <button class="struct-btn secondary" id="track-traditional" style="flex:1;">본문중심 트랙</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>원저자 — 이 책을 쓴 사람</h2>
+            <p id="author-academic">룻기는 <strong>저자를 밝히지 않은 익명 문서</strong>입니다. 유대 전승은 사무엘을 저자로 보지만, 다윗의 족보(4:18–22)까지 알고 썼다고 보기는 어렵다는 반론도 있습니다.</p>
+            <p id="author-traditional" style="display:none;">유대 전승(탈무드 바바 바트라)은 <strong>사무엘을 룻기의 저자</strong>로 봅니다. 사무엘상하의 배경이 되는 시대와 맞닿아 있어, 다윗 왕가의 뿌리를 아는 인물이 기록했다고 보는 전통적 견해입니다.</p>
+            <p>정교한 구조(4막 구성, 이름의 언어유희, 반복되는 핵심어 배치)로 볼 때 저자는 문학적 훈련을 받은 인물로 추정됩니다.</p>
+          </div>
+          <div class="card">
+            <h2>원독자 — 이 이야기를 처음 들은 사람들</h2>
+            <p id="readers-academic"><strong>다윗 왕조 초기설</strong>을 따르면 원독자는 다윗 왕가의 정당성에 관심 있던 유다 궁정 주변 사람들입니다. <strong>포로기 이후설</strong>을 따르면, 에스라·느헤미야 시대에 이방인과의 결혼을 강제로 해소시키던 정책과 맞물려, 이 이야기가 그 정책에 대한 내부 반론으로 읽혔을 가능성이 있습니다.</p>
+            <p id="readers-traditional" style="display:none;">사무엘 시대 무렵 기록됐다고 보면, 원독자는 사사 시대의 혼란을 지나 왕정을 시작한 이스라엘 백성입니다. 다윗 왕가의 뿌리에 이방 여인 룻의 신실함이 있다는 사실이, 하나님이 예상 밖의 사람을 통해 구속사를 이끄신다는 메시지로 읽혔을 것입니다.</p>
+          </div>
+          <div class="card" id="card-debate">
+            <h2>저작 연대 논쟁 — 두 가설 병기</h2>
+            <div class="debate">
+              <div class="debate-side"><div class="d-label">가설 A · 다윗 왕조 초기 (주전 10세기경)</div><p>족보가 다윗에서 끝나고 솔로몬이 언급되지 않는 점, 고졸한 히브리어 특징에 근거합니다.</p></div>
+              <div class="debate-side"><div class="d-label">가설 B · 포로기~포로기 이후 (주전 6~5세기경)</div><p>후기 히브리어 어휘(Bush)와, 4:7에서 서술자가 신 벗는 관습을 "옛적" 일로 설명해야 했던 점에 근거합니다.</p></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>이야기의 흐름</h2>
+            <div class="timeline">
+              <div class="t-item"><div class="t-title">① 베들레헴에서 모압으로</div><div class="t-desc">흉년을 피해 엘리멜렉 가족이 모압으로 이주 (1:1–2)</div></div>
+              <div class="t-item"><div class="t-title">② 상실</div><div class="t-desc">엘리멜렉, 말론, 기룐이 차례로 죽고 나오미만 남음 (1:3–5)</div></div>
+              <div class="t-item"><div class="t-title">③ 룻의 서약과 귀환</div><div class="t-desc">룻이 나오미를 따르기로 결단 (1:16–22)</div></div>
+              <div class="t-item"><div class="t-title">④ 이삭 줍기</div><div class="t-desc">룻이 보아스의 밭에서 일하며 호의를 얻음 (2장)</div></div>
+              <div class="t-item"><div class="t-title">⑤ 타작마당의 청혼</div><div class="t-desc">룻이 보아스에게 기업 무름을 요청 (3장)</div></div>
+              <div class="t-item"><div class="t-title">⑥ 성문의 해결과 오벳의 출생</div><div class="t-desc">보아스가 룻과 결혼해 오벳을 낳음 → 다윗의 증조부 (4장)</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>법적 배경 — 고엘과 이삭줍기</h2>
+            <p><strong>이삭줍기</strong>(레 19:9–10, 신 24:19): 밭의 가장자리는 가난한 자와 나그네를 위해 남겨두는 규정.</p>
+            <p><strong>고엘(גֹּאֵל)</strong>(레 25:23–28): 형편이 어려워 판 친족의 재산을 대신 사들여 되돌려주는 근친의 의무.</p>
+            <p>룻기는 고엘 제도와 형사취수(신 25:5–10)를 <strong>결합해 확장 적용</strong>한 독특한 사례로 평가됩니다.</p>
+          </div>
+        </div>
+
+        <div class="side-view" id="view-people"></div>
+
+        <div class="side-view" id="view-map">
+          <svg class="map" viewBox="0 0 640 460" role="img" aria-label="나오미와 룻의 여정 지도(실제 지형 반영)">
+            <defs>
+              <linearGradient id="seaGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#d8e8ef"/>
+                <stop offset="100%" stop-color="#c2dbe6"/>
+              </linearGradient>
+              <clipPath id="ruthLandClip">
+                <path d="M 441.8,-134.4 L 363.2,-39.4 L 199.9,-81.1 L 105.4,119.5 L 218.8,153.4 L 103.5,194.8 L 84.1,274.2 L 296.3,233.3 L 306.9,350.5 L 81.9,832.3 L -214.7,314.6 L -83.4,215.3 L -114.2,198.2 L 5.2,57.4 L 96.7,-170.0 L 161.3,-246.3 L 173.8,-249.4 L 324.8,-248.8 L 366.4,-301.6 L 487.5,-305.6 L 494.4,-182.3 L 433.2,-136.4 L 441.8,-134.4 Z M 363.2,-39.4 L 441.8,-134.4 L 944.8,-15.0 L 1828.8,-336.1 L 2010.8,30.8 L 1924.8,76.3 L 1020.7,227.5 L 1470.6,528.8 L 1321.3,579.9 L 1247.0,680.9 L 902.6,722.6 L 794.5,831.1 L 599.4,923.8 L 97.0,875.9 L 81.9,832.3 L 306.9,350.5 L 296.3,233.3 L 363.0,144.9 L 363.2,-39.4 Z M 363.2,-39.4 L 363.0,144.9 L 296.3,233.3 L 84.1,274.2 L 103.5,194.8 L 218.8,153.4 L 105.4,119.5 L 199.9,-81.1 L 363.2,-39.4 Z M 487.5,-305.6 L 366.4,-301.6 L 324.8,-248.8 L 173.8,-249.4 L 334.5,-494.8 L 559.1,-707.2 L 567.6,-717.7 L 770.6,-702.3 L 844.4,-584.1 L 598.3,-470.6 L 487.5,-305.6 Z M 1828.8,-336.1 L 944.8,-15.0 L 441.8,-134.4 L 433.2,-136.4 L 494.4,-182.3 L 487.5,-305.6 L 598.3,-470.6 L 844.4,-584.1 L 770.6,-702.3 L 567.6,-717.7 L 525.4,-948.2 L 635.9,-1072.2 L 756.8,-1138.2 L 877.7,-1204.3 L 902.1,-1372.3 L 1049.9,-1313.7 L 1546.9,-1397.6 L 1787.1,-1340.8 L 2158.5,-1341.8 L 2677.9,-1454.8 L 2921.2,-1449.7 L 3434.7,-1496.6 L 3203.3,-1308.6 L 2956.2,-1234.1 L 2998.8,-1014.0 L 2828.2,-649.7 L 1828.8,-336.1 Z M 81.9,832.3 L -44.9,953.4 L -142.0,1181.0 L -264.8,1337.9 L -370.1,1390.5 L -520.5,1293.3 L -724.3,1158.8 L -1046.4,726.9 L -1092.8,754.2 L -905.7,1072.2 L -628.6,1375.1 L -287.4,1844.5 L -120.7,2008.3 L 24.3,2178.5 L 429.4,2512.1 L 339.7,2564.6 L 354.3,2760.5 L 880.1,3030.9 L 959.3,3092.7 L -831.1,3092.7 L -2582.7,3092.7 L -4397.4,3092.7 L -4397.4,1983.0 L -4397.4,911.4 L -4532.8,668.7 L -4416.6,482.6 L -4486.4,353.8 L -4323.0,209.2 L -3722.4,204.2 L -3288.0,283.9 L -2839.8,372.9 L -2630.7,419.8 L -2283.2,324.4 L -2097.4,238.0 L -1699.3,213.2 L -1378.3,251.2 L -1255.3,400.7 L -1150.5,302.2 L -788.7,373.4 L -436.9,390.5 L -214.7,314.6 L 81.9,832.3 Z M 3628.7,4795.8 L 3570.1,4667.2 L 3433.9,4576.5 L 3399.1,4456.3 L 3166.0,4348.3 L 2925.4,4095.6 L 2798.0,3850.1 L 2485.8,3642.7 L 2284.5,3593.2 L 1985.5,3306.0 L 1933.3,3096.6 L 1952.5,2918.0 L 1693.6,2583.9 L 1481.9,2466.3 L 1238.0,2404.0 L 1089.6,2231.3 L 1114.3,2163.2 L 988.8,2007.0 L 857.0,1939.7 L 680.8,1715.5 L 405.9,1472.5 L 175.6,1265.6 L -49.1,1267.0 L 21.1,1101.6 L 41.1,996.1 L 97.0,875.9 L 599.4,923.8 L 794.5,831.1 L 902.6,722.6 L 1247.0,680.9 L 1321.3,579.9 L 1470.6,528.8 L 1020.7,227.5 L 1924.8,76.3 L 2010.8,30.8 L 2554.6,112.5 L 3227.2,323.4 L 4500.0,929.4 L 5339.3,953.5 L 5741.6,982.6 L 5854.0,1126.1 L 6173.3,1118.3 L 6350.0,1378.2 L 6572.1,1447.0 L 6649.4,1552.9 L 6957.1,1679.5 L 6984.4,1803.9 L 6939.4,1904.2 L 6996.6,2005.4 L 7126.4,2089.9 L 7186.5,2188.7 L 7254.0,2262.6 L 7390.5,2322.4 L 7515.6,2300.9 L 7601.3,2416.0 L 7618.6,2485.7 L 7791.5,2791.0 L 9148.5,2942.9 L 9239.5,2879.2 L 9446.4,3092.7 L 9145.4,3695.3 L 7791.1,3996.7 L 6489.5,4112.2 L 6068.2,4247.8 L 5744.7,4564.2 L 5534.0,4614.4 L 5421.1,4514.0 L 5248.1,4529.0 L 4811.7,4498.9 L 4728.9,4468.8 L 4208.0,4475.7 L 4085.6,4502.9 L 3900.2,4424.6 L 3780.6,4572.7 L 3826.9,4699.7 L 3628.7,4795.8 Z"/>
+              </clipPath>
+            </defs>
+            <rect width="640" height="460" fill="url(#seaGrad)"/>
+
+            <g clip-path="url(#ruthLandClip)">
+              <image href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDAwMEBAQFBgoGBgUFBgwICQcKDgwPDg4MDQ0PERYTDxAVEQ0NExoTFRcYGRkZDxIbHRsYHRYYGRj/2wBDAQQEBAYFBgsGBgsYEA0QGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBj/wAARCAShBXgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD64ooorxTnCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAFAJOBSlGHUU2rMZLLjGaAK1FWmtWb5gMVXZCjYIoAbRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFSRsVbIOKYOvNOPI6UDRfiusjYwyD3oljZycR8etU43AODxV2K5O3Znk9DWm+5pbmRQeF1bG003y3/umtFYpd5LfMPargghnhAZgrDrUqDZKg3sYBGDg0Vqz6eo4Xn3qjJbOmSBkUmmtyWrEFFGDRSEFFOVC1KYyKAGUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUU9Y2Y9OKAGUoUnoKtJCB2zUix84xinYCn5T4ziitJoSqggg/SinysfKZVFFFSIKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKdGBu5PFNpy4zzQBMNucYyacqc/dxQhjTkcn3qTzUYckZq0axHi6njTbGBUPky3X35mQ+op/XpS4lP3BmmbwZGft9ufLeYvH/AHqlW6tOEeX6ipUDyKY5FwwqlNYIzEbefUUPTYyqXvqWZGtSdsQ359KRLWLgvxntVa3DadIDgsp67q00vNMlwskqo3oxpJJkxhzbEDwFeI1P1qFreQ9VrZR4SoKsrr6inGWPYNsYbJwMVfs0X7BswWgPdaiMOD1rfeyd8ngfSoG0vHOc1DpvoZODRi+U2eBTvJ961PsL/SoXg2tgcmlyMnlZntEw+lMrQ8mRuMYFRtajNKwinRVowBRyKj8pQc5z7UgIaKkaMk5UcU3Y3pQA2ilII6ikoAKKKKACiiigAooooAKKKKACiiigAooowfSgAopdrdhRtb+6aAEop2x/7pqRbZ2GSKAIacqsx4FWBbBeWOfapAmBhFp2Aiji29RmrCopGM4oRJBjepq6lsGOSOPeqjEuMLlWMAoSvUVJ5bSYyuB3q4trAmWBoN1ZxqQZF3dMd60Ubbm0aTsRw2iquQ2T60VUOpNBdNEVIU8gmihOJsqRlUUUVgcAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUoz+FJTlGaAFUsTtQc+pqzEsa/6xMt7VXRsHBOBUoK5yGzVIuLLY8thwtP5QcVXRh0qbjHWrR0xQuGzuJq1HNEEy0eT61UzxSq+WIJ4qr2LavuWZYoLuMqQBWLdaBbAmUM7Ec9avs4Q5Q9KmjvtygGMEipaT3IdPqjmW1W5gja1to2UDuwqjDrmqWcxKTKc9n5rs5TZzREPCisfQVjzaVZvIW8vNZyg+jOiFS2jQy28aXUZH261Lr/fTgCugttZhvgr2jq6kc+1cddW2NyRjap4wRWREt7p92ZbCVg/oOlT7Wcd9TZQhNdj1LBlX5nI+lAt1HAwfrXHad4m1JMDUYRt/v9K27TXrW7l2ecEz61tGrFmMqDNURjPzY9qY8aEYWPn1qJtU0+BxG06E+oOalTUbWYgLKh+hq7x2uZOjpsVpbNmJJPHpURssDgVpme33hc5J7Cnthx94Rr78UuRMydAxzbso6YFQOCCQBmtl/saj95cRn/gVRvHbsv7tgalwM5UmYxQsMMMU3yV9a03t1DYzz6VAYs9FxUctjNxaKfkqKaYh2NXhbk/ezS+QAeFpcorGd5T/AN2gRPn7prS8rB4NRFizkBeKfKFip5DU14ynU1bKtnk4p3kjbvxmlYVigFJ6DNPELmrWVQ7tvy0+NlZ8rnmiw7FZbY/xVKLVByTVxIJJPYetSizUN1JqlApQbM4QIT8q5qxHZK4yRj2q8sSrwQBSjYvTqKpQRcaN9ystmiZOKiZYyxAA4q8weRNoGM96EsY0TDNmnydinStsZ67DkKMmp4onkGCNtWyltH/Ei/jUE89usZKTLx6Gny2HGl3HrYKOtSC2ijGWIArEn8UQxfu4VMz96p/2ne30gDKUjPUVPPFbGqoJbnQSTWwBZXBAoW8hZQUkXB681l+XELYxhiSaxrnTmL5WZ1z2Boc2ti4xijqHurJSRJeKB9az5NS0OGfcZRKwOeKwE0Us2ZJXx6k1ZW1sLdghtt7/AN6s+aTNfdNK68R2cqbbeyMrjocdKKoiCaR/3aKi+woofMw5orYsUUUUjyQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigApwPFNHWnEYPBzQBIsauvzHikMS9jSK+3gjj1pwkT+9TRSBUIPLGrHmhQADVcupPWljVX+ZjwKpM2pysWQ525JFJuDNhck0wbCeDmlLMkgwnHrVXN4u44REHLGkIKt8nFWPMV0A4zUeeaBsasY3hmNTGRMYCZNMAz0peV5K8UwKtzGsoIkXH0qmIYlPyRgD3rTZ/MP3QBTTGp5IqWhp2MO5095zuY/KOgqu+iu8YKFvwrpCgHbPtTCWAI4AqHTRaqNHMSaEojLecwI6gmqG2a2k/0N3D9yTXXSW3mcc5pi6XHncQM1DpX2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UUUoVj2oASlC+tPCAdetLtz2oATaKMYNOCcc04JgdaAGhc9aeFCmjkUoye1UNINqnkHFIVI96eF9acBRYpEYBAqRGwcFc0uAPrQV3DgVVhpCSQMw3owBqsUnU5Z8irSsycY4qbzYmHzpRYtJrYpiXAwBzUivJjLAYqSaKI8p+VQeWxPJOKCuZrcfvDHinbgVxilSF24UVL9hlxk8U1cEyPadue1NALcUNE6PjeT7UDikNDtoUU3HPFOzmjB9KY2JTadSZ9qRLG55owKfjNG3FAhh46imknscVKAM0celFgIjgjrSdRipCtNIoJbE7daTd2ApcelBFIVxCTSEZpaKQhMcCjPpQc59qMDFAXEJPrTSN1OwB15pc+goENCYHJpVIXIzQeTyaaRzkUXAcSDzSdDxSc4waTpSEOJzSUmaSgB3WmkEHmjntSls9etAriUUYopCAcGg57UfSigdwopMiigQyiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKfHE0h4oeJk60AMooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKcg3NigCSNiq85xntV37bYFB5rGJx/FUCW5kHGRUM1lKo3Lb+Z9atXSOnD26lqW4aa3K2l1uU8E96guLa7bT1CSs2OR6mqMMj2N6GuIzGjdRjiugicz2paLGOq01rudUls0c5bX2qQXAjks3cA9DWw2p3UjrGtmyE9c1LJfxpEfPUBhxmpbdHuiJg4CkYFEU1omU3dXaEAd1EWDk8tjtTnwIHSOLJHbuatLG8C8EH1phcSKVXC46tVmbiVoH89MOph29QaLm9tAFt45lZzxgVVvre7uRgZ2gckHrTtP0ixiYNNlpiM5JpXeyFJIdMHghYxP94Uy2uVgQGQMxPWpLhITdiPzcoOoHaroks4rcbVXnoDRYzcdkhizW7x7ljbHoapTosrfMjoT0xUj3JWTfgBR2pHv4mG5V8wjsKG0xyjpoRCERqQcufe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0CYhpKdmk2kjNS0SIeKTNBBzSUALyKKMetFACUUUUDCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAp8bKD/WmVGzMpwpxmjZjT1Le5lmBLnB4q5bwOVLLnGeprK8uT74bd3rVtr8ra4deRxgVpFndF80dCdYNoycH1NV5/L3YU5qwN0g7qDT1t4gOmT61TVzGdO+xmkdgtNZD1rQaBQc1VkYFyqjIFZuJg42IVI7DNT24QSHcccVAofzDgYBqxawq0p3N2oiggrsY20scc0wgseFxWi1vHswFxULosSFjTcRuDRRK7Tz0pw57Ur5ZT8tNVXKAHgCpsTYmTbj1PpUuWi6oQtQoFicMOa0RdQtAQwDHpWkUb04X1GxS2zAb3GfQ0y5sIZYy9uQp/nVa7tlMJkgjbPXFVLO/nhnEFzbyBT90+lDdtGbxgnsJHbTeYTMu3aahvr8W6jYmT7CugkgF1EC521RnghtYyUiEpHPPNKUdDSL1Obkl1bUcGV/s1v09CRUscOyHyIXZh3Y966FJbG/tAtwFj29qgl1DTLZcQxiTb2ArLkW7Z0qTeljn9+nWmcx/v+uTWnY39tchZIxvkAxj3qObxBpE2UOl7m9cVTtrsW+oq8Np5MTdQai6T0Zra61R1ixt5ZlkbBI6DtVa712yt3+yiRWlPBz0FOa/hkj8kSqHccCqb2WkadBvugskz9zyTWrk+hio9xNumMWEDqJXXllqva2F55+w3gkibjaTWla2ljBB9pEAXeM4Nc/qkRtbwz208gRjnAPSlLRXCOrsbl9J9jkUtAWjIxuXtT4DDNabEUkHv6VQtL6O6s1QylnPBVqmv54tPstsbbZD096FLqDj0EmNpYODfSlxn5UpsutaXFmRFLMRwPSuf2z3UrOS0zt1zzitHSNAme5869UJGDkA96mMpN+6hz5VubFvcypZ/adrDfyARUv9tRxR7512Y9atTxKYTHGQSmOPSsu+fTMBLhWkkPG1e1bSuupjFJ7ixatHqN+qxt8uelanljb+75Jqpp9tZWUW6KEZfueoq8AwBKDA96cb21JkrvQQxFI+XBNQtvI+Q80195l25yKc4kWPK8EUyWrCnzCuOhqRIVMfLZNNhZnUmXGRUEk2ycMudp60XHYuqm37zcUGQdAMmoS6hRK5+TvmoJdWtw220HnN7UcyQKFyyyOeeBntSeWR1FR2s07nfcLtY9F9KU3KvIyp1FF0DiRSKYn3gZHpUyzKVARBuP6U3DEHcc1EjNC52Jn1zSEkWNrd6bLAAA2efSmtOwj+UZJqCMT+ZvlbPtRdBYnwCoB4p4xjAGadFGHPz9ae4Eak8AUxWIHRiOBio2gYLk1KkhlJAPAoLupwRxQFiNSduHFIGAOO1PZH3cjionj3HaMjNIYhkDybR0FSjagyeaZHCsQ65pzMOgGaBDSQegxR9adsPU9acF45oAYBzxTwuaXAFNZiRgDFO4gZRnGaeu1Rgc1DkjnrSG4CA8c0XCxYLH04ph5PNRLKXPzHHtUmeOKLisKSBTVj3EselAUk5NP6DFMGJkAbVWomBJyTU+5FGWqJ2j3cc0iWhoXHNNZucChnJ4FJwvLUiGOAOMYyaa0ZAzjFL9ujCbQvzVH5skpy3C+lITWg0ll+6M0AseW60+jbk0EMYelJg+lS4FBFBJFndzjFKBnoKcVJOAOaeInUZbgUgsRFMDJpvH92pdwZsKM04x4GTRYVisVxSbOM5qVlxTWPGAKRLI8elISak4Uc0w4J4FIQ3ax7UhBFShhil+U8UgK/NFTMmTxRQKxDRRRQMKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACkZQwxilpRnPFAFi2iUxneNpFW7MRsSGAODVW3jMkmHkoMZt7rO4gHuK0Wx2UdjSLKWwOKcuRwtECRbA24N+NLLOinYvJ9BVmnKKYy33z17VDNAYk3IBmhJZAx3jikO64mCgkCloyJwuijIJkbJIqe1IaXnrirM1qhXhskVBZb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lq21sDNRS7UJwdy+1KwmyNFfrI26lICnKrikSQq3yjNSmQfxqMUjObuQ7iwoXG7DUFkL/L0pJd6DcACtIwbHMkbDA61WlEkS/KpNCysCCo5q4JRLaHzQFIpbi32KEd7KpxIue2ake4kYhY1pjoozgcUxSVPGfxqbg5skEkynLsKsA5XOajCRyx5ZgD6VEsxjfywM4707iuWKQk00S568GgnHPWgBQ2eaKZvAOCcU8EHoaEAUUUUwIaKKKkkKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAClUAsATSUHpxQBbTYnIPNTiYFQSmBWWs+04PWp0vWA5GV96uLN6NrmiZ4GUJ9n3A98VA2mwo/nREgnsarSarbRrnfjHbFZ82tXEzeXZjk/xGhyXU7YxNaRlQYcDNJE5PAPFZ8OnTSp591eYbqVqVJfK+QEMP72am7NV5F91iIIILMalFnC9kInztP6Vnfb4Ulw5x71au76C10lbgMWy2BVJomcWKLJbXIjOR71E8ibsDGayje6jqEuyJvLj7mrQ08Wqh2u97Hsam99ho0YzuHzGk8mGWZVVTgHk1US6AB3ADFSW19bvKELFTn0oTQ5K5puhChFf8qguLeXaJEBZ19KuBkG3bz7mnmVQMlgK1sc9mYk2olhsltGVx3qJNVnQFYkOfStiZVmUlUUkd6zpnWIfLEqNUSTXU1i/IqXM99dpsaQJnsKihU23yhSx9TU7XEEH76Q72PYVLDei6YLHAAvqRUJalN6ElumV3S52064eKT5YSyMO61cUR+WMEfSiRUiTeiA+tXbQhPUrWklzHhZpgw7Zq1cWzSQsVfqKhF1ZsNsg2tUVxe7VWGLnPfNTdI1UWzLktdRhm8y2cM3oasR3V6V2XUK7f4uKkkBCmZZwG/u5qKEtMSs74zUpWG33FEGmTHy7eMB27UTyz6TEoniT7MeMAVJBaIjsUG0/3qfMIIYQLuUXEeehPSnbQSephSGG5m+3zxFrcH5ENXotQtpSPI04Ko74qe5udLFuzEgwgcKBWL9ugvD5UT+SF6YHWsnozdarU2TcEw5QbPmxVO8uTO6qJRkcUphnksFSPI5+8RWhZafZwRq0rLJKedxNVZshNLUzHs2ZgZLs+y5ps+jzMol3CRfQVt3EWmtGxaZAw64NZbSJbj9xefJ6NUuKRpGTMk2QgkLNGyr3xVu3m0xozCk5L91JrLv8AWLyWdrW1QFe8hqgqWtqRLLP+8PXbUqSWx0qLa1O1tZYbS3bySC3Wqs2vyrkGLA96x4lvZ4g1opKHuapzyGRzZvHIsmcZI4qnNrYlU1fU6WynuJ18yWZFQnoKmmvA0xXnyh1Y1zkOk3VmolWY/wC6TWkrxy2oSc7G9PWpUmRKKvdF9haXMB+zOA471z93o2p7mk+3S7e4DcVNDN5FyY7eMnmrL3t3NNsVCFA5pOzQ1eOxhJpkhIkW4lkIPc1v2p1SGNjBFmQjAz0qKSOQ5jUbM1b0/VY9NGy8l+ntRFJBKTaLNhpOqSjzb+dYuclRxmtiTFvCqom9RTYby2v4NyXAcnooPNSN+4kYNxGR1NbpJLQ55Nt6kNmonnecjao9anAhlciN93PJqheaiVT7PZRA54LVJaF7SECVdgYZOfWhPoS49SOWSK3ecEeWccN60tmoVjM7h/esnU7nbe+TIhkDcgjtWnY+TY2gkmLlZPUdKSeo5LQuMoLgeYNp5xTzmKLd99B19qhXyGlM65ZDwBUUqXEMpZJyIW/hIqrkJXYy68RWVqRFGC7e3aksdRvby6NxNFshUYUUlno0dw5nuox8x4rTMCRIsEEeV9aSUnqym4rRFVklkYzFgM9BSySRxwiNm+c+lFzIizCJScj0qe3s4v8AWum5/ftVIhkKRQQp5zRs+OxqVNRhc7nj8tR0Bpst3um8kJkj0qI2TSt+9YfSn6EvzJRcmckxrhfWnohPQ09IVhjCAcU7NVbuZsUDaMHmmO5HAHNDOoOCaN0anJIP40xWFQ8ZZfzp2EkPDCnBDKOBkVG1ugPJIPtTJYpRd+AOfWgwI5weD601ZfJXGM+9KGMq7o1O6gVhGiZO2R61E8ZZMqMmpvMfG12wfSq0jTK37o8d6Qr2JIpAqFZWwaaYYi26OQ5+tVshZNzNnPUVZgmtgfnBFJFdBJEDDGTx3poTC8c4q95ltj5cEVXmKD5o+D6U2jKSZXYlfujmo3YsOvNPLbhlhg03d6DmoZg5dBhRtnBxUYVweZDj0qXLHgU3HrSIuBIHSq0ssjfIQTz1qxTMEnJqRXAE7cUuBRRQIjJKtlQSaXnbkjBp9FFgISGznmnq8oOO1PoosAZDcMKcGVehpm0YxTfLXtmgCwGB70VXXCfeop3HcfRRRQIKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigBrKD82Oaibdj5unoKnpGC8E0hp2Ka2KzNuK4HpV63tIIuqAEU3zCPuGnJK5OVGT71SsbwqvqNlVnkKIpHqTUZjsLeFg1zh+4zTpjcM21DyaZbaNHPcCW7V9vehq+x2QmiG08ueYnBZB3PSr03k3NuLYbSFOdorZXTrRIPLRAFx2rNutOt7AfaoWbex24J7U+RpBOfutkSxQxQfIvPcCqxgE5zKxSMfnVgSSlcKBiqkkVzcfLklDxxQyKc0Nu3so4wsU5c9MVNaCJI/OkUA+pq1pmh2aPunjJk6gHpWncaZazpsYED2oUHubc6M77QJJNyzAgdAKeI5Zx8+QKlj0aytl3pI2fc05oZ2GA2BTs+omxvmi3QLvJPpVeW2Fwd5c59Kma1kxksMj1qEB4mLFs+1BLK5hSJwgQFj61p2sIijJ8oEkVWhjDSGdxlu1K93JHIN5IHtQtA3JvtFuHKyQMh9aY9/Ai7VbINMuhDPGH8/Bx0rJlWKNTsVmaplJo1gkTX80aQNImGJ6CuWN1ftMd0rJk9K05pLv7oQLn+9Vi3ghKbpUDSCsGuZnSpKCI7G0urkbvMfA7mtdfs0Uf2d9zSVXW9KYWKPaB1FadqYBsuZIvmbua2gkctSTbIPs1xcIqwyGM4xzUZ0e4QHzgZgetb7vbyKMABu2Kz7vVHtI9g+dvQVTjFbhFyOflhaKfaLULCPvA05ILGSUS20J46irf2n+1pPLRGVu4NakGlpFB8pCnvUKN9i3O2hQe6umX7PBZuYcY3YrIurPUFQsEkVM/lW9Imowtm3nXZ6Utvc3ryGK6ClPXFDjfccZW2OVS3lRi8q5A6kmql7qUTJ5SQ7sd67SbSbacl1kIB6iqp0bRkQjP7wVk6b6G0Kq6nHRWs1zHvmJhj7Ad6zJ4Ps95mHMuOgNdPq0KxvjzPkHQCsprqPyGCQYf+8RWTVjqhN7hbavqllEkmxRF3Brat9f0bUIwZ5VjYdc9c1yIju55iGdihP3T0qYaDukyybSe9CnIcoxe51C32kJMXe+eVV+6tWVuNO1aYRqCpHINc3baZCsmyYqoHcV0tnYW9vah41bJ/iq4tswnyrYknjgtApjQEnq5oXMKZUKwbnIrNv/ADZm8uOQ4HaorFbzf5e8nHrRfUVtNzRlu4Ypi0y8DpVCeC11OUyQYU9Npq9dWgkVRMRj260trbRWmZDbSY7NTauJSSV1uZ8Ol3lg4uLV9j98mtB72+uLZVuGBB4O2lZzcSYmYrDnqKns5NDtJ8LeCU/3T0FEV2G3fcW0mksz5s9pI8Y6bRmrMmoHURgwtGnYEYNTPfvPLstsBBTVurCCUfbLmNH7LV7aXM3rrbUnSKyhhBIV396sFvtA8gxptxzUOLeXE8ZBjHOR3pHgdj9o8zyz2FXcyaLUNvCtuyRnnpVI3jKr288YLKeDVY6itrKUlYbiamuLuxKCaWdAxHQUnJdClFrctrdgD5DnAGRS3F9Ise2ELux3rmptctobt4bU7y44PYUti25m+2SsztyuDxS9pfRF+ytqzcskMMcl9eFMetUbnWZdQYwWivEucb8davQWsUyK8zt5Y52k8GhprEyFYkXcOiqKpXtYye9ymjX+mx7oIhPnqW61at7qd4zJKPn/ALtOfULmEbZbF/L/ALwpv2gPiSCEg+9UtDOTLsUrzLukQrTmkLqUij6dWNZsmoXNmpaQKwPQVJb3kt5ERuWIHsapS6C5RWE28rgfWo/s5U72c59KuqIwu0Nk1G0eO+adjO5XTWVtjtmjYqPSrMOr2l0cKGX/AHqrvCr/ACmMfWpI7OLaAYwKSuPSxa+V+QQRSi8itm2sQPrTVjRQFXNRXOnrONz59qq76EaX1Jo1jumLqQatrawbMlqz0ge3i2wnFVjcTQzZncj0p3tuKyZbudL3EyQP+Bqr5TBNj4yKsreb0BB4qKTG/wAwA1Lt0Il7pXaPbgBiKElZThuR6084c5FNIPQ1JjKbZIDu9KHCg+pqM7VX3qAs5bO6k2Ztlgn0NRkn600NnjNLkilcljT1ooopWEFFFFMAooooAKKKKACiiigBCARg0UtFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRgUUUARmM5+U4qWAMGwSNvc0lPCDIJNCGty8k1tDHxHvI71WudSnkG2GIBR3pVx0Y5qOZQw2jge1aXdjtpNCQ6lOrhS5b2xU963m2asW+bOcVlyTzw/u4bcZ/vVPCZWi/fHk1nfobVv4bLNvt4MzYA6Y71ca+hgX93AM1RRQp4NSfLjOcn3q4s5KTXUglv7ppt5Hlr2qzbahLKdjNkf3sVUmXJ343Edqq/aLuSUIkPlqO4qW2md0dUbT/NOqo+almvHt4SGjye2KrWskaRgyEbvWmytPJJ5iKHQVVxtCRedI/myMQT2qztyucZqPzBIgI+Vh2p3nug4iyMU0ZSGOHUYj4qIq4GZRuq4qM43N8oqGQlGwnz0NCiyKN7W2BklUZ7ZpjzxTjzPKCr2p/2aF5BLeDPogqK+ZDEYoE2ehNS9EaxK89xp8sqxSjkdxUkcNi/EOfrWato1spkeIzE9xzirEE8znZBDjPGO9Qn3Lm10NGK2/fhcKVqW9trswjyk+UVJb2ptrYySS/vD2NWEv8AMBEgAx3rWytqYxu3dGULv7JDtkP7wjAqqLeV5PtAfLdSDSX1xBNcFljLEdKjQ3E7qikrWO7Oh6I1bWMLH5zFUc+lW4bqFpvL3ZzVb7PGYVQNyPeoXi+zrvbhfWrbsRFJm8BDjPFQPHAzZyPpXNSatIkmEyVH8qnGptcR5VCjL6Uvapl+ya1NC9QxR71Hy9xmsOSdnYiJCPWniW4mmHmSOwz0IrVt/JyEEYye9Q/eKXumA8fmDmAn1JqM2cStvkQKK6e5jVItrOoz0FY0umzOGCyCQH+HNS4GimY872CBmSPewPG2iBPtKGSKb5v7hrUjt4LZTE1puJ60h060kcGLMLegqVBjdQZpumpI5km4I7HvV+W8dc2yoqp0DVHKJI4hHApYjuKyZ7e6lmy5ZSexqvhVkQnd3ZdjtBCzTMC5PTFRljc3ASFCjDrirVjcfZ0W1lyc/wARq3JbxW6tNC4yaajdCcrMs2sNlsUt/rF6gmrnmx7dqBHH92uUutUWJ8gZk6Yqml9LaSfaWmO9ui+lDqJaDVO5u60IhaM0KgP3SuKe3diXAEWK2NlxfZu3utrE8LmppdGM0Immk2kDkDvWUrydzaMlDQyrPXr2xjMMYEgPerUdpNqK+fKMuefpTl+wwyKrWzcd2FbNnFEI2kjbCsOMdqcYt7sJzS1SM2zuv7PkMNzI2wds1tDWtMvLdkWQo46ZNYNzZTS3RV1ZhnhsU2TQ8Jl5ghHvimuZbEXjLcTU5Jb2YMF+VO6nrVaOMyjbLE+3sSantpIrWTyAdxJ+8allimWcGS4CqeRiotfUvntoI0ekWgVnVvMHeobubzEWa0ZsDjirNzYfasOzlhjg461PY2D2Z3cbSM4NVyvYlTVitZ6pfQYiYtIp/hNdVpZt/LNw0QVvQ1jStGFE/kYYHriliubhAJ1wUParh7pnO0jbuNXSafyIenQ5FSmC4kg2w4XjrUOnWtoY/tU7ozHnAPSr73ESx7kJx0GK3jqrs5projnpleKbypYnd8/e7VBPZXM8oaN2UDsDiunj82flowE9cU2WyOPkJU0+S5HO0zOsIp40CSuD71oOmzGec96ovZurn5yDUyCXKq8uVAprTQlu+pMpycHgVJuCLxzUDSxYKseai85ovuruU+tGwJFvczDKDmoRNdF9vlninxXkaDc3FX4poJU8wMuPemtQ1M/7U6nDxHipWnjuIwGt1z602S4W4ZgijaOKqwyKkxjOeaLisOMZhlzgBTUhPHPIqYhCuCvFQOka9CfpQZzImCqcpRuVUzjJpCB+FNCAn73FQcrGOVboKaI/XrT3AU/LTCSeeakliFSpyRSbxShcjk00rg0hCk5FJR2opgFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFGXDcDIoqSMYbnpQA5AzYOMCrIWGNP3mKjDgdKHCP1OTWiOmkMaRWOEX8aq7ZBMXJ4q00LYypxULdducmpkjeo/cYiM+cFc1Yjj3H5qbHgfe61KH454FETjpjnaBV4xuqtKS6fIMZqQohbIGaY8bLzu49KpnbFlWGM+b5c2eemK0II5Im2q2R2FU2cZwg5HepBequNxww4qFob3ui7PFLEvmgLnHSqVteyyXJ82MrGP1qQQyTN581wcdlqwlxFAQGiDKe+KtGL00JTcNNhFhdUPc00xMvyqQDV5HinjyrjHp0qtczwxDGMt7VTEihdAW8Zdm3OegqtFYy3Sm4vJ9idlB6VabyZjmYEDtWbexxO3lxzuc/wg1m11NE7A0lyt15diwkTOK2razxB5ijE2Oag02wNtbiRkK1fRyj7o2/A1UVbchvmZmXb6i0bR/Zz/vVlwxajJceVO21D3rsFuFZcMPqKxtXlRF3RKTjqBUzit7m1NtaBFp0ATDuPrRHZxJK3kyZAHesFpLyc7YXZVPrWpbJNYWmSGlc8k0ou/QJ+pZeQW/zKpbHWsq41EXsnkrn3FSPqD3W6KRPJHv3qSG1tYFL8bj3NS3fYuOhW8lQBgY+tPVkgIcNk98U24Jf5QePaoTDIsO1PmJrM1uaMH78krjA6mknu1txtiBd6htIJILciSXazdRUFzNHBlUO5j3qm9BLcgE1zcTFrkkDt7VoWdtPEpkgkZ8+tULeCa9mVSx2jk4rZluZLa3EaRY4wDSiurHN9EItzE7FZhtekW2Bl3p8w9aqbowu+Q7mPbvVqK8lgt9sMBYH1q077mUvIuJMlqdrIuSOKjlWOSPMgTzG9O1ZrC5u5RJJGykdKu20kUp8qSNlcfxGmndg1ZFGXT7woTujx29as2WnXMkJWZxjtmpo7QC4yZmKk8ZNS3EV3AvmxNuUdhQo21J5r6FGfSURiPKDN/erOn0uKP946M5/uitpdaRFMcsDb/WnJlnEzR/Kalxi9jRSaOfSKWWZUjsmCKeuKknmuIJdxjYkdB2rpkmaUhIYwB3NTSwW8iBZwgz7c01T7MTqPqcojPekyXEKqB04qS2Nrb3GXmwufu9q6I6PbGP5X4qB/D9pKhE3T2pqmyXURXuFtpUVra5X3Cms+aCKeQSTsyxjt3NWo9DiguMwzkJ2BqR9NlVjmRWU+vahxb3QlNLYr/YbG5jBigKgVKdIgeNXcZA7Ui2lwj5ScEegp4gvI33qSV9KSXkNy8yOSIBAkCgIO1ZlzLcxyfMp2DpWwEljYzFh/u0/dHdJlAocdjQ43BTtqVLGWK4j2XKhE9TT7vTvLQPb7niP8K1Xu7KeVsbwuOwGKbbT6rav5UR3x+4o8mHN1RWzd+ftijaNB1B71u2V/GqKtyAFWg/v4tzrtk78VnyTW8RJ2Fm9KEuUObm0OmGpW5j3KQFqP+0PPk8uBfqTXMw3kiy7jFmPuK27W8sWUFQVY+laRm2RKC6E9zHMbcsCCaoQXAD7JASfUVpG4gK7RkmqzwiN/MVevNU+6ML23HmyVh5jNjNQ7AuQXyBUmJ5lCCQfSlMEVvgTt170NDTKkrxKCSpaqE0tzKn7kNHH7VqSpFIMRHK1X2CCT5myp7VDRUZWF06SRU2nJFXLi03L5sZ5pqsoj3IAKYJ5Wk2A/KapaKxEn1Hwz7Ew780pkWVwqDJ9ahltxuyDxUseIk4xRd7GUpX0LHkxIuWbJqnKFL5Tj6UkkiqSSSTTcgjI6UmzGSQd+aDjvTc4PrSZNTczYME9803GOppSeabSEFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABSEsOlLRQBKm8j58fSn71QcDJqtllOeTUqgkZIxTTLjKxOpeU0lxHGtuHDfvM4pUlVABkVDM5duAMVT2Ohu8GRKX3YH5mplH985qE5PQ4oUtnaRmoTscydiz5uDhR+NSKhb5nOB3NQKMMM8VMZh5ZGQa0R0U5XIby3RVDW7detMgsWCb5cNnnNPRyzFZMBKrTm7J2W7lk7VL7nSn0HOLrzdufkz2qdr5rQqrQCRar21teGQIzc9xW0ttAkO24Zc+9OKZDleRRMrzgPCvlJ7VG108Ll5Id0Y71HdLIpb7O52dqrwy3BJicbgfWlctySQ7zrm6uB9iHyn+E1pQWcliPtMsQkc9vSmWkcdsudpBPerw1C3ijy77jVRXVmabkRLrKZKywsnoMVUu9UiVC+wj8KLzV7dxiCEM/uKy5Eu7s7nVVX0pSk9kaxstyG616eQ7bXKe9OsJ7ln82TLnurDrT0hs4uNu5x1qWG3vrg/uotqeuKzSd7s1dRWsXY7mKZhGkIDHqBV1HSGULOMDHWktLJbFfMYAuerVZZopQUlQE9jWyRjuyA2OmXL+coBYd81Dc2drnLSjA7VUuCbdyEJX2FVTI88mME/Ss3LpY2UbdS1stgDtI29KdHApcSNgKOgpYNOO3dJx3pZoGX+Mge1Kw7jbie2PG3Le1Z0tuJXG1AM9zUxTaCyDLepp1v8rmaXnHRam19yr22Jo1TT7bgjnrVX7UtzJiYlFJ4NLOPtz7kBAHami3G352AHpQ7vYaL8en2JjDJLub605onjIAYYxVOFAPlibDetW5Y3MAYv04OKtbGUtxGvTEDuUHHpVN7hmGQCPeobqQxjMILtT7GC8uDhwAp7VN23Yt2SNC0hlvbcgvtA6GontdSt3KfaN8Z7VoJaPalW8wKvemXEc0pL2zqwHvV8pmn1M9PKFxsYgsexFW33wxl3ceWe1Z88VzzMYhvHpVW3h1C8uwk0gWMc8mobtoaR11Ne31GzgOJG25q9HNpzv5wkDNjjJ6Vymrt9ln8pYlkwM7/SspDeSSbo9wHcipdRp2LUE1e56AZ0Mm9HAQepps1yFgLROHf61ysN8DGICJGI61fjsndRNHI+zqVFVGbexEopGgk0txAyttV/QGoobWS4fZLcsMdRUllbR3Em5A6AcEnvWjPYoY90JCuK0SbVzFvUijtIbZNoGCT1z1qbYp9QKgtj5bEXMm9x0Bq0bmMcBC30ppobRA9nBLlmBArPl01Yn822csc/dFa5ZpEy+FT0qL7daW42oBuoaQtVsUg0pTM0JAA9Kabq1C/KvP0qw9/cyttiiRgetVZICzk+WEHc0vQm/cmt761B2yEc9zU8lpp06GTA+tY06xq+1Yt3vU1nOS2xxgelJS6MqyYS2aRzfO42dhRujjbESg+9X5Yra4h2qfm7VUS2aIFZRx60NBzdye2umC4MQPvU005mXGPl9qokqp2gtj2qeOdAu0A00+hnMSMhNxUlW96ja6YtsmUye9PMZkkz2qXYo4xijUyU9CJZPk+UY9qaYzIeeBUxVBggc0hwy4zyaCOdkaKVOzORT3IC8imMGhOSaPPQ/eoI57h5ytx0ppcngnpTiin5h3pjKBzSuS5O9xuSxGRwKUtjjNNLk8Cmgc5bk1LdyLjwaU9abmkzSEBope1JTAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACgYHWiigBQwpC5U5JyD2pCKPlA5pAmRmMTNlWYVIqMi4Zs0p6cHFNGd2M0yuZ2sPyAOaXdxwcU2kxQSDSDbtbJ96jWBid6sR7ZqUbc0jZ7GkNSJoghXEh5pk0kkMYWNQCelRBXZ/l61YSMo3mTPuYdB6VdzVVGPtri4gizLHlz/FUTrcXkmZHKipTOGBH5U37Q6HaFyKZrCZPb20aDZLJ9M0SwJG+7euPaqty9xJGDEBu9KsWFk0SeddPuc9ielF+iFN30W5ajm2xYMYcVnzxxyytI67FHarV1LGg2qME1TiimuX2sDs9abfQ0vyoZGYS/wC6jyfWtCOyWQgzPt+lWbS2t7bC7QS1S3VtI8JMYwewpqIXb1Ei0yxiO5UBPvU6lVJSNQMVhpeXEDlbo7AvTNMn16P/AJYuS49BRzpGqp3NySEOhLHmqsktnax7p5QMe9YBu9RvAT5/loapMoim2kvNIfxFZup1SNVBLdmu8kV9OfIBK1pWtpHEnCge5qnYq1ra+bPGFZug9KimuLiZjtbC9gKe2rDc1HligzucH2qhdanbEiPblj2FUTbSscvIc06BIjdCNY8t/eNTzNlWSJlDOw+TAp8sPyZEZJ9BV9ZbK2j/AHpyacl3bTjER/HFVZE3ZiOl4h3xxYXuKgMjeZueNlB6g10LLtPyjNV5EMh/1GT9KTiLnMtVJ+ZMgCrMU3l258xGJJ6Gkktr1m+WLCihhKyhGXDUJWE5XImm3tiOIAGr0U8dnb4Xl+9VUtnWQDeB6ip5sRtwm401dCbuypcPdXxIZ2RTUcUMth8y3RbP8JNSySkjB4+lLbQeZLvkOQOgPeptqVzaF+OUyxqp+8ep9Kgu9BaSAta3ZVjzwana5jK+WyBB61T3G3k328jNnqM1Tt1FG/QoR6LeJlbh/MHvSSGO1TYQAR6V0scvmQqdo5681Tv9JhnQvuCt70uTTQHNp6mAXS4lU221D3p3+n2UpNvNv38Yq3a6VJbTbsg5NX/Kt0m3Eg7eSKlQ7jdTsRR6rdWyRRtanf3OKtXEs0sfmfNGxGcUrazpqR7JgAR04qlJdNqEgaL5EHQVbfmEVpdozJ9UuY5sPGQw7mnQa3exvl1BU+lXpLb7TGY51CsOjVnyoLU7Ik3nvms2mtblqaehpxX092hdiQvpUqRfaCBImwetZcWoXEbBRB8vfArRTVEnj8vyiH6VUWupM/I1YbZYISkcignuTTHt3kjKh9x9RVFbATjLStn0DVaikNkvlkEr69a1RgynLFNAfLK596ry27IwkLYz2Fb/APo1xBlHDE+/NZFzHLDNz9zPGamSIUnF6jI7p0AVIvxqZZpXIZh06ipIoi8ZbFOwqDBHNCKciRVt5uQAG9KPK2n5Y/xqPB3AhMVfGPJy7bR3NVuTLUz55dpHyEEdcU6Ii4+4DTZtplOyQFO+asJ5Ij2xOFY0luYq97ET2jgZLVAAI5DuPNTFsHa7knNMkSBx0OaTIkrETS7hgnPtUZAwQBS7VU1IWjYYIwakzZEHKLjOaMljSHAPFBbikFxTim0gJNLSEFFFFFgDtRRRTAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAoxRRQAAClOMYpKKQBRRRTATApQBRRikArFsYXrUY80cMc0+l3YoAQAkjjFSKyKMNUZ5HWo2Dnj9adxplmAhZzNgtnoKLi/ZTgIS/YUxLnyk2sBjtU9uIy3myJz2zVJ9jSMmtipGLq7kHmRlfwrctofJg/eEKMU1LofwxYHrSNJvGZPmHpVpW1NoRbd2Jc3cagCAbmHcVH/aEqRZlP8A9ameZGSREmKoXHmTziNgVTqaltnSkizeNaXqASsCT6VBHokofNsi7T3arET6ZBjchLCp/PDHcsxVewosnuCb6EUWipEd9zKWHXHapfM063bEMHzDvioJrt5BsibeB1qq0gXh3Az2pXS2Kt3J5py7FpGG3+7VfzEY5jBphQTsApqURso2gALS1Y+YhbeWwTT40aIMyZ3etPLRRqc/N71JbsscLSzHcD0FCQORF5Qcb5GyPQ01XeOTci/IKf5U07l8FU7U4AAYcjbSsPmLFvqQZ/mXgdqvLqEI/gx+FY7CNcmJefWkV2lGxuGqlJoTSZvC7SQbVYKT61XuoV2ZjcF/Wsja543Nkd6khuJlukhCl/7xqua+5DiuhdtrNhmeUA4omL3DbI02qO/rSPeOpK42g8VLFdx/cI209NibPcqfZlDYYZqY2jNGAuEX1qd0R+d2B7VTljuS+yOQmM0NE3BtKt3+9dgn61GbAQH5ZSwpG05owW3sT2zUazSRIVlbOalpdi0y1BGtvLueb5TyKsCJblyWuMgdBmsRlG8szs56hauWqK0RZ3KH0pRfQqSTRFqUN3C37p9ye1Q2LSpC7SoST61fVGMgQMXzVyTS98AYMVNHK27o5Odp26HMz20E0hnmlKgdhT476OEiK3Usvauhj0q0aLbIAW96jOl20JLIgzR7N7nQqmmpUjDSoJJRg9hQ0CschefWrDALxgmo2kKjJBAp2MXU1Kkn+iMHI3A9Vp6eU+HhQAnrTyROeUyB609I40/2TSK9qrEkEZSUHeea0xbBl+dgQetZM0qomAaWHUmWPYoLN6mqTSKWquTvpMiTma0dh6ilkhuXjJlQcetRPf3Xc7fpTPOuJTkyHHvRoZ1NtWOS6kC7VXBHFNZ53ky2ARURJjk39aBNI3O3AqbmTqXRYDSbx5rACpftlsriKViB6mqkrHyct0FVXX7QmCn40+axcaiSdzaaCxmQiKZRn3rP2PZXYLt5qdiKppEkfyuWUjvUz+YEzGSfrScrmcpK90XzcRSr8qbfc1GblFypIrNaWV8KeD7UCF2HJNLnIlNMuuY25VxUY29z+FRpCEPWn7RUkDjg9KbgUDNLTAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKMCiiiwBjFG4UUUgGkDduAyfep0eV+WIGO1RdORUTSlG3HNNOw07Gh5xRcZ4rMudSMcuxiSP8AZqzFbS34y83lp6Vcg0/T4Rgrvf1NVq9jphUfRGQL+5lIjt4GGe+K0rS0u+XuhkY61pBoYE3QwqT6YqtPeTTjYCIx3xVcttzbmbITFCzcR8+tRywSJ9zBQ9al5iTKcn3pjStIcHr6ChjiypJFIo2wA89TSpbx7cXGSanie5WTCxginyxkjeeD3FTYcpWK27yjiNML61HtuJWzu4qbYSMt0pfNjjG1fvetBl7XUi8okgY+XvUxEZkAZgEFNEpcMDxTQqjgjg0aFKorlhrlf9WrfL61VnhkBDK2QakaBRgM23PSpUCIMB9xotfc05rIiiB2YC/jTzGgO4HmnORjg0mxjF8h5p2DmGlmZeBg0Ru1qrTL87NxinmMiLdkA/zqW0hhiQzSPkn+E0WIlLoV1Etx+8cYPpTvLVWG881M8mDuU4Wq7ybshRnNA3In8wgEbvlp8VwiR5ByfeoIt0LZcBh15pJmUt5ygH2FO5EppE4mkkO9h0pksMckgY8+1VnkaRfkfafSljllCbWPI/WlcXtENnRif3YCkd6amdwMhzUrZYAswBpP3W7LNxSE6o8ux5t2Ckd6kS8uxJ/pE6kDoBVSSNTzE+M1HsER3SZalzGUalmy9JczmTKcimDUZpCY/usO3rVd5pZYfLVNg9aYkkURDSAu3rTci5VVsi/FOd+JFyaSd1d+mBVQXEcnJfZUsd3bf6pgWb1FFzHm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oAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAeqBhnNIUYcdqcMDHepRn04oAg2NjNIQR1qfPpTGUt6CkBFRSkYOKSmAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUALuUdTxQbxB8vJppUHqKAqjoBRqA5buEnGCv1qZJIpR8jVXKq3VRTDEByh2mgC1Igx8oyahpFedOOGFLnPJoAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q==" x="0" y="0" width="640" height="460" preserveAspectRatio="none"/>
+            </g>
+
+            <path d="M 441.8,-134.4 L 363.2,-39.4 L 199.9,-81.1 L 105.4,119.5 L 218.8,153.4 L 103.5,194.8 L 84.1,274.2 L 296.3,233.3 L 306.9,350.5 L 81.9,832.3 L -214.7,314.6 L -83.4,215.3 L -114.2,198.2 L 5.2,57.4 L 96.7,-170.0 L 161.3,-246.3 L 173.8,-249.4 L 324.8,-248.8 L 366.4,-301.6 L 487.5,-305.6 L 494.4,-182.3 L 433.2,-136.4 L 441.8,-134.4 Z M 363.2,-39.4 L 441.8,-134.4 L 944.8,-15.0 L 1828.8,-336.1 L 2010.8,30.8 L 1924.8,76.3 L 1020.7,227.5 L 1470.6,528.8 L 1321.3,579.9 L 1247.0,680.9 L 902.6,722.6 L 794.5,831.1 L 599.4,923.8 L 97.0,875.9 L 81.9,832.3 L 306.9,350.5 L 296.3,233.3 L 363.0,144.9 L 363.2,-39.4 Z M 363.2,-39.4 L 363.0,144.9 L 296.3,233.3 L 84.1,274.2 L 103.5,194.8 L 218.8,153.4 L 105.4,119.5 L 199.9,-81.1 L 363.2,-39.4 Z M 487.5,-305.6 L 366.4,-301.6 L 324.8,-248.8 L 173.8,-249.4 L 334.5,-494.8 L 559.1,-707.2 L 567.6,-717.7 L 770.6,-702.3 L 844.4,-584.1 L 598.3,-470.6 L 487.5,-305.6 Z M 1828.8,-336.1 L 944.8,-15.0 L 441.8,-134.4 L 433.2,-136.4 L 494.4,-182.3 L 487.5,-305.6 L 598.3,-470.6 L 844.4,-584.1 L 770.6,-702.3 L 567.6,-717.7 L 525.4,-948.2 L 635.9,-1072.2 L 756.8,-1138.2 L 877.7,-1204.3 L 902.1,-1372.3 L 1049.9,-1313.7 L 1546.9,-1397.6 L 1787.1,-1340.8 L 2158.5,-1341.8 L 2677.9,-1454.8 L 2921.2,-1449.7 L 3434.7,-1496.6 L 3203.3,-1308.6 L 2956.2,-1234.1 L 2998.8,-1014.0 L 2828.2,-649.7 L 1828.8,-336.1 Z M 81.9,832.3 L -44.9,953.4 L -142.0,1181.0 L -264.8,1337.9 L -370.1,1390.5 L -520.5,1293.3 L -724.3,1158.8 L -1046.4,726.9 L -1092.8,754.2 L -905.7,1072.2 L -628.6,1375.1 L -287.4,1844.5 L -120.7,2008.3 L 24.3,2178.5 L 429.4,2512.1 L 339.7,2564.6 L 354.3,2760.5 L 880.1,3030.9 L 959.3,3092.7 L -831.1,3092.7 L -2582.7,3092.7 L -4397.4,3092.7 L -4397.4,1983.0 L -4397.4,911.4 L -4532.8,668.7 L -4416.6,482.6 L -4486.4,353.8 L -4323.0,209.2 L -3722.4,204.2 L -3288.0,283.9 L -2839.8,372.9 L -2630.7,419.8 L -2283.2,324.4 L -2097.4,238.0 L -1699.3,213.2 L -1378.3,251.2 L -1255.3,400.7 L -1150.5,302.2 L -788.7,373.4 L -436.9,390.5 L -214.7,314.6 L 81.9,832.3 Z M 3628.7,4795.8 L 3570.1,4667.2 L 3433.9,4576.5 L 3399.1,4456.3 L 3166.0,4348.3 L 2925.4,4095.6 L 2798.0,3850.1 L 2485.8,3642.7 L 2284.5,3593.2 L 1985.5,3306.0 L 1933.3,3096.6 L 1952.5,2918.0 L 1693.6,2583.9 L 1481.9,2466.3 L 1238.0,2404.0 L 1089.6,2231.3 L 1114.3,2163.2 L 988.8,2007.0 L 857.0,1939.7 L 680.8,1715.5 L 405.9,1472.5 L 175.6,1265.6 L -49.1,1267.0 L 21.1,1101.6 L 41.1,996.1 L 97.0,875.9 L 599.4,923.8 L 794.5,831.1 L 902.6,722.6 L 1247.0,680.9 L 1321.3,579.9 L 1470.6,528.8 L 1020.7,227.5 L 1924.8,76.3 L 2010.8,30.8 L 2554.6,112.5 L 3227.2,323.4 L 4500.0,929.4 L 5339.3,953.5 L 5741.6,982.6 L 5854.0,1126.1 L 6173.3,1118.3 L 6350.0,1378.2 L 6572.1,1447.0 L 6649.4,1552.9 L 6957.1,1679.5 L 6984.4,1803.9 L 6939.4,1904.2 L 6996.6,2005.4 L 7126.4,2089.9 L 7186.5,2188.7 L 7254.0,2262.6 L 7390.5,2322.4 L 7515.6,2300.9 L 7601.3,2416.0 L 7618.6,2485.7 L 7791.5,2791.0 L 9148.5,2942.9 L 9239.5,2879.2 L 9446.4,3092.7 L 9145.4,3695.3 L 7791.1,3996.7 L 6489.5,4112.2 L 6068.2,4247.8 L 5744.7,4564.2 L 5534.0,4614.4 L 5421.1,4514.0 L 5248.1,4529.0 L 4811.7,4498.9 L 4728.9,4468.8 L 4208.0,4475.7 L 4085.6,4502.9 L 3900.2,4424.6 L 3780.6,4572.7 L 3826.9,4699.7 L 3628.7,4795.8 Z" fill="none" stroke="#7a6d52" stroke-width="1.4" opacity="0.5"/>
+            <path d="M 381.1,162.5 L 372.7,207.7 L 362.9,272.4 L 352.0,282.1 L 307.7,282.6 L 298.8,275.7 L 298.4,232.3 L 307.1,194.3 L 325.7,166.6 L 352.5,152.9 L 369.2,150.0 L 381.1,162.5 L 381.1,162.5 L 381.1,162.5 L 381.1,162.5 Z M 352.7,327.3 L 350.2,334.1 L 346.4,342.9 L 341.6,349.0 L 324.2,351.6 L 304.9,349.2 L 293.5,339.9 L 286.9,327.1 L 289.2,315.7 L 297.7,311.2 L 318.0,310.8 L 339.7,318.9 L 352.7,327.3 L 352.7,327.3 L 352.7,327.3 L 352.7,327.3 Z" fill="#7fa9c4" stroke="#5f8aa8" stroke-width="1.8"/>
+
+            <path d="M 208.2,179.1 C 258.2,223.1 365.0,270.3 424.0,306.3"
+                  fill="none" stroke="#8a7f6a" stroke-width="3.4" stroke-dasharray="8 8"/>
+            <polygon points="424.0,306.3 399.0,299.3 407.0,322.3" fill="#8a7f6a"/>
+
+            <path d="M 427.0,317.3 C 365.0,290.3 268.2,210.1 221.2,184.1"
+                  fill="none" stroke="#3f6b47" stroke-width="4" stroke-linecap="round"/>
+            <polygon points="221.2,184.1 249.2,181.1 236.2,205.1" fill="#3f6b47"/>
+
+            <circle cx="213.3" cy="149.2" r="5.5" fill="#7a3b2e" stroke="#fff" stroke-width="1.8"/>
+            <text x="224.3" y="171.2" font-size="17" fill="#2b2620" stroke="#f3ede0" stroke-width="3.5" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">예루살렘</text>
+
+            <circle cx="527.9" cy="93.2" r="5.5" fill="#7a3b2e" stroke="#fff" stroke-width="1.8" opacity="0.8"/>
+            <text x="539.9" y="98.2" font-size="15" fill="#4a3f2e" stroke="#f3ede0" stroke-width="3.5" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">(현재의 암만)</text>
+
+            <circle cx="208.2" cy="168.1" r="11" fill="#7a3b2e" stroke="#fff" stroke-width="3"/>
+            <text x="208.2" y="146.1" text-anchor="middle" font-size="25" font-weight="bold" fill="#2b2620" stroke="#f3ede0" stroke-width="4" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">베들레헴</text>
+
+            <circle cx="435.0" cy="325.3" r="11" fill="#7a3b2e" stroke="#fff" stroke-width="3"/>
+            <text x="435.0" y="363.3" text-anchor="middle" font-size="25" font-weight="bold" fill="#2b2620" stroke="#f3ede0" stroke-width="4" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">모압 지방</text>
+            <text x="435.0" y="388.3" text-anchor="middle" font-size="17" fill="#3a5540" stroke="#f3ede0" stroke-width="3.5" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">(사해 동편 고원)</text>
+
+            <text x="330" y="255" font-size="19" fill="#2d4a63" font-style="italic" stroke="#eef4f6" stroke-width="3.5" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">사해</text>
+            <text x="55" y="55" font-size="21" fill="#5a7d8c" font-family="Noto Sans KR, sans-serif">지중해</text>
+            <text x="200" y="70" font-size="17" fill="#4a3f2e" stroke="#f3ede0" stroke-width="3.5" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">유다 산지</text>
+            <text x="470" y="330" font-size="17" fill="#4a3f2e" stroke="#f3ede0" stroke-width="3.5" style="paint-order:stroke" font-family="Noto Sans KR, sans-serif">모압 고원</text>
+          </svg>
+          <div class="legend">
+            <span><span class="dot" style="background:#9a9488"></span>가족의 첫 이주 (베들레헴 → 모압, 1:1)</span>
+            <span><span class="dot" style="background:#4a7a52"></span>나오미와 룻의 귀환 (모압 → 베들레헴, 1:6–22)</span>
+          </div>
+          <p class="map-caption">실제 해안선·사해 모양과 실제 위성 고도(릴리프) 데이터를 반영한 지도입니다(churchmaps.info 공개 지형 데이터, 인터넷 연결 없이 항상 표시됨). 지형 텍스처의 세부 위치는 근사치이며, 국경선은 참고용으로만 옅게 표시했습니다. 모압은 사해 동편 요르단강 건너편 고원 지대로, 베들레헴까지 직선거리로는 약 80km이지만 실제 도보 경로는 100km에 육박했을 것으로 추정됩니다(도보 4~7일, 추정).</p>
+        </div>
+
+        <div class="side-view" id="view-structure"></div>
+
+        <div class="side-view" id="view-dict">
+          <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 룻기 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다. (지금은 룻기 안에서만 검색되는 미니 사전입니다)</div>
+          <input type="text" id="dict-input" placeholder="예: 기업, 인애, 이방 여인, 헤세드...">
+          <div id="dict-results"><div class="struct-hint">검색어를 입력해보세요.</div></div>
+        </div>
+
+        <div class="side-view" id="view-memo"></div>
+
+      </div>
+    </aside>
+  </div>
+
+  <div id="hl-popup">
+    <div class="swatch y" data-color="yellow" title="노랑"></div>
+    <div class="swatch g" data-color="green" title="초록"></div>
+    <div class="swatch p" data-color="pink" title="분홍"></div>
+    <div class="swatch b" data-color="blue" title="파랑"></div>
+    <div class="swatch x" data-color="remove" title="하이라이트 지우기">✕</div>
+  </div>
+
+  <footer>
+    본문: 개역한글판 (저작권 만료 번역본)<br>
+    하이라이트와 관찰·해석·적용 메모는 이 브라우저의 로컬 저장소(localStorage)에만 저장됩니다 — 다른 기기·다른 브라우저와 동기화되지 않고, 브라우저 데이터를 지우면 함께 사라집니다.<br>
+    토블 : 성경을 톺아보다 — 학습 모드 프로토타입 v0.1 (룻기)
+  </footer>
+
+</div>
+
+<script>
+// ============================================================
+// 학자 노트 데이터 — "학자 노트 보기" 단계에서만 공개됨
+// ============================================================
+const TEACHER_NOTES = {
+  "1-1": { t: "사사 시대의 흉년, 그리고 '빵집'의 아이러니", b: "이야기는 '사사들이 치리하던 때'로 시작합니다. 그 혼란 속에 흉년까지 겹쳤습니다. 베들레헴(בֵּית לֶחֶם, '빵집')이라는 지명 자체가 '빵이 있어야 할 곳에 빵이 없다'는 아이러니를 담고 있습니다.", r: "사사기 21:25" },
+  "1-2": { t: "이름에 새겨진 복선", b: "엘리멜렉은 '나의 하나님은 왕이시다', 나오미는 '나의 즐거움'이라는 뜻입니다. 두 아들 말론과 기룐은 각각 '병약함', '쇠약해짐'을 뜻합니다 — 독자는 이름을 듣는 순간 이들이 오래 살지 못하리라는 것을 예감합니다." },
+  "1-4": { t: "모압 여인과의 결혼", b: "신명기 23:3의 모압인 총회 가입 제한은 남성에게 적용된다고 보는 해석이 우세해, 이스라엘 남성과 모압 여성의 결혼 자체를 금지한 것은 아니라는 견해가 많습니다.", r: "신명기 23:3" },
+  "1-8": { t: "선대 — 헤세드(חֶסֶד)의 첫 등장", b: "'선대하다'로 번역된 단어의 명사형이 헤세드(חֶסֶד)입니다. 계약 관계 안에서 의무를 넘어서는 신실한 사랑을 뜻하는 단어로, 룻기 전체를 관통하는 핵심 개념입니다.", r: "3:10" },
+  "1-16": { t: "룻의 서약 — 성경에서 가장 유명한 충성 고백 중 하나", b: "'가시는 곳에 나도 가고'로 시작하는 이 구절은 네 쌍의 평행 구절로 이루어져 있습니다. 룻은 혈연이 아닌 자유로운 결단으로 이스라엘의 하나님께 속하기로 선택합니다.",
+    g: "히브리어 원문은 '~하는 곳에(בַּאֲשֶׁר)' + 미완료 동사가 네 번 반복되는 구조입니다. 미완료형은 앞으로 지속될 행동을 나타내므로, 이 서약이 '지금의 감정'이 아니라 '앞으로 계속될 결단'임을 문법 자체가 보여줍니다." },
+  "1-17": { t: "표준 저주 서약 공식", b: "룻의 맹세는 즉흥적 감탄사가 아니라, 고대 이스라엘의 정형화된 맹세 문구를 그대로 따릅니다.", r: "삼상 3:17, 삼하 3:9",
+    g: "'여호와께서 내게 벌을 내리시고 더 내리시기를'은 히브리어 관용구 כֹּה יַעֲשֶׂה יְהוָה לִי וְכֹה יֹסִיף의 번역으로, 사무엘서·열왕기에도 동일한 공식구가 등장합니다." },
+  "1-20": { t: "나오미에서 마라로 — 이름의 반전", b: "나오미('나의 즐거움')는 자신을 마라('쓴맛')로 불러 달라고 요청합니다. 상실 앞에서 정체성 자체가 흔들리는 경험을 압축해서 보여줍니다. 이 반전은 4장에서 다시 뒤집힙니다.", r: "4:14–17" },
+  "1-21": { t: "여호와와 전능자 — 나란히 쓰인 두 신명", b: "나오미는 한 문장 안에서 '여호와'와 '전능자(샤다이)'를 나란히 씁니다. 샤다이는 족장 시대 내러티브에서 즐겨 쓰이던 옛 신명입니다." },
+  "2-1": { t: "보아스 소개 — '유력한 자'라는 표현", b: "보아스는 '유력한 자'로 소개됩니다. 단순히 부자라는 뜻이 아니라 사회적 지위·재력·인격을 아우르는 표현입니다.",
+    g: "히브리어 원문 אִישׁ גִּבּוֹר חַיִל(이쉬 기보르 하일)은 직역하면 '용맹의 사람'입니다. 사사기·사무엘서에서는 군사적 '용사'를 가리키는 데 자주 쓰이지만, 룻기에는 군사적 맥락이 없어 '재력과 신망을 갖춘 자'로 읽는 것이 일반적입니다." },
+  "2-2": { t: "이삭줍기 — 가난한 자를 위한 법", b: "룻이 밭에 나간 것은 우연이 아니라, 레위기 19:9–10과 신명기 24:19에 규정된 이삭줍기 법을 활용한 것입니다.", r: "레위기 19:9–10, 신명기 24:19" },
+  "2-10": { t: "이방 여인 — 노크리야", b: "룻은 스스로를 노크리야(נָכְרִיָּה, '이방 여인')라 부릅니다. 이스라엘 공동체의 법적·사회적 보호망 바깥에 있는 존재라는 뜻을 담고 있습니다.",
+    g: "잠언에서는 종종 유혹하는 이방 여인을 가리키는 부정적 뉘앙스로도 쓰이는데, 룻기는 이 단어를 정확히 그 통념을 뒤집는 인물에게 붙입니다." },
+  "2-12": { t: "날개 아래 보호 — 3장의 복선", b: "보아스는 룻이 '여호와의 날개 아래' 피하러 왔다고 말합니다. 이 단어는 3장 9절에서 룻이 보아스에게 '옷자락으로 덮어 달라'고 요청할 때 다시 등장합니다.", r: "3:9",
+    g: "히브리어 כָּנָף(카나프)는 '새의 날개'와 '옷자락'을 동시에 가리킵니다. 저자는 이 단어를 2장과 3장에 배치해, 룻이 보아스에게 '당신이 방금 축복한 그 보호를 직접 베풀어 달라'고 요청하는 구조를 만듭니다." },
+  "2-20": { t: "기업 무를 자 — 고엘의 첫 등장", b: "나오미가 처음으로 보아스를 고엘(גֹּאֵל, '기업 무를 자')이라 부릅니다. 이 단어가 이야기의 나머지 절반을 이끌어가는 법적 장치가 됩니다.",
+    g: "גֹּאֵל은 동사 גָאַל('무르다')의 능동분사형으로, '무르는 행위를 하는 자'라는 뜻을 그대로 담고 있는 법률 전문 용어입니다." },
+  "3-9": { t: "룻의 청혼 — 옷자락으로 덮으소서", b: "룻은 2:12에서 보아스가 축복했던 바로 그 옷자락(כָּנָף) 이미지를 그대로 가져와 청혼합니다. '당신은 우리 기업을 무를 자가 됨이니이다'는 고엘 제도를 명시적으로 호출하는 법적 언어입니다.", r: "2:12" },
+  "3-10": { t: "처음보다 나중이 더한 헤세드", b: "보아스는 룻의 인애(헤세드)가 '처음보다 나중이 더하다'고 평가합니다. 룻이 자신의 이익보다 가문의 존속을 우선했다는 뜻입니다.", r: "1:8" },
+  "3-13": { t: "법적 순서를 지키는 보아스", b: "보아스는 감정적으로 즉답하지 않고, 자신보다 법적으로 우선순위에 있는 근족(고엘)의 권리를 먼저 확인하겠다고 말합니다. 이 신중함이 4장의 성문 장면을 낳습니다." },
+  "4-1": { t: "'아무개' — 이름이 지워진 유일한 인물", b: "보아스가 부르는 상대는 본문에서 끝까지 이름이 나오지 않습니다. 히브리어 관용구를 살린 번역이 '아무개'입니다.",
+    g: "히브리어 פְּלֹנִי אַלְמֹנִי(펠로니 알모니)는 실제 이름을 모를 때 쓰는 표현이 아니라, 저자가 의도적으로 익명 처리했다는 신호로 읽힙니다. 이름이 그토록 중요한 서사적 장치로 쓰이는 룻기에서, 이 인물만은 이름을 부여받지 못한 채 사라집니다." },
+  "4-6": { t: "근족이 거절한 이유", b: "근족은 '내 기업에 손해가 있을까' 염려하며 기업 무를 자의 권리를 거절합니다. 순수한 경제적 계산이 신앙적 결단(보아스)과 대비됩니다." },
+  "4-7": { t: "신 벗는 관습 — 연대 추정의 핵심 단서", b: "저자는 신 벗는 관습을 '옛적' 일이라 설명하며 독자를 위해 풀어줍니다. 이 설명이 필요했다는 것은, 저자와 원독자 시대에는 이미 이 관습이 낯설어졌다는 뜻입니다.", r: "신명기 25:9–10" },
+  "4-11": { t: "라헬과 레아 — 족장 서사의 소환", b: "성문의 증인들은 룻을 이스라엘 열두 지파의 어머니 라헬과 레아에 비유합니다 — 이방 여인 룻이 이스라엘 역사상 가장 중요한 여성 계보에 편입되는 순간입니다." },
+  "4-12": { t: "다말과 유다 — 창세기 38장의 반향", b: "축복은 유다와 다말 사이에서 태어난 베레스를 언급합니다. 다말 역시 정당한 권리를 대담하게 요구했던 여성입니다 — 룻과 다말은 '주변부 여성이 위험을 무릅쓰고 가문의 존속을 지킨' 유사한 이야기 구조를 공유합니다.", r: "창세기 38장" },
+  "4-13": { t: "잉태의 주체는 여호와", b: "결혼과 동침을 서술한 직후, 저자는 곧바로 '여호와께서 그로 잉태케 하시므로'라고 씁니다. 인간의 결단과 하나님의 섭리가 이 지점에서 만난다는 신학적 강조로 읽힙니다." },
+  "4-17": { t: "오벳 — 그리고 나오미의 이름이 돌아오다", b: "오벳('섬기는 자')이 태어나며, 마을 여인들은 '나오미가 아들을 낳았다'고 선언합니다. 1장에서 '마라'로 불리기를 원했던 나오미의 이름이 이 장면에서 사실상 회복됩니다.", r: "1:20" },
+  "4-18": { t: "족보로 끝나는 이유", b: "짧은 가족 서사가 갑자기 공식 족보로 마무리됩니다. 베레스에서 시작해 다윗으로 끝나는 이 족보가 룻기를 다윗 왕조사의 공적인 서문으로 격상시킵니다." }
+};
+
+// 본문중심 트랙에서 덮어쓸 노트(비평적 연대 추정 뉘앙스를 뺀 버전).
+// 나머지 항목은 원어 문법·역사적 배경 서술이라 두 트랙에 공통으로 사용합니다.
+const TEACHER_NOTES_TRADITIONAL_OVERRIDES = {
+  "4-7": { t: "신 벗는 관습 — 계약을 확정하는 상징 행동", b: "고대 이스라엘에서는 재산의 매매나 상속권 양도 같은 중요한 거래를 확정할 때, 신을 벗어 상대에게 건네는 행동으로 계약의 성립을 공개적으로 증명했습니다. 문서나 인장이 흔하지 않던 시절, 공동체 전체가 지켜보는 앞에서 행하는 상징적 행동이 곧 법적 효력을 가졌던 것입니다.", r: "신명기 25:9–10" }
+};
+
+let currentTrack = 'academic'; // 'academic' | 'traditional'
+
+function getNote(key) {
+  if (currentTrack === 'traditional' && TEACHER_NOTES_TRADITIONAL_OVERRIDES[key]) {
+    return TEACHER_NOTES_TRADITIONAL_OVERRIDES[key];
+  }
+  return TEACHER_NOTES[key];
+}
+
+const PEOPLE = [
+  { n: "나오미", role: "주인공 · 룻의 시모", v: "1장 전반, 이후 지속", b: "엘리멜렉의 아내. 남편과 두 아들을 모두 잃고 스스로를 '마라'라 부르지만, 4장에서 오벳의 할머니가 되며 이름의 의미가 회복됩니다." },
+  { n: "룻", role: "표제 인물 · 모압 여인, 나오미의 며느리", v: "1:4 이후 전체", b: "말론의 아내였던 모압 여인. 시모를 따라 베들레헴으로 와서 이삭을 줍고, 결국 보아스와 결혼해 다윗의 증조모가 됩니다." },
+  { n: "보아스", role: "기업 무를 자 · 룻의 남편", v: "2장 이후", b: "엘리멜렉의 친족으로 '유력한 자'로 소개됩니다. 법적 절차를 신중히 지키면서도 실질적인 호의를 베푸는, 고엘 제도의 이상적 실천자입니다." },
+  { n: "엘리멜렉", role: "나오미의 남편", v: "1:2–3", b: "흉년을 피해 모압으로 이주한 뒤 이야기 초반에 사망합니다. 그의 '기업(토지)'이 4장 전체의 법적 쟁점이 됩니다." },
+  { n: "말론과 기룐", role: "나오미의 두 아들", v: "1:2, 5", b: "이름의 뜻이 각각 '병약함'과 '쇠약해짐'으로, 모압에서 결혼한 뒤 자녀 없이 일찍 사망합니다." },
+  { n: "오르바", role: "나오미의 다른 며느리 · 룻의 동서", v: "1:4, 14", b: "룻과 마찬가지로 나오미를 따라가겠다고 했으나, 결국 모압으로 돌아갑니다. 룻의 선택을 더 돋보이게 하는 대조 인물입니다." },
+  { n: "이름 없는 근족", role: "보아스보다 가까운 친족", v: "4:1–8", b: "본문에서 끝까지 이름이 밝혀지지 않는 인물('아무개'). 나오미의 밭을 무를 권리는 있었지만, 룻과의 결혼 조건 앞에서 권리를 포기합니다." },
+  { n: "오벳", role: "룻과 보아스의 아들 · 다윗의 증조부", v: "4:13–17, 21–22", b: "이름의 뜻은 '섬기는 자'. 이웃 여인들에 의해 사실상 나오미의 아들로 선언되며, 족보상 다윗의 할아버지가 됩니다." }
+];
+
+// ============================================================
+// 학습 흐름용 공통 질문 (모든 절에 동일하게 적용되는 관찰/해석/적용 뼈대)
+// ============================================================
+const STUDY_PROMPTS = {
+  obs: "이 절에서 반복되는 단어, 접속사(그러므로·그러나·이는 등), 인물, 시간·장소 표현이 있다면 적어보세요. 무엇이 눈에 띄나요?",
+  interp: "방금 관찰한 것이 왜 그렇게 쓰였을까요? 저자는 이 표현으로 무엇을 말하려는 걸까요?",
+  app: "이 본문이 오늘 나의 삶(신앙·관계·사역)에 어떤 질문을 던지나요?"
+};
+
+// ============================================================
+// 로컬 저장소 헬퍼
+// ============================================================
+function lsGet(key, def) { try { const v = localStorage.getItem(key); return v === null ? def : v; } catch (e) { return def; } }
+function lsSet(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+function lsRemove(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
+// ============================================================
+// 역본 선택 / 대조 보기
+// 지금은 개역한글(퍼블릭 도메인)만 실제 본문이 있고, 나머지는 저작권자의
+// 라이선스를 받아야 텍스트를 채울 수 있는 자리만 미리 만들어 둔 상태입니다.
+// 나중에 text에 절별 본문을 채우면 버튼이 자동으로 활성화되도록 설계했습니다.
+// ============================================================
+const VERSIONS = {
+  krv: { label: '개역한글', available: true, note: '1961년판 · 2012년 저작권 만료(퍼블릭 도메인)', text: null },
+  krv1998: { label: '개역개정', available: false, note: '재단법인 대한성서공회 저작권 — 별도 라이선스 계약 필요', text: {} },
+  saebun: { label: '새번역', available: false, note: '재단법인 대한성서공회 저작권 — 별도 라이선스 계약 필요', text: {} },
+  woorimal: { label: '우리말성경', available: false, note: '두란노서원 저작권 — 별도 라이선스 계약 필요', text: {} },
+  saehangeul: { label: '새한글성경', available: false, note: '재단법인 대한성서공회 저작권 · 2024년 출간 — 별도 라이선스 계약 필요', text: {} }
+};
+let primaryVersion = 'krv';
+let compareOn = false;
+let compareVersion = null;
+
+function showVersionNote(text) {
+  const el = document.getElementById('version-note');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(showVersionNote._t);
+  showVersionNote._t = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
+function renderVersionBar() {
+  const bar = document.getElementById('version-bar');
+  bar.innerHTML = Object.keys(VERSIONS).map(id => {
+    const v = VERSIONS[id];
+    const cls = 'version-pill' + (id === primaryVersion ? ' active' : '') + (!v.available ? ' locked' : '');
+    return `<button class="${cls}" data-v="${id}">${v.label}${v.available ? '' : '<span class="lock">🔒</span>'}</button>`;
+  }).join('');
+  bar.querySelectorAll('.version-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.v;
+      const v = VERSIONS[id];
+      if (!v.available) {
+        showVersionNote(`"${v.label}"은(는) 아직 사용할 수 없습니다 — ${v.note}. 원문이 확보되면 이 버튼이 자동으로 켜집니다.`);
+        return;
+      }
+      primaryVersion = id;
+      renderVersionBar();
+    });
+  });
+}
+
+function renderCompareVersionBar() {
+  const bar = document.getElementById('compare-version-bar');
+  bar.innerHTML = Object.keys(VERSIONS).filter(id => id !== primaryVersion).map(id => {
+    const v = VERSIONS[id];
+    const cls = 'version-pill' + (id === compareVersion ? ' active' : '') + (!v.available ? ' locked' : '');
+    return `<button class="${cls}" data-v="${id}">${v.label}${v.available ? '' : '<span class="lock">🔒</span>'}</button>`;
+  }).join('');
+  bar.querySelectorAll('.version-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.v;
+      const v = VERSIONS[id];
+      if (!v.available) {
+        showVersionNote(`"${v.label}"은(는) 아직 대조할 수 없습니다 — ${v.note}.`);
+        return;
+      }
+      compareVersion = id;
+      renderCompareVersionBar();
+      applyComparisonText();
+    });
+  });
+}
+
+function applyComparisonText() {
+  document.querySelectorAll('.vtext-alt').forEach(el => el.remove());
+  if (!compareOn || !compareVersion) return;
+  const v = VERSIONS[compareVersion];
+  if (!v || !v.available) return;
+  document.querySelectorAll('.verse[data-n]').forEach(verseEl => {
+    const key = verseEl.dataset.n;
+    const altText = v.text && v.text[key];
+    if (!altText) return;
+    const alt = document.createElement('div');
+    alt.className = 'vtext-alt';
+    alt.style.display = 'block';
+    alt.textContent = altText;
+    verseEl.insertAdjacentElement('afterend', alt);
+  });
+}
+
+document.getElementById('compare-toggle').addEventListener('change', (e) => {
+  compareOn = e.target.checked;
+  const bar = document.getElementById('compare-version-bar');
+  bar.style.display = compareOn ? 'flex' : 'none';
+  if (compareOn) {
+    renderCompareVersionBar();
+    if (!compareVersion) {
+      showVersionNote('대조할 역본을 아래에서 골라주세요. 지금은 개역한글 외에는 아직 원문이 없어 잠겨 있습니다.');
+    }
+  } else {
+    applyComparisonText();
+  }
+});
+
+renderVersionBar();
+
+// ============================================================
+// 콘텐츠 트랙 (학술 / 본문중심)
+// ============================================================
+function applyTrackUI() {
+  const isTrad = currentTrack === 'traditional';
+  document.getElementById('track-academic').classList.toggle('struct-btn', true);
+  document.getElementById('track-academic').classList.toggle('secondary', isTrad);
+  document.getElementById('track-traditional').classList.toggle('secondary', !isTrad);
+
+  document.getElementById('author-academic').style.display = isTrad ? 'none' : '';
+  document.getElementById('author-traditional').style.display = isTrad ? '' : 'none';
+  document.getElementById('readers-academic').style.display = isTrad ? 'none' : '';
+  document.getElementById('readers-traditional').style.display = isTrad ? '' : 'none';
+  document.getElementById('card-debate').style.display = isTrad ? 'none' : '';
+
+  document.getElementById('fact-author').textContent = isTrad ? '사무엘 (전통적 견해)' : '미상 (익명)';
+  document.getElementById('fact-date').textContent = isTrad ? '사무엘~다윗 시대 무렵' : '학계 논쟁 중 (아래 참조)';
+
+  // 현재 열려 있는 학습 노트가 있으면 트랙에 맞춰 다시 그림
+  try {
+    if (currentOpen) {
+      renderStudyFlow(currentOpen.dataset.n);
+    }
+  } catch (e) { /* 초기 로드 시점엔 currentOpen이 아직 선언되지 않았을 수 있음 */ }
+}
+function setTrack(track) {
+  currentTrack = track;
+  lsSet('track_ruth', track);
+  applyTrackUI();
+}
+document.getElementById('track-academic').addEventListener('click', () => setTrack('academic'));
+document.getElementById('track-traditional').addEventListener('click', () => setTrack('traditional'));
+currentTrack = lsGet('track_ruth', 'academic');
+applyTrackUI();
+
+
+// ============================================================
+// 하이라이트
+// ============================================================
+const hlPopup = document.getElementById('hl-popup');
+let pendingRange = null, pendingVtext = null;
+
+function hlKey(n) { return 'hl_ruth_' + n; }
+
+function restoreHighlights() {
+  document.querySelectorAll('.verse').forEach(v => {
+    const n = v.dataset.n;
+    const saved = lsGet(hlKey(n), null);
+    if (saved) v.querySelector('.vtext').innerHTML = saved;
+  });
+}
+restoreHighlights();
+
+function hidePopup() {
+  hlPopup.style.display = 'none';
+  pendingRange = null; pendingVtext = null;
+}
+
+function positionAndShowPopup(range) {
+  const rect = range.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) return; // 아직 선택이 확정되지 않음
+  hlPopup.style.display = 'flex';
+  const popupRect = hlPopup.getBoundingClientRect();
+  const popupW = popupRect.width || 190;
+  let left = rect.left + rect.width / 2 - popupW / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
+  let top = rect.top - 50;
+  if (top < 8) top = rect.bottom + 12; // 화면 위쪽 벗어나면 선택 영역 아래에 표시
+  hlPopup.style.left = left + 'px';
+  hlPopup.style.top = top + 'px';
+}
+
+// 데스크톱(마우스)과 iOS/모바일(터치, 선택 핸들 드래그) 모두 대응하기 위해
+// selectionchange를 디바운스해서 감지하는 방식을 기본으로 쓰고,
+// mouseup/touchend는 즉각 반응용 보조 트리거로 함께 둔다.
+let selTimer = null;
+function scheduleSelectionCheck(delay) {
+  clearTimeout(selTimer);
+  selTimer = setTimeout(evaluateSelection, delay === undefined ? 180 : delay);
+}
+
+function evaluateSelection() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || sel.rangeCount === 0) { hidePopup(); return; }
+  const range = sel.getRangeAt(0);
+  const container = range.commonAncestorContainer;
+  const startEl = container.nodeType === 3 ? container.parentElement : container;
+  const vtext = startEl && startEl.closest ? startEl.closest('.vtext') : null;
+  if (!vtext) { hidePopup(); return; }
+  const verseEl = vtext.closest('.verse');
+  if (!verseEl || !verseEl.classList.contains('select-armed')) { hidePopup(); return; } // 활성화된 절이 아니면 무시
+  pendingRange = range; pendingVtext = vtext;
+  positionAndShowPopup(range);
+}
+
+document.addEventListener('selectionchange', () => scheduleSelectionCheck(180));
+document.addEventListener('mouseup', (e) => {
+  if (e.target.closest('#hl-popup')) return;
+  scheduleSelectionCheck(10);
+});
+document.addEventListener('touchend', (e) => {
+  if (e.target.closest('#hl-popup')) return;
+  scheduleSelectionCheck(180);
+});
+document.addEventListener('mousedown', (e) => {
+  if (!e.target.closest('#hl-popup')) hidePopup();
+});
+document.addEventListener('touchstart', (e) => {
+  if (!e.target.closest('#hl-popup')) hidePopup();
+}, { passive: true });
+
+function saveVerseHighlight(vtext) {
+  const verseEl = vtext.closest('.verse');
+  lsSet(hlKey(verseEl.dataset.n), vtext.innerHTML);
+}
+
+function removeHighlightInRange(range, vtext) {
+  const marks = Array.from(vtext.querySelectorAll('mark'));
+  let changed = false;
+  marks.forEach(m => {
+    if (range.intersectsNode(m)) {
+      m.replaceWith(document.createTextNode(m.textContent));
+      changed = true;
+    }
+  });
+  if (!changed) return;
+  vtext.normalize();
+  const verseEl = vtext.closest('.verse');
+  if (vtext.querySelectorAll('mark').length) {
+    saveVerseHighlight(vtext);
+  } else {
+    lsRemove(hlKey(verseEl.dataset.n));
+  }
+}
+
+hlPopup.querySelectorAll('.swatch').forEach(sw => {
+  // 스와치를 누르는 순간 선택(selection)이 풀리지 않도록 기본 동작을 막는다.
+  sw.addEventListener('mousedown', (e) => e.preventDefault());
+  sw.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  sw.addEventListener('click', () => {
+    if (!pendingRange || !pendingVtext) return;
+    const color = sw.dataset.color;
+    if (color === 'remove') {
+      removeHighlightInRange(pendingRange, pendingVtext);
+    } else {
+      try {
+        const mark = document.createElement('mark');
+        mark.className = 'hl-' + color;
+        pendingRange.surroundContents(mark);
+        saveVerseHighlight(pendingVtext);
+      } catch (err) {
+        alert('여러 절에 걸치거나 이미 칠해진 부분과 겹치는 선택은 지원되지 않아요. 한 절 안에서 겹치지 않게 다시 선택해보세요.');
+      }
+    }
+    window.getSelection().removeAllRanges();
+    hidePopup();
+  });
+});
+document.querySelectorAll('.verse .clear-hl').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const verseEl = btn.closest('.verse');
+    const vtext = verseEl.querySelector('.vtext');
+    if (!vtext.querySelector('mark')) return;
+    if (!confirm('이 절의 형광펜 표시를 모두 지울까요?')) return;
+    vtext.innerHTML = vtext.textContent;
+    lsRemove(hlKey(verseEl.dataset.n));
+  });
+});
+
+// ============================================================
+// 사이드 탭 전환
+// ============================================================
+// iOS Safari는 문서에 touchstart 리스너가 하나라도 없으면 :active 가상클래스가
+// 탭 즉시 반응하지 않는 경우가 있어, 빈 리스너를 하나 걸어 눌림 피드백을 확실히 살린다.
+document.addEventListener('touchstart', function () {}, { passive: true });
+
+// ============================================================
+// "홈 화면에 추가" 안내 배너 — iOS Safari에서, 아직 앱(웹앱)으로 설치되지 않았을 때만 노출
+// ============================================================
+(function () {
+  const isIOS = /iP(hone|ad|od)/.test(navigator.platform) ||
+    (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1); // iPadOS 데스크톱 모드 대응
+  const isStandalone = window.navigator.standalone === true; // 이미 홈 화면 앱으로 실행 중
+  const dismissed = lsGet('a2hs_dismissed', '0') === '1';
+  if (isIOS && !isStandalone && !dismissed) {
+    const banner = document.getElementById('a2hs-banner');
+    document.getElementById('a2hs-text').innerHTML =
+      '📲 <strong>공유 버튼</strong>(사각형에 화살표) → <strong>"홈 화면에 추가"</strong>를 누르면, 이 화면이 앱 아이콘으로 설치되어 브라우저 주소창 없이 전체화면으로 실행됩니다.';
+    banner.style.display = 'flex';
+    document.getElementById('a2hs-close').addEventListener('click', () => {
+      banner.style.display = 'none';
+      lsSet('a2hs_dismissed', '1');
+    });
+  }
+})();
+
+const sidepanel = document.getElementById('sidepanel');
+const noteView = document.getElementById('view-note');
+const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+function setSheetOpen(open) { sidepanel.classList.toggle('open', open); document.body.classList.toggle('sheet-open', open); }
+function switchView(name) {
+  document.querySelectorAll('.side-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  document.querySelectorAll('.side-view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+  sidepanel.querySelector('.side-body').scrollTop = 0;
+  if (typeof versesEl !== 'undefined' && versesEl) {
+    versesEl.classList.toggle('memo-active', name === 'memo');
+  }
+  if (name === 'memo' && typeof renderMemoTab === 'function') renderMemoTab();
+}
+document.querySelectorAll('.side-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const name = btn.dataset.view;
+    if (isMobile()) {
+      if (btn.classList.contains('active') && sidepanel.classList.contains('open')) { setSheetOpen(false); return; }
+      switchView(name); setSheetOpen(true);
+    } else { switchView(name); }
+  });
+});
+
+const DEFAULT_PANEL = `
+  <div class="default-guide">
+    <p><span class="mark2">✦</span> 표시가 있는 절을 누르면 관찰 → 해석 → 적용 순서로 스스로 채워가는 학습 카드가 열립니다. 각 단계를 마쳐야 다음 단계와 학자 노트가 열립니다.</p>
+    <p style="margin-top:10px;">본문 전체의 흐름을 스스로 나눠보고 싶다면 왼쪽 위 <strong>"구조"</strong> 탭에서 나만의 개요를 만들어볼 수 있습니다.</p>
+  </div>`;
+noteView.innerHTML = DEFAULT_PANEL;
+
+// ============================================================
+// 학습 흐름 렌더링
+// ============================================================
+function stepFields() { return ['obs', 'interp', 'app']; }
+
+function renderStudyFlow(n) {
+  const maxStep = parseInt(lsGet('study_ruth_' + n + '_step', '1'), 10);
+  const vals = {
+    obs: lsGet('study_ruth_' + n + '_obs', ''),
+    interp: lsGet('study_ruth_' + n + '_interp', ''),
+    app: lsGet('study_ruth_' + n + '_app', '')
+  };
+  const labels = { obs: '1 · 관찰', interp: '2 · 해석', app: '3 · 적용' };
+  const nextLabel = { obs: '다음: 해석 →', interp: '다음: 적용 →', app: '완료 · 학자 노트 보기 →' };
+  const [chap, verse] = n.split('-');
+
+  let html = `<div class="verse-ref">룻기 ${chap}:${verse}</div>`;
+  html += `<div class="reset-link" data-reset="${n}">이 절 학습 기록 초기화</div>`;
+
+  stepFields().forEach((field, idx) => {
+    const stepNum = idx + 1;
+    const hidden = stepNum > maxStep ? 'hidden' : '';
+    html += `<div class="step" data-step="${stepNum}" ${hidden}>
+      <div class="step-label">${labels[field]}</div>
+      <p class="step-q">${STUDY_PROMPTS[field]}</p>
+      <textarea class="step-input" data-field="${field}" placeholder="여기에 자유롭게 적어보세요...">${vals[field]}</textarea>
+      <div class="saved-badge" data-saved="${field}"></div>
+      <button class="step-next" data-goto="${stepNum + 1}" data-field="${field}">${nextLabel[field]}</button>
+    </div>`;
+  });
+
+  const tn = getNote(n);
+  const teacherHidden = maxStep > 3 ? '' : 'hidden';
+  html += `<div class="step teacher-note" data-step="4" ${teacherHidden}>
+    <div class="step-label">참고 · 학자들의 관찰과 배경 지식</div>
+    ${tn ? `<h3 style="margin-top:6px;">${tn.t}</h3><div class="note-body"><p>${tn.b}</p></div>
+      ${tn.g ? `<div class="grammar"><div class="g-label">문법 포인트</div>${tn.g}</div>` : ''}
+      ${tn.r ? `<div class="refs"><strong>함께 읽기</strong> · ${tn.r}</div>` : ''}
+      <p class="compare-hint">스스로 적은 내용과 비교해보세요 — 다르다고 틀린 게 아닙니다. 학자들이 무엇에 주목했는지 확인하고, 필요하면 위 칸을 다시 고쳐 써보세요.</p>`
+      : `<p style="font-size:13px; color:var(--ink-soft);">이 절에는 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 이 절에 대한 병호님의 연구 결과입니다.</p>`}
+  </div>`;
+
+  html += `<div class="progress-dots">${[1,2,3,4].map(i => `<span class="${i <= maxStep ? 'on' : ''}">●</span>`).join('')}</div>`;
+
+  noteView.innerHTML = html;
+
+  noteView.querySelectorAll('.step-input').forEach(ta => {
+    ta.addEventListener('input', () => {
+      lsSet('study_ruth_' + n + '_' + ta.dataset.field, ta.value);
+      const badge = noteView.querySelector(`.saved-badge[data-saved="${ta.dataset.field}"]`);
+      badge.textContent = '저장됨';
+      clearTimeout(badge._t);
+      badge._t = setTimeout(() => { badge.textContent = ''; }, 1200);
+    });
+  });
+  noteView.querySelectorAll('.step-next').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const goto = parseInt(btn.dataset.goto, 10);
+      const cur = parseInt(lsGet('study_ruth_' + n + '_step', '1'), 10);
+      if (goto > cur) lsSet('study_ruth_' + n + '_step', String(goto));
+      renderStudyFlow(n);
+      setTimeout(() => {
+        const nextEl = noteView.querySelector(`[data-step="${goto}"]`);
+        if (nextEl) nextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 30);
+    });
+  });
+  const resetLink = noteView.querySelector('.reset-link');
+  if (resetLink) resetLink.addEventListener('click', () => {
+    if (!confirm('이 절의 관찰·해석·적용 기록을 모두 지울까요? (하이라이트는 유지됩니다)')) return;
+    ['obs', 'interp', 'app', 'step'].forEach(f => lsRemove('study_ruth_' + n + '_' + f));
+    renderStudyFlow(n);
+  });
+}
+
+// ============================================================
+// 절 클릭 바인딩 — 메모 탭이 활성화되어 있으면 모든 절이 메모 대상,
+// 아니면 기존처럼 학습 노트가 있는 절만 학습 흐름을 엽니다.
+// ============================================================
+const versesEl = document.getElementById('verses');
+let currentOpen = null;
+
+function isMemoTabActive() {
+  const v = document.getElementById('view-memo');
+  return !!(v && v.classList.contains('active'));
+}
+
+// 하이라이트는 항상 아무 텍스트나 드래그하면 바로 되는 게 아니라,
+// 먼저 절을 한 번 눌러 '활성화'해야만 그 절 안에서 드래그 선택이 가능합니다.
+// iOS/아이패드에서 텍스트가 항상 선택 가능한 상태면 사파리의 기본 복사 메뉴와
+// 계속 충돌하기 때문에, 의도적으로 누른 절에서만 선택을 허용하는 방식입니다.
+let armedVerse = null;
+function armVerseForHighlight(v) {
+  if (armedVerse && armedVerse !== v) armedVerse.classList.remove('select-armed');
+  armedVerse = v;
+  v.classList.add('select-armed');
+}
+function disarmHighlight() {
+  if (armedVerse) armedVerse.classList.remove('select-armed');
+  armedVerse = null;
+}
+
+versesEl.querySelectorAll('.verse').forEach(v => {
+  const n = v.dataset.n;
+  v.addEventListener('click', (e) => {
+    if (e.target.closest('.clear-hl')) return;
+    if (window.getSelection().toString().length > 0) return; // 텍스트 선택 중이면 토글 안 함
+
+    armVerseForHighlight(v); // 이 절 안에서 드래그하면 하이라이트가 가능하도록 활성화
+
+    if (isMemoTabActive()) {
+      openMemoForVerse(n);
+      return;
+    }
+
+    if (!v.classList.contains('has-note')) return; // 메모 모드가 아니면 학습 노트 없는 절은 무반응
+    if (currentOpen === v) {
+      v.classList.remove('open'); currentOpen = null;
+      noteView.innerHTML = DEFAULT_PANEL;
+      return;
+    }
+    if (currentOpen) currentOpen.classList.remove('open');
+    currentOpen = v; v.classList.add('open');
+    renderStudyFlow(n);
+    switchView('note');
+    if (isMobile()) setSheetOpen(true);
+  });
+});
+
+let exampleShown = false;
+
+// ============================================================
+// 구간(장) 페이지네이션 — 한 번에 한 구간만 보여주고 탭/다음 버튼으로 이동
+// ============================================================
+const PAGE_COUNT = document.querySelectorAll('#verses .page').length;
+let currentPage = 1;
+
+function showPage(n) {
+  n = Math.max(1, Math.min(PAGE_COUNT, n));
+  currentPage = n;
+  document.querySelectorAll('#verses .page').forEach(p => {
+    p.hidden = Number(p.dataset.page) !== n;
+  });
+  document.querySelectorAll('.page-tab').forEach(t => {
+    t.classList.toggle('active', Number(t.dataset.page) === n);
+  });
+  document.getElementById('page-prev').disabled = (n === 1);
+  document.getElementById('page-next').disabled = (n === PAGE_COUNT);
+  document.getElementById('page-next').textContent = (n === PAGE_COUNT) ? '마지막 장' : '다음 장 →';
+  document.getElementById('page-indicator').textContent = n + ' / ' + PAGE_COUNT;
+  versesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  exampleShown = false;
+  const structView = document.getElementById('view-structure');
+  if (structView && structView.classList.contains('active') && typeof renderStructureTab === 'function') {
+    renderStructureTab();
+  }
+}
+
+document.querySelectorAll('.page-tab').forEach(tab => {
+  tab.addEventListener('click', () => showPage(Number(tab.dataset.page)));
+});
+document.getElementById('page-prev').addEventListener('click', () => showPage(currentPage - 1));
+document.getElementById('page-next').addEventListener('click', () => showPage(currentPage + 1));
+showPage(1);
+
+// ============================================================
+// 인물 렌더링
+// ============================================================
+const peopleEl = document.getElementById('view-people');
+PEOPLE.forEach(p => {
+  const d = document.createElement('div');
+  d.className = 'person';
+  d.innerHTML = `<div class="avatar">${p.n[0]}</div>
+    <div><h3>${p.n}</h3><div class="role">${p.role}</div><p>${p.b}</p><div class="vref">등장: ${p.v}</div></div>`;
+  peopleEl.appendChild(d);
+});
+
+// ============================================================
+// 구조 다이어그램 — 나만의 개요 만들기 (장별로 별도 관리)
+// ============================================================
+const CHAPTER_LENGTHS = { 1: 22, 2: 23, 3: 18, 4: 22 };
+const PALETTE = ['#8a6d3b', '#4a7a52', '#b0552f', '#5a7d8c', '#7a5a8c', '#a68a3b', '#4a6a8c'];
+const CHAPTER_EXAMPLES = {
+  1: [ { t: '가족의 이주와 상실', r: '1:1–5' }, { t: '돌아가는 길 위에서', r: '1:6–18' }, { t: '베들레헴 귀환', r: '1:19–22' } ],
+  2: [ { t: '이삭 줍는 룻', r: '2:1–13' }, { t: '보아스의 환대', r: '2:14–23' } ],
+  3: [ { t: '나오미의 계획', r: '3:1–6' }, { t: '타작마당에서의 청혼', r: '3:7–13' }, { t: '약속과 귀가', r: '3:14–18' } ],
+  4: [ { t: '기업 무를 자의 법적 절차', r: '4:1–12' }, { t: '오벳의 출생과 족보', r: '4:13–22' } ]
+};
+
+function loadBlocks(c) { try { return JSON.parse(lsGet('structure_ruth_blocks_' + c, '[]')); } catch (e) { return []; } }
+function saveBlocks(c, blocks) { lsSet('structure_ruth_blocks_' + c, JSON.stringify(blocks)); }
+// started/revealed는 장이 바뀌어도 유지되는 전역 상태 (단락 구성 자체만 장별로 따로 저장)
+function getFlag(name, def) { return lsGet('structure_ruth_' + name, def ? '1' : '0') === '1'; }
+function setFlag(name, val) { lsSet('structure_ruth_' + name, val ? '1' : '0'); }
+
+function clearOverlay(c) {
+  const page = document.querySelector('.page[data-page="' + c + '"]');
+  if (!page) return;
+  page.querySelectorAll('.verse').forEach(v => { v.style.borderLeft = ''; v.style.paddingLeft = ''; });
+  page.querySelectorAll('.my-sect-label').forEach(el => el.remove());
+}
+
+function applyOverlay(c, blocks) {
+  clearOverlay(c);
+  const page = document.querySelector('.page[data-page="' + c + '"]');
+  if (!page) return;
+  blocks.forEach(b => {
+    const start = Math.min(b.start, b.end), end = Math.max(b.start, b.end);
+    let firstEl = null;
+    for (let i = start; i <= end; i++) {
+      const el = page.querySelector('.verse[data-n="' + c + '-' + i + '"]');
+      if (!el) continue;
+      el.style.borderLeft = '4px solid ' + b.color;
+      el.style.paddingLeft = '10px';
+      if (!firstEl) firstEl = el;
+    }
+    if (firstEl) {
+      const label = document.createElement('div');
+      label.className = 'my-sect-label';
+      label.style.borderColor = b.color;
+      label.textContent = (b.title && b.title.trim()) ? b.title : '(제목 없음)';
+      firstEl.parentNode.insertBefore(label, firstEl);
+    }
+  });
+}
+
+// 모든 장에 동일하게 적용되는 전역 상태이므로 4개 장 전부에 반영
+function updateVersesSectVisibility() {
+  const started = getFlag('started', false);
+  const revealed = getFlag('revealed', true);
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.toggle('hide-author-sect', started && !revealed);
+  });
+}
+
+function renderStructureTab() {
+  const c = currentPage;
+  const maxV = CHAPTER_LENGTHS[c];
+  const blocks = loadBlocks(c);
+  const started = getFlag('started', false);
+  const revealed = getFlag('revealed', true);
+  updateVersesSectVisibility();
+  applyOverlay(c, blocks);
+
+  let html = `<div class="verse-ref" style="margin-bottom:12px;">룻기 ${c}장 개요 만들기</div>`;
+  html += `<button class="struct-btn secondary" id="struct-example-toggle" style="margin-bottom:10px;">${exampleShown ? '예시 숨기기' : '예시 보기 (저자의 문단 구분 미리보기)'}</button>`;
+  if (exampleShown) {
+    html += `<ul class="outline" style="margin-bottom:14px;">` +
+      CHAPTER_EXAMPLES[c].map(o => `<li><span>${o.t}</span><span>${o.r}</span></li>`).join('') +
+      `</ul>`;
+  }
+  if (!started) {
+    html += `<div class="struct-hint">
+      룻기 ${c}장을 처음부터 다시 읽으면서, <strong>흐름이 바뀐다고 느껴지는 지점</strong>마다 스스로 단락을 나눠보세요.
+      시작하면 지금 본문에 붙어 있는 성경 기존 단락 구분 표시가 잠시 숨겨집니다 — 힌트 없이 스스로 나눠보기 위해서예요.
+      다 나눈 뒤에는 성경 기존 단락 구분을 다시 보이게 해서 비교할 수 있습니다. 이 설정은 장을 넘겨도 그대로 유지됩니다.
+    </div>
+    <button class="struct-btn" id="struct-start">단락 구분 숨기고 시작하기</button>`;
+  } else {
+    html += `<div class="struct-toolbar">
+      <button class="struct-btn secondary" id="struct-toggle-reveal">${revealed ? '단락 구분 다시 숨기기' : '성경 기존 단락 구분 보이기'}</button>
+    </div>`;
+    if (!blocks.length) {
+      html += `<div class="struct-hint">아직 단락이 없습니다. 본문을 읽으며 "여기서 흐름이 바뀐다" 싶은 지점부터 단락을 추가해보세요.</div>`;
+    }
+    blocks.forEach((b, idx) => {
+      html += `<div class="block-card" style="border-left-color:${b.color}" data-id="${b.id}">
+        <div class="b-row">
+          <input type="text" class="b-title" placeholder="이 단락의 제목 (예: 나오미의 계획)" value="${(b.title || '').replace(/"/g, '&quot;')}">
+          <div class="b-actions">
+            <button class="b-up" title="위로" ${idx === 0 ? 'disabled style="opacity:.25;cursor:default;"' : ''}>↑</button>
+            <button class="b-down" title="아래로" ${idx === blocks.length - 1 ? 'disabled style="opacity:.25;cursor:default;"' : ''}>↓</button>
+            <button class="b-del" title="삭제">✕</button>
+          </div>
+        </div>
+        <div class="b-row">
+          <span class="range-field"><span>${c}장 절 범위</span>
+            <input type="number" class="b-start" inputmode="numeric" pattern="[0-9]*" min="1" max="${maxV}" value="${b.start}"> ~
+            <input type="number" class="b-end" inputmode="numeric" pattern="[0-9]*" min="1" max="${maxV}" value="${b.end}">
+          </span>
+        </div>
+        <textarea class="b-note" placeholder="왜 이 구간을 하나로 묶었나요? (예: 같은 인물이 계속 언급됨, 접속사 '그러므로'로 전환됨 등)">${b.note || ''}</textarea>
+      </div>`;
+    });
+    html += `<button class="add-block-btn" id="struct-add">+ 새 단락 추가</button>`;
+    html += `<span class="struct-reset" id="struct-reset">이 장의 모든 단락 지우고 처음부터 다시 시작</span>`;
+  }
+  document.getElementById('view-structure').innerHTML = html;
+  bindStructureEvents();
+}
+
+function bindStructureEvents() {
+  const c = currentPage;
+  const maxV = CHAPTER_LENGTHS[c];
+
+  const exToggle = document.getElementById('struct-example-toggle');
+  if (exToggle) exToggle.addEventListener('click', () => { exampleShown = !exampleShown; renderStructureTab(); });
+
+  const startBtn = document.getElementById('struct-start');
+  if (startBtn) startBtn.addEventListener('click', () => {
+    setFlag('started', true);
+    setFlag('revealed', false);
+    if (!loadBlocks(c).length) {
+      saveBlocks(c, [{ id: Date.now(), title: '', start: 1, end: 1, note: '', color: PALETTE[0] }]);
+    }
+    renderStructureTab();
+  });
+
+  const toggleBtn = document.getElementById('struct-toggle-reveal');
+  if (toggleBtn) toggleBtn.addEventListener('click', () => {
+    setFlag('revealed', !getFlag('revealed', true));
+    renderStructureTab();
+  });
+
+  const addBtn = document.getElementById('struct-add');
+  if (addBtn) addBtn.addEventListener('click', () => {
+    const blocks = loadBlocks(c);
+    const last = blocks[blocks.length - 1];
+    const start = last ? Math.min(maxV, last.end + 1) : 1;
+    blocks.push({ id: Date.now(), title: '', start: start, end: start, note: '', color: PALETTE[blocks.length % PALETTE.length] });
+    saveBlocks(c, blocks);
+    renderStructureTab();
+  });
+
+  const resetLink = document.getElementById('struct-reset');
+  if (resetLink) resetLink.addEventListener('click', () => {
+    if (!confirm('이 장에서 내가 만든 단락 구성을 모두 지울까요?')) return;
+    saveBlocks(c, []);
+    renderStructureTab();
+  });
+
+  document.querySelectorAll('#view-structure .block-card').forEach(card => {
+    const id = Number(card.dataset.id);
+    const getBlocks = () => loadBlocks(c);
+    const patch = (field, value) => {
+      const blocks = getBlocks();
+      const b = blocks.find(x => x.id === id);
+      if (!b) return;
+      b[field] = value;
+      saveBlocks(c, blocks);
+      applyOverlay(c, blocks);
+    };
+    card.querySelector('.b-title').addEventListener('input', (e) => patch('title', e.target.value));
+    card.querySelector('.b-note').addEventListener('input', (e) => patch('note', e.target.value));
+    card.querySelector('.b-start').addEventListener('change', (e) => patch('start', Math.max(1, Math.min(maxV, parseInt(e.target.value || '1', 10)))));
+    card.querySelector('.b-end').addEventListener('change', (e) => patch('end', Math.max(1, Math.min(maxV, parseInt(e.target.value || '1', 10)))));
+    card.querySelector('.b-del').addEventListener('click', () => {
+      saveBlocks(c, getBlocks().filter(x => x.id !== id));
+      renderStructureTab();
+    });
+    const upBtn = card.querySelector('.b-up');
+    if (upBtn && !upBtn.disabled) upBtn.addEventListener('click', () => {
+      const blocks = getBlocks();
+      const i = blocks.findIndex(x => x.id === id);
+      if (i > 0) { [blocks[i - 1], blocks[i]] = [blocks[i], blocks[i - 1]]; saveBlocks(c, blocks); renderStructureTab(); }
+    });
+    const downBtn = card.querySelector('.b-down');
+    if (downBtn && !downBtn.disabled) downBtn.addEventListener('click', () => {
+      const blocks = getBlocks();
+      const i = blocks.findIndex(x => x.id === id);
+      if (i < blocks.length - 1) { [blocks[i + 1], blocks[i]] = [blocks[i], blocks[i + 1]]; saveBlocks(c, blocks); renderStructureTab(); }
+    });
+  });
+}
+
+// 구조 탭이 선택될 때마다 최신 상태로 다시 그림
+document.querySelector('.side-tabs button[data-view="structure"]').addEventListener('click', renderStructureTab);
+
+// 페이지 로드시 저장된 구조가 있으면 각 장 본문에 바로 반영 (탭을 열지 않아도 보이도록)
+[1, 2, 3, 4].forEach(c => applyOverlay(c, loadBlocks(c)));
+updateVersesSectVisibility();
+
+
+// 사전 검색 — 본문과 학자 노트를 대상으로 한 미니 단어 검색
+// ============================================================
+function buildVerseIndex() {
+  const idx = [];
+  document.querySelectorAll('.verse[data-n]').forEach(v => {
+    const key = v.dataset.n;
+    const [c, verse] = key.split('-');
+    const vt = v.querySelector('.vtext');
+    idx.push({ key: key, chapter: c, verse: verse, text: vt ? vt.textContent : '' });
+  });
+  return idx;
+}
+const VERSE_INDEX = buildVerseIndex();
+
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeHtmlDict(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function runDictSearch(qRaw) {
+  const resultsEl = document.getElementById('dict-results');
+  const q = (qRaw || '').trim();
+  if (!q) { resultsEl.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>'; return; }
+
+  const re = new RegExp(escapeRegExp(q), 'g');
+  const verseHits = VERSE_INDEX.filter(v => v.text.includes(q));
+  const noteHits = Object.keys(TEACHER_NOTES).filter(k => {
+    const n = TEACHER_NOTES[k];
+    return (n.t && n.t.includes(q)) || (n.b && n.b.includes(q)) || (n.g && n.g.includes(q));
+  });
+
+  let html = '';
+  html += `<div class="dict-result-label">본문에서 (${verseHits.length}건)</div>`;
+  if (!verseHits.length) {
+    html += `<div class="struct-hint">본문에서 "${escapeHtmlDict(q)}"를 포함한 절을 찾지 못했습니다.</div>`;
+  } else {
+    verseHits.forEach(v => {
+      const marked = escapeHtmlDict(v.text).replace(new RegExp(escapeRegExp(q), 'g'), m => `<mark>${m}</mark>`);
+      html += `<div class="dict-hit" data-key="${v.key}"><div class="dh-ref">룻기 ${v.chapter}:${v.verse}</div>${marked}</div>`;
+    });
+  }
+
+  html += `<div class="dict-result-label" style="margin-top:16px;">학자 노트에서 (${noteHits.length}건)</div>`;
+  if (!noteHits.length) {
+    html += `<div class="struct-hint">노트 설명 중에는 일치하는 내용이 없습니다.</div>`;
+  } else {
+    noteHits.forEach(k => {
+      const n = TEACHER_NOTES[k];
+      const [c, v] = k.split('-');
+      const body = escapeHtmlDict(n.b || '').replace(new RegExp(escapeRegExp(q), 'g'), m => `<mark>${m}</mark>`);
+      html += `<div class="dict-hit" data-key="${k}"><div class="dh-ref">룻기 ${c}:${v} · ${escapeHtmlDict(n.t)}</div>${body}</div>`;
+    });
+  }
+
+  resultsEl.innerHTML = html;
+  resultsEl.querySelectorAll('.dict-hit').forEach(el => {
+    el.addEventListener('click', () => jumpToVerseFromDict(el.dataset.key));
+  });
+}
+
+function jumpToVerseFromDict(key) {
+  const chap = Number(key.split('-')[0]);
+  showPage(chap);
+  setTimeout(() => {
+    const el = versesEl.querySelector('.verse[data-n="' + key + '"]');
+    if (!el) return;
+    if (currentOpen) currentOpen.classList.remove('open');
+    if (el.classList.contains('has-note')) {
+      currentOpen = el;
+      el.classList.add('open');
+      renderStudyFlow(key);
+      switchView('note');
+    } else {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      switchView('note');
+      noteView.innerHTML = DEFAULT_PANEL;
+    }
+    if (isMobile()) setSheetOpen(true);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 160);
+}
+
+const dictInput = document.getElementById('dict-input');
+let dictTimer = null;
+dictInput.addEventListener('input', (e) => {
+  clearTimeout(dictTimer);
+  const val = e.target.value;
+  dictTimer = setTimeout(() => runDictSearch(val), 150);
+});
+
+// ============================================================
+// 메모 탭 — 학습 노트가 없는 절도 포함해 자유롭게 메모
+// ============================================================
+function loadMemos() { try { return JSON.parse(lsGet('memos_ruth', '{}')); } catch (e) { return {}; } }
+function saveMemos(m) { lsSet('memos_ruth', JSON.stringify(m)); }
+
+function memoRefLabel(key) {
+  const [c, v] = key.split('-');
+  return c + '장 ' + v + '절';
+}
+
+function renderMemoTab() {
+  const wrap = document.getElementById('view-memo');
+  const memos = loadMemos();
+  const keys = Object.keys(memos).sort((a, b) => {
+    const [ac, av] = a.split('-').map(Number);
+    const [bc, bv] = b.split('-').map(Number);
+    return ac - bc || av - bv;
+  });
+
+  if (!keys.length) {
+    wrap.innerHTML = `<div class="struct-hint">아직 작성한 메모가 없습니다. 이 탭이 켜져 있는 동안 본문에서 절을 누르면(학습 노트가 없는 절도 가능) 그 절의 메모 칸이 여기에 추가됩니다.</div>`;
+    return;
+  }
+
+  let html = '';
+  keys.forEach(key => {
+    html += `<div class="memo-card" data-key="${key}">
+      <div class="memo-head">
+        <span class="memo-ref">${memoRefLabel(key)}</span>
+        <button class="memo-del" data-key="${key}" title="메모 삭제">✕</button>
+      </div>
+      <textarea class="memo-input" data-key="${key}" placeholder="자유롭게 메모를 적어보세요...">${(memos[key] || '').replace(/</g, '&lt;')}</textarea>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.memo-input').forEach(ta => {
+    ta.addEventListener('input', () => {
+      const m = loadMemos();
+      m[ta.dataset.key] = ta.value;
+      saveMemos(m);
+    });
+  });
+  wrap.querySelectorAll('.memo-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = loadMemos();
+      delete m[btn.dataset.key];
+      saveMemos(m);
+      renderMemoTab();
+    });
+  });
+}
+
+function openMemoForVerse(key) {
+  const memos = loadMemos();
+  if (!(key in memos)) {
+    memos[key] = '';
+    saveMemos(memos);
+  }
+  switchView('memo');
+  if (isMobile()) setSheetOpen(true);
+  setTimeout(() => {
+    const card = document.querySelector('.memo-card[data-key="' + key + '"] textarea');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.focus();
+    }
+  }, 80);
+}
+
+// 오프라인에서도 앱이 열리도록 서비스 워커 등록 (file:// 로컬 실행 시에는 지원되지 않아 조용히 무시됨)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
