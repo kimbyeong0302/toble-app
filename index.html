@@ -470,17 +470,15 @@
 
   @media (max-width: 1400px) {
     .read-layout { grid-template-columns: 1fr; }
-    .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
-    body.sheet-open .wrap { padding-bottom: calc(75vh + 60px); }
+    .wrap { transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
     .verse { font-size: 17px; }
     aside {
       position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none;
       border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none;
       box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50;
-      transform: translateY(75vh); transition: transform .34s cubic-bezier(.4,0,.2,1);
+      transition: transform .34s cubic-bezier(.4,0,.2,1);
       will-change: transform;
     }
-    aside.open { transform: translateY(0); }
     .sheet-handle {
       display: flex; align-items: center; justify-content: center;
       padding: 14px 0 10px; cursor: pointer; touch-action: none; user-select: none;
@@ -489,7 +487,7 @@
     .sheet-handle:active::after { background: var(--accent); }
     .side-tabs { padding: 2px 14px 10px; }
     .side-body {
-      height: 75vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
     .facts { grid-template-columns: 1fr 1fr; }
     .verse-select-bar { bottom: calc(78px + env(safe-area-inset-bottom)); }
@@ -525,6 +523,23 @@
       margin-left: 0; width: 34px; padding: 4px 0; font-size: 10px;
       line-height: 1.25; white-space: normal; text-align: center;
     }
+  }
+
+  /* 가로 모드(아이패드 가로 포함): 메뉴 시트가 아래가 아니라 오른쪽에서 열림 */
+  @media (max-width: 1400px) and (orientation: landscape) {
+    aside {
+      left: auto; right: 0; bottom: 0; top: 0;
+      border-radius: 16px 0 0 16px; border-right: none; border-bottom: 1px solid var(--line);
+      box-shadow: -6px 0 24px rgba(43,38,32,.14);
+      display: grid; grid-template-columns: 22px 1fr; grid-template-rows: auto 1fr;
+    }
+    .sheet-handle {
+      grid-column: 1; grid-row: 1 / 3; padding: 0;
+    }
+    .sheet-handle::after { width: 4px; height: 40px; }
+    .side-tabs { grid-column: 2; grid-row: 1; padding: 10px 12px 6px; }
+    .side-body { grid-column: 2; grid-row: 2; padding-bottom: 18px; }
+    .verse-select-bar { bottom: 24px; }
   }
 </style>
 </head>
@@ -4534,7 +4549,54 @@ const isMobile = () => window.matchMedia('(max-width: 1400px)').matches;
   dragHandle.addEventListener('pointercancel', endHlDrag);
 })();
 
-function setSheetOpen(open) { sidepanel.classList.toggle('open', open); document.body.classList.toggle('sheet-open', open); }
+// ============================================================
+// 메뉴 시트 크기·방향 — 세로일 땐 아래에서, 가로일 땐 오른쪽에서 열리고,
+// 열리는/닫히는 정도는 손잡이를 끌어서 사용자가 원하는 만큼 조절할 수 있음
+// ============================================================
+const sideBody = sidepanel.querySelector('.side-body');
+const SHEET_MAX_FRAC = 0.95;
+
+function sheetIsLandscape() { return isMobile() && window.matchMedia('(orientation: landscape)').matches; }
+function sheetViewportExtent() { return sheetIsLandscape() ? window.innerWidth : window.innerHeight; }
+function sheetFracKey(base) { return base + (sheetIsLandscape() ? '_x' : '_y'); }
+function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function getSheetOpenFrac() { return clampNum(parseFloat(lsGet(sheetFracKey('sheet_open_frac'), '0.75')) || 0.75, 0.15, SHEET_MAX_FRAC); }
+function getSheetClosedFrac() { return clampNum(parseFloat(lsGet(sheetFracKey('sheet_closed_frac'), '0')) || 0, 0, SHEET_MAX_FRAC); }
+
+function positionSheet(open) {
+  if (!isMobile()) { sidepanel.style.transform = ''; return; }
+  const extent = sheetViewportExtent();
+  const maxPx = extent * SHEET_MAX_FRAC;
+  const frac = open ? getSheetOpenFrac() : getSheetClosedFrac();
+  const offset = Math.max(0, maxPx - extent * frac);
+  sidepanel.style.transform = (sheetIsLandscape() ? 'translateX(' : 'translateY(') + offset + 'px)';
+  if (!sheetIsLandscape()) {
+    document.querySelector('.wrap').style.paddingBottom = open ? (extent * frac + 60) + 'px' : '90px';
+  } else {
+    document.querySelector('.wrap').style.paddingBottom = '';
+  }
+}
+function positionSheetInstant(open) {
+  sidepanel.style.transition = 'none';
+  positionSheet(open);
+  void sidepanel.offsetHeight;
+  sidepanel.style.transition = '';
+}
+function applySheetGeometry() {
+  if (!isMobile()) { sideBody.style.height = ''; sidepanel.style.width = ''; sidepanel.style.transform = ''; document.querySelector('.wrap').style.paddingBottom = ''; return; }
+  const maxPx = sheetViewportExtent() * SHEET_MAX_FRAC;
+  if (sheetIsLandscape()) { sideBody.style.height = ''; sidepanel.style.width = maxPx + 'px'; }
+  else { sidepanel.style.width = ''; sideBody.style.height = maxPx + 'px'; }
+  positionSheetInstant(sidepanel.classList.contains('open'));
+}
+window.addEventListener('resize', applySheetGeometry);
+window.addEventListener('orientationchange', () => setTimeout(applySheetGeometry, 150));
+
+function setSheetOpen(open) {
+  sidepanel.classList.toggle('open', open);
+  document.body.classList.toggle('sheet-open', open);
+  positionSheet(open);
+}
 function switchView(name) {
   document.querySelectorAll('.side-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
   document.querySelectorAll('.side-view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
@@ -4559,49 +4621,70 @@ if (sheetHandle) {
     if (isMobile()) setSheetOpen(!sidepanel.classList.contains('open'));
   });
 
-  // 손가락으로 위/아래 스와이프해서 시트를 여닫는 제스처
+  // 손가락으로 끌어서 시트를 여닫는 제스처 — 세로일 땐 위/아래, 가로일 땐 좌/우.
+  // 살짝 움직이면 그냥 탭으로 간주하고, 크게 끌면 그 지점을 새 열림/닫힘 기준으로 저장한다.
   let sheetDragging = false;
-  let sheetDragStartY = 0;
+  let sheetDragStartCoord = 0;
   let sheetDragStartOffset = 0;
   let sheetDragStartTime = 0;
-  const sheetClosedOffset = () => window.innerHeight * 0.75;
+  let sheetDragStartWasOpen = false;
+
+  function sheetPointerCoord(e) { return sheetIsLandscape() ? e.clientX : e.clientY; }
 
   sheetHandle.addEventListener('pointerdown', (e) => {
     if (!isMobile()) return;
     sheetDragging = true;
-    sheetDragStartY = e.clientY;
+    sheetDragStartCoord = sheetPointerCoord(e);
     sheetDragStartTime = Date.now();
-    sheetDragStartOffset = sidepanel.classList.contains('open') ? 0 : sheetClosedOffset();
+    sheetDragStartWasOpen = sidepanel.classList.contains('open');
+    const extent = sheetViewportExtent();
+    const maxPx = extent * SHEET_MAX_FRAC;
+    const startFrac = sheetDragStartWasOpen ? getSheetOpenFrac() : getSheetClosedFrac();
+    sheetDragStartOffset = Math.max(0, maxPx - extent * startFrac);
     sidepanel.style.transition = 'none';
     if (sheetHandle.setPointerCapture) sheetHandle.setPointerCapture(e.pointerId);
   });
   sheetHandle.addEventListener('pointermove', (e) => {
     if (!sheetDragging) return;
-    const deltaY = e.clientY - sheetDragStartY;
-    const offset = Math.max(0, Math.min(sheetClosedOffset(), sheetDragStartOffset + deltaY));
-    sidepanel.style.transform = 'translateY(' + offset + 'px)';
+    const deltaCoord = sheetPointerCoord(e) - sheetDragStartCoord;
+    const maxPx = sheetViewportExtent() * SHEET_MAX_FRAC;
+    const offset = Math.max(0, Math.min(maxPx, sheetDragStartOffset + deltaCoord));
+    sidepanel.style.transform = (sheetIsLandscape() ? 'translateX(' : 'translateY(') + offset + 'px)';
   });
   function endSheetDrag(e) {
     if (!sheetDragging) return;
     sheetDragging = false;
-    const deltaY = e.clientY - sheetDragStartY;
-    const deltaTime = Math.max(1, Date.now() - sheetDragStartTime);
-    const velocity = deltaY / deltaTime; // px/ms, 음수 = 위로 스와이프
     sidepanel.style.transition = '';
-    sidepanel.style.transform = '';
-    if (Math.abs(deltaY) > 8) {
-      const closedOffset = sheetClosedOffset();
-      const offset = sheetDragStartOffset + deltaY;
-      let shouldOpen;
-      if (velocity < -0.5) shouldOpen = true;
-      else if (velocity > 0.5) shouldOpen = false;
-      else shouldOpen = offset < closedOffset * 0.75;
-      setSheetOpen(shouldOpen);
+    const deltaCoord = sheetPointerCoord(e) - sheetDragStartCoord;
+    const deltaTime = Math.max(1, Date.now() - sheetDragStartTime);
+    const velocity = deltaCoord / deltaTime; // px/ms, 음수 = 열리는 방향
+
+    if (Math.abs(deltaCoord) <= 8) {
+      positionSheet(sheetDragStartWasOpen); // 살짝 움직인 것뿐이면 원래 상태로 복귀 (탭 처리는 click에서)
+      return;
     }
+
+    const extent = sheetViewportExtent();
+    const maxPx = extent * SHEET_MAX_FRAC;
+    const releaseOffset = Math.max(0, Math.min(maxPx, sheetDragStartOffset + deltaCoord));
+    const revealedFrac = clampNum((maxPx - releaseOffset) / extent, 0, SHEET_MAX_FRAC);
+
+    let goingOpen;
+    if (velocity < -0.5) goingOpen = true;
+    else if (velocity > 0.5) goingOpen = false;
+    else goingOpen = deltaCoord < 0;
+
+    if (sheetDragStartWasOpen) {
+      lsSet(sheetFracKey('sheet_closed_frac'), String(clampNum(revealedFrac, 0, getSheetOpenFrac() - 0.05)));
+    } else {
+      lsSet(sheetFracKey('sheet_open_frac'), String(clampNum(revealedFrac, 0.15, SHEET_MAX_FRAC)));
+    }
+    setSheetOpen(goingOpen);
   }
   sheetHandle.addEventListener('pointerup', endSheetDrag);
   sheetHandle.addEventListener('pointercancel', endSheetDrag);
 }
+applySheetGeometry();
 
 const DEFAULT_PANEL = `
   <div class="default-guide">
@@ -4649,7 +4732,7 @@ function renderStudyFlow(n) {
       ${tn.g ? `<div class="grammar"><div class="g-label">문법 포인트</div>${tn.g}</div>` : ''}
       ${tn.r ? `<div class="refs"><strong>함께 읽기</strong> · ${tn.r}</div>` : ''}
       <p class="compare-hint">스스로 적은 내용과 비교해보세요 — 다르다고 틀린 게 아닙니다. 학자들이 무엇에 주목했는지 확인하고, 필요하면 위 칸을 다시 고쳐 써보세요.</p>`
-      : `<p style="font-size:13px; color:var(--ink-soft);">${isMulti ? '이 구간에는' : '이 절에는'} 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 ${isMulti ? '이 구간' : '이 절'}에 대한 병호님의 연구 결과입니다.</p>`}
+      : `<p style="font-size:13px; color:var(--ink-soft);">${isMulti ? '이 구간에는' : '이 절에는'} 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 ${isMulti ? '이 구간' : '이 절'}에 대한 당신의 연구 결과입니다.</p>`}
   </div>`;
 
   html += `<div class="progress-dots">${[1,2,3,4].map(i => `<span class="${i <= maxStep ? 'on' : ''}">●</span>`).join('')}</div>`;
@@ -4763,6 +4846,7 @@ document.getElementById('vsb-memo').addEventListener('click', () => {
   const key = selectedVerses.length === 1 ? selectedVerses[0] : buildCompositeKey(selectedVerses);
   clearSelection();
   openMemoForVerse(key);
+  if (isMobile()) setSheetOpen(true);
 });
 
 versesEl.querySelectorAll('.verse').forEach(v => {
@@ -4814,7 +4898,6 @@ versesEl.querySelectorAll('.verse').forEach(v => {
     currentOpen = v; v.classList.add('open');
     renderStudyFlow(n);
     switchView('note');
-    if (isMobile()) setSheetOpen(true);
   });
 });
 
@@ -5548,7 +5631,6 @@ function openMemoForVerse(key) {
     saveMemos(memos);
   }
   switchView('memo');
-  if (isMobile()) setSheetOpen(true);
   setTimeout(() => {
     const card = document.querySelector('.memo-card[data-key="' + key + '"] textarea');
     if (card) {
