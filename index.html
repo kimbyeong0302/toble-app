@@ -75,13 +75,30 @@
 
   .sect { margin: 26px 10px 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
   .sect::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-  .verse { font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 1.95; padding: 6px 10px; border-radius: 8px; cursor: default; transition: background .15s; position: relative; }
+  .verse { font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 1.95; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: background .15s; position: relative; }
   .verse .num { font-family: 'Noto Sans KR', sans-serif; font-size: 12px; color: var(--accent); font-weight: 700; vertical-align: super; margin-right: 5px; }
   .vtext { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-  .verse.has-note { cursor: pointer; }
   .verse.has-note .num::after { content: "✦"; font-size: 9px; margin-left: 3px; vertical-align: middle; }
   .verse.open { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .verse.selected { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .verse.selected .num::before { content: "✓"; color: var(--accent); font-weight: 700; margin-right: 2px; }
   .verse .clear-hl { font-size: 13px; color: var(--ink-soft); opacity: .4; margin-left: 4px; cursor: pointer; vertical-align: super; user-select: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; }
+
+  /* ---- 여러 절을 함께 선택해서 묶어 학습/메모하기 (길게 눌러서 선택) ---- */
+  .verse-select-bar {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    z-index: 70; display: flex; align-items: center; gap: 10px;
+    background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.28); font-size: 13px; white-space: nowrap;
+  }
+  .verse-select-bar[hidden] { display: none; }
+  .vsb-actions { display: flex; gap: 6px; }
+  .vsb-actions button {
+    border: none; border-radius: 16px; padding: 7px 13px; font-size: 12.5px; font-family: inherit;
+    cursor: pointer; touch-action: manipulation;
+  }
+  #vsb-study, #vsb-memo { background: var(--accent); color: #fff; }
+  #vsb-cancel { background: rgba(255,255,255,.18); color: #fff; }
 
   /* ---- 단어별 하이라이트 ---- */
   .word { border-radius: 3px; padding: 0 1px; }
@@ -270,14 +287,14 @@
   .hl-clear-verse { border: none; background: none; color: var(--ink-soft); cursor: pointer; font-size: 11.5px; }
 
   /* 터치 기기: hover 대신 눌렀을 때(:active) 즉각 피드백 */
-  .verse.has-note:active { background: var(--accent-soft); }
+  .verse:active { background: var(--accent-soft); }
   .step-next:active { opacity: .8; }
   .struct-btn:active { opacity: .8; }
   .hl-tool:active { transform: scale(1.12); }
   .add-block-btn:active { border-color: var(--accent); color: var(--accent); }
 
   @media (hover: hover) and (pointer: fine) {
-    .verse.has-note:hover { background: var(--accent-soft); }
+    .verse:hover { background: var(--accent-soft); }
     .verse .clear-hl:hover { opacity: 1; color: var(--accent); }
     .hl-tool:hover { transform: scale(1.15); }
     .step-next:hover { opacity: .9; }
@@ -451,7 +468,7 @@
   #a2hs-close { background: none; border: none; color: #fff; opacity: .85; font-size: 15px; padding: 6px 8px; cursor: pointer; flex: 0 0 auto; }
   #a2hs-close:active { opacity: 1; }
 
-  @media (max-width: 1200px) {
+  @media (max-width: 1400px) {
     .read-layout { grid-template-columns: 1fr; }
     .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
     body.sheet-open .wrap { padding-bottom: calc(75vh + 60px); }
@@ -475,6 +492,7 @@
       height: 75vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
     .facts { grid-template-columns: 1fr 1fr; }
+    .verse-select-bar { bottom: calc(78px + env(safe-area-inset-bottom)); }
 
     #hl-sentinel { display: none; }
     .hl-toolbar-wrap {
@@ -3678,6 +3696,15 @@
 
 </div>
 
+<div class="verse-select-bar" id="verse-select-bar" hidden>
+  <span class="vsb-count" id="vsb-count">0개 절 선택됨</span>
+  <div class="vsb-actions">
+    <button id="vsb-study" type="button">묶어서 학습</button>
+    <button id="vsb-memo" type="button">묶어서 메모</button>
+    <button id="vsb-cancel" type="button">취소</button>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // 현재 보고 있는 책 (전역 상태) — 모든 저장 키·노트·인물 데이터가 이 값을 기준으로 갈라짐
@@ -4448,7 +4475,7 @@ document.addEventListener('touchstart', function () {}, { passive: true });
 
 const sidepanel = document.getElementById('sidepanel');
 const noteView = document.getElementById('view-note');
-const isMobile = () => window.matchMedia('(max-width: 1200px)').matches;
+const isMobile = () => window.matchMedia('(max-width: 1400px)').matches;
 
 // ---- 형광펜 도구 막대: 손잡이를 잡고 끌어서 원하는 자리에 놓기 ----
 (function setupHlToolbarDrag() {
@@ -4597,11 +4624,10 @@ function renderStudyFlow(n) {
   };
   const labels = { obs: '1 · 관찰', interp: '2 · 해석', app: '3 · 적용' };
   const nextLabel = { obs: '다음: 해석 →', interp: '다음: 적용 →', app: '완료 · 학자 노트 보기 →' };
-  const [chap, verse] = n.split('-');
+  const isMulti = n.indexOf('+') !== -1;
 
-  const bookLabel = BOOK_LABELS[currentBook] || '룻기';
-  let html = `<div class="verse-ref">${bookLabel} ${chap}:${verse}</div>`;
-  html += `<div class="reset-link" data-reset="${n}">이 절 학습 기록 초기화</div>`;
+  let html = `<div class="verse-ref">${compositeRefLabel(n)}</div>`;
+  html += `<div class="reset-link" data-reset="${n}">${isMulti ? '이 구간' : '이 절'} 학습 기록 초기화</div>`;
 
   stepFields().forEach((field, idx) => {
     const stepNum = idx + 1;
@@ -4623,7 +4649,7 @@ function renderStudyFlow(n) {
       ${tn.g ? `<div class="grammar"><div class="g-label">문법 포인트</div>${tn.g}</div>` : ''}
       ${tn.r ? `<div class="refs"><strong>함께 읽기</strong> · ${tn.r}</div>` : ''}
       <p class="compare-hint">스스로 적은 내용과 비교해보세요 — 다르다고 틀린 게 아닙니다. 학자들이 무엇에 주목했는지 확인하고, 필요하면 위 칸을 다시 고쳐 써보세요.</p>`
-      : `<p style="font-size:13px; color:var(--ink-soft);">이 절에는 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 이 절에 대한 병호님의 연구 결과입니다.</p>`}
+      : `<p style="font-size:13px; color:var(--ink-soft);">${isMulti ? '이 구간에는' : '이 절에는'} 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 ${isMulti ? '이 구간' : '이 절'}에 대한 병호님의 연구 결과입니다.</p>`}
   </div>`;
 
   html += `<div class="progress-dots">${[1,2,3,4].map(i => `<span class="${i <= maxStep ? 'on' : ''}">●</span>`).join('')}</div>`;
@@ -4653,7 +4679,7 @@ function renderStudyFlow(n) {
   });
   const resetLink = noteView.querySelector('.reset-link');
   if (resetLink) resetLink.addEventListener('click', () => {
-    if (!confirm('이 절의 관찰·해석·적용 기록을 모두 지울까요? (하이라이트는 유지됩니다)')) return;
+    if (!confirm(`${isMulti ? '이 구간' : '이 절'}의 관찰·해석·적용 기록을 모두 지울까요? (하이라이트는 유지됩니다)`)) return;
     ['obs', 'interp', 'app', 'step'].forEach(f => lsRemove('study_' + currentBook + '_' + n + '_' + f));
     renderStudyFlow(n);
   });
@@ -4670,17 +4696,115 @@ function isMemoTabActive() {
   return !!(v && v.classList.contains('active'));
 }
 
+// ============================================================
+// 여러 절 묶어 선택하기 — 절을 길게 누르면 선택 모드로 들어가고,
+// 이후 다른 절들을 탭하면 선택에 추가/제거됩니다.
+// ============================================================
+let selectedVerses = [];
+function inSelectionMode() { return selectedVerses.length > 0; }
+
+function verseSortValue(key) {
+  const [c, v] = key.split('+')[0].split('-').map(Number);
+  return c * 1000 + v;
+}
+function buildCompositeKey(keys) {
+  return keys.slice().sort((a, b) => verseSortValue(a) - verseSortValue(b)).join('+');
+}
+function compositeParts(key) {
+  return key.split('+').map(k => { const [c, v] = k.split('-'); return { c, v }; });
+}
+function compositeRefLabel(key) {
+  const bookLabel = BOOK_LABELS[currentBook] || '룻기';
+  const parts = compositeParts(key);
+  if (parts.length === 1) return `${bookLabel} ${parts[0].c}:${parts[0].v}`;
+  const sameChap = parts.every(p => p.c === parts[0].c);
+  if (sameChap) return `${bookLabel} ${parts[0].c}:${parts.map(p => p.v).join(',')}`;
+  return bookLabel + ' ' + parts.map(p => `${p.c}:${p.v}`).join(', ');
+}
+
+const selectBar = document.getElementById('verse-select-bar');
+const vsbCount = document.getElementById('vsb-count');
+
+function updateSelectBar() {
+  if (!selectedVerses.length) { selectBar.hidden = true; return; }
+  selectBar.hidden = false;
+  vsbCount.textContent = selectedVerses.length + '개 절 선택됨';
+}
+
+function clearSelection() {
+  selectedVerses.forEach(key => {
+    const el = versesEl.querySelector('.verse[data-n="' + key + '"]');
+    if (el) el.classList.remove('selected');
+  });
+  selectedVerses = [];
+  updateSelectBar();
+}
+
+function toggleVerseSelection(v) {
+  const key = v.dataset.n;
+  const idx = selectedVerses.indexOf(key);
+  if (idx === -1) { selectedVerses.push(key); v.classList.add('selected'); }
+  else { selectedVerses.splice(idx, 1); v.classList.remove('selected'); }
+  updateSelectBar();
+}
+
+document.getElementById('vsb-cancel').addEventListener('click', clearSelection);
+document.getElementById('vsb-study').addEventListener('click', () => {
+  if (!selectedVerses.length) return;
+  const key = selectedVerses.length === 1 ? selectedVerses[0] : buildCompositeKey(selectedVerses);
+  clearSelection();
+  if (currentOpen) { currentOpen.classList.remove('open'); currentOpen = null; }
+  renderStudyFlow(key);
+  switchView('note');
+  if (isMobile()) setSheetOpen(true);
+});
+document.getElementById('vsb-memo').addEventListener('click', () => {
+  if (!selectedVerses.length) return;
+  const key = selectedVerses.length === 1 ? selectedVerses[0] : buildCompositeKey(selectedVerses);
+  clearSelection();
+  openMemoForVerse(key);
+});
+
 versesEl.querySelectorAll('.verse').forEach(v => {
   const n = v.dataset.n;
+  let pressTimer = null;
+  let longPressFired = false;
+  let downX = 0, downY = 0;
+
+  v.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.clear-hl')) return;
+    if (hlTool !== 'off') return;
+    downX = e.clientX; downY = e.clientY;
+    longPressFired = false;
+    pressTimer = setTimeout(() => {
+      longPressFired = true;
+      toggleVerseSelection(v);
+    }, 450);
+  });
+  v.addEventListener('pointermove', (e) => {
+    if (!pressTimer) return;
+    if (Math.abs(e.clientX - downX) > 10 || Math.abs(e.clientY - downY) > 10) {
+      clearTimeout(pressTimer); pressTimer = null;
+    }
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(evt => {
+    v.addEventListener(evt, () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
+  });
+
   v.addEventListener('click', (e) => {
     if (e.target.closest('.clear-hl')) return;
+    if (longPressFired) { longPressFired = false; return; }
+
+    if (inSelectionMode()) {
+      toggleVerseSelection(v);
+      return;
+    }
 
     if (isMemoTabActive()) {
       openMemoForVerse(n);
       return;
     }
 
-    if (!v.classList.contains('has-note')) return; // 메모 모드가 아니면 학습 노트 없는 절은 무반응
     if (currentOpen === v) {
       v.classList.remove('open'); currentOpen = null;
       noteView.innerHTML = DEFAULT_PANEL;
@@ -5371,18 +5495,17 @@ function loadMemos() { try { return JSON.parse(lsGet('memos_' + currentBook, '{}
 function saveMemos(m) { lsSet('memos_' + currentBook, JSON.stringify(m)); }
 
 function memoRefLabel(key) {
-  const [c, v] = key.split('-');
-  return c + '장 ' + v + '절';
+  const parts = compositeParts(key);
+  if (parts.length === 1) return parts[0].c + '장 ' + parts[0].v + '절';
+  const sameChap = parts.every(p => p.c === parts[0].c);
+  if (sameChap) return parts[0].c + '장 ' + parts.map(p => p.v).join(',') + '절';
+  return parts.map(p => p.c + ':' + p.v).join(', ');
 }
 
 function renderMemoTab() {
   const wrap = document.getElementById('view-memo');
   const memos = loadMemos();
-  const keys = Object.keys(memos).sort((a, b) => {
-    const [ac, av] = a.split('-').map(Number);
-    const [bc, bv] = b.split('-').map(Number);
-    return ac - bc || av - bv;
-  });
+  const keys = Object.keys(memos).sort((a, b) => verseSortValue(a) - verseSortValue(b));
 
   if (!keys.length) {
     wrap.innerHTML = `<div class="struct-hint">아직 작성한 메모가 없습니다. 이 탭이 켜져 있는 동안 본문에서 절을 누르면(학습 노트가 없는 절도 가능) 그 절의 메모 칸이 여기에 추가됩니다.</div>`;
