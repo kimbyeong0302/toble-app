@@ -4515,13 +4515,14 @@ document.querySelectorAll('.side-tabs button').forEach(btn => {
 });
 const sheetHandle = document.getElementById('sheet-handle');
 if (sheetHandle) {
-  sheetHandle.addEventListener('click', () => {
-    if (isMobile()) setSheetOpen(!sidepanel.classList.contains('open'));
-  });
-
   // 손가락으로 끌어서 시트를 여닫는 제스처 — 세로일 땐 위/아래, 가로일 땐 좌/우.
   // 살짝 움직이면 그냥 탭으로 간주하고, 크게 끌면 그 지점을 새 열림/닫힘 기준으로 저장한다.
+  // 실제로 드래그가 일어났을 땐 뒤이어 발생하는 click 이벤트가 방금 정한 상태를
+  // 다시 뒤집어버리지 않도록 sheetDragOccurred로 막는다 (탭과 드래그가 같은 손가락
+  // 동작에서 함께 발생해 서로 충돌하던 버그의 원인).
+  const TAP_TOLERANCE = 10;
   let sheetDragging = false;
+  let sheetDragOccurred = false;
   let sheetDragStartCoord = 0;
   let sheetDragStartOffset = 0;
   let sheetDragStartTime = 0;
@@ -4529,9 +4530,15 @@ if (sheetHandle) {
 
   function sheetPointerCoord(e) { return sheetIsLandscape() ? e.clientX : e.clientY; }
 
+  sheetHandle.addEventListener('click', () => {
+    if (sheetDragOccurred) { sheetDragOccurred = false; return; }
+    if (isMobile()) setSheetOpen(!sidepanel.classList.contains('open'));
+  });
+
   sheetHandle.addEventListener('pointerdown', (e) => {
     if (!isMobile()) return;
     sheetDragging = true;
+    sheetDragOccurred = false;
     sheetDragStartCoord = sheetPointerCoord(e);
     sheetDragStartTime = Date.now();
     sheetDragStartWasOpen = sidepanel.classList.contains('open');
@@ -4557,10 +4564,12 @@ if (sheetHandle) {
     const deltaTime = Math.max(1, Date.now() - sheetDragStartTime);
     const velocity = deltaCoord / deltaTime; // px/ms, 음수 = 열리는 방향
 
-    if (Math.abs(deltaCoord) <= 8) {
+    if (Math.abs(deltaCoord) <= TAP_TOLERANCE) {
       positionSheet(sheetDragStartWasOpen); // 살짝 움직인 것뿐이면 원래 상태로 복귀 (탭 처리는 click에서)
       return;
     }
+
+    sheetDragOccurred = true; // 뒤따라올 click이 이 결과를 뒤집지 못하게 막는다
 
     const extent = sheetViewportExtent();
     const maxPx = extent * SHEET_MAX_FRAC;
