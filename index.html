@@ -541,19 +541,19 @@
   }
 
   /* 가로 모드(아이패드 가로 포함): 메뉴 시트가 아래가 아니라 오른쪽에서 열림 */
+  /* 가로 방향: 예전처럼 본문과 메뉴가 나란히 항상 펼쳐져 있는 데스크탑형 레이아웃 —
+     손잡이로 여닫는 시트는 세로 방향에서만 사용한다 */
   @media (max-width: 1400px) and (orientation: landscape) {
+    .read-layout { grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; }
     aside {
-      left: auto; right: 0; bottom: 0; top: 0;
-      border-radius: 16px 0 0 16px; border-right: none; border-bottom: 1px solid var(--line);
-      box-shadow: -6px 0 24px rgba(43,38,32,.14);
-      display: grid; grid-template-columns: 22px 1fr; grid-template-rows: auto 1fr;
+      position: sticky; top: 12px; left: auto; right: auto; bottom: auto;
+      max-height: calc(100vh - 24px); width: auto;
+      border-radius: 16px; border: 1px solid var(--line);
+      box-shadow: none;
     }
-    .sheet-handle {
-      grid-column: 1; grid-row: 1 / 3; padding: 0;
-    }
-    .sheet-handle::after { width: 4px; height: 40px; }
-    .side-tabs { grid-column: 2; grid-row: 1; padding: 10px 12px 6px; }
-    .side-body { grid-column: 2; grid-row: 2; padding-bottom: 18px; }
+    .sheet-handle { display: none; }
+    .side-tabs { padding: 12px 14px; }
+    .side-body { padding: 18px 20px 22px; }
     .verse-select-bar { bottom: 24px; }
   }
 </style>
@@ -4230,29 +4230,47 @@ function wrapWordsInVerse(vtext) {
   const text = vtext.textContent;
   const parts = text.split(/(\s+)/);
   let wi = 0;
+  let lastWordIdx = -1;
   const frag = document.createDocumentFragment();
   parts.forEach(tok => {
     if (tok === '') return;
     if (/^\s+$/.test(tok)) {
-      frag.appendChild(document.createTextNode(tok));
+      // 공백도 span으로 감싸둬서, 앞뒤 단어가 같은 색이면 그 사이도 이어 칠할 수 있게 한다
+      const span = document.createElement('span');
+      span.className = 'wsp';
+      span.dataset.after = String(lastWordIdx);
+      span.textContent = tok;
+      frag.appendChild(span);
     } else {
       const span = document.createElement('span');
       span.className = 'word';
-      span.dataset.wi = String(wi++);
+      span.dataset.wi = String(wi);
       span.textContent = tok;
       frag.appendChild(span);
+      lastWordIdx = wi;
+      wi++;
     }
   });
   vtext.innerHTML = '';
   vtext.appendChild(frag);
 }
 
+// 절 전체(또는 이어진 단어들)를 끊어지지 않은 한 덩어리처럼 보이게, 같은 색으로
+// 이어진 단어 사이의 공백에도 같은 배경색을 칠한다.
 function applyWordHighlightsForVerse(verseEl) {
   const map = loadWordHighlights(verseEl.dataset.n);
   verseEl.querySelectorAll('.word').forEach(w => {
     w.className = 'word';
     const color = map[w.dataset.wi];
     if (color) w.classList.add('hlw-' + color);
+  });
+  verseEl.querySelectorAll('.wsp').forEach(sp => {
+    sp.className = 'wsp';
+    const beforeIdx = sp.dataset.after;
+    const afterIdx = String(Number(beforeIdx) + 1);
+    const c1 = map[beforeIdx];
+    const c2 = map[afterIdx];
+    if (c1 && c1 === c2) sp.classList.add('hlw-' + c1);
   });
 }
 
@@ -4274,16 +4292,14 @@ function applyHighlightToSelectedVerses(tool) {
   selectedVerses.forEach(key => {
     const verseEl = versesEl.querySelector('.verse[data-n="' + key + '"]');
     if (!verseEl) return;
-    const words = verseEl.querySelectorAll('.word');
     if (tool === 'erase') {
       saveWordHighlights(key, {});
-      words.forEach(w => { w.className = 'word'; });
     } else {
       const map = {};
-      words.forEach(w => { map[w.dataset.wi] = tool; });
+      verseEl.querySelectorAll('.word').forEach(w => { map[w.dataset.wi] = tool; });
       saveWordHighlights(key, map);
-      words.forEach(w => { w.className = 'word hlw-' + tool; });
     }
+    applyWordHighlightsForVerse(verseEl); // 같은 색 단어 사이 공백까지 이어 칠해서 문장 전체가 끊기지 않게 보이도록
   });
   clearSelection();
 }
@@ -4336,12 +4352,11 @@ versesEl.addEventListener('click', (e) => {
   const map = loadWordHighlights(key);
   if (hlTool === 'erase') {
     delete map[wordEl.dataset.wi];
-    wordEl.className = 'word';
   } else {
     map[wordEl.dataset.wi] = hlTool;
-    wordEl.className = 'word hlw-' + hlTool;
   }
   saveWordHighlights(key, map);
+  applyWordHighlightsForVerse(verseEl);
 }, true);
 
 // 절 앞 "⌫" — 그 절의 하이라이트를 전부 지움
@@ -4354,7 +4369,7 @@ document.querySelectorAll('.verse .clear-hl').forEach(btn => {
     if (!Object.keys(map).length) return;
     if (!confirm('이 절의 형광펜 표시를 모두 지울까요?')) return;
     saveWordHighlights(key, {});
-    verseEl.querySelectorAll('.word').forEach(w => { w.className = 'word'; });
+    applyWordHighlightsForVerse(verseEl);
   });
 });
 
@@ -4453,25 +4468,24 @@ const isMobile = () => window.matchMedia('(max-width: 1400px)').matches;
 const sideBody = sidepanel.querySelector('.side-body');
 const SHEET_MAX_FRAC = 0.95;
 
+// 가로 방향일 땐 예전처럼 본문 옆에 메뉴가 항상 펼쳐져 있는 데스크탑형 레이아웃을 쓰고,
+// 세로일 때만 손잡이로 여닫는(제스처로 크기 조절 가능한) 시트를 쓴다.
 function sheetIsLandscape() { return isMobile() && window.matchMedia('(orientation: landscape)').matches; }
-function sheetViewportExtent() { return sheetIsLandscape() ? window.innerWidth : window.innerHeight; }
-function sheetFracKey(base) { return base + (sheetIsLandscape() ? '_x' : '_y'); }
+function sheetIsCollapsible() { return isMobile() && !sheetIsLandscape(); }
+function sheetViewportExtent() { return window.innerHeight; }
+function sheetFracKey(base) { return base + '_y'; }
 function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function getSheetOpenFrac() { return clampNum(parseFloat(lsGet(sheetFracKey('sheet_open_frac'), '0.75')) || 0.75, 0.15, SHEET_MAX_FRAC); }
 function getSheetClosedFrac() { return clampNum(parseFloat(lsGet(sheetFracKey('sheet_closed_frac'), '0')) || 0, 0, SHEET_MAX_FRAC); }
 
 function positionSheet(open) {
-  if (!isMobile()) { sidepanel.style.transform = ''; return; }
+  if (!sheetIsCollapsible()) { sidepanel.style.transform = ''; document.querySelector('.wrap').style.paddingBottom = ''; return; }
   const extent = sheetViewportExtent();
   const maxPx = extent * SHEET_MAX_FRAC;
   const frac = open ? getSheetOpenFrac() : getSheetClosedFrac();
   const offset = Math.max(0, maxPx - extent * frac);
-  sidepanel.style.transform = (sheetIsLandscape() ? 'translateX(' : 'translateY(') + offset + 'px)';
-  if (!sheetIsLandscape()) {
-    document.querySelector('.wrap').style.paddingBottom = open ? (extent * frac + 60) + 'px' : '90px';
-  } else {
-    document.querySelector('.wrap').style.paddingBottom = '';
-  }
+  sidepanel.style.transform = 'translateY(' + offset + 'px)';
+  document.querySelector('.wrap').style.paddingBottom = open ? (extent * frac + 60) + 'px' : '90px';
 }
 function positionSheetInstant(open) {
   sidepanel.style.transition = 'none';
@@ -4480,10 +4494,13 @@ function positionSheetInstant(open) {
   sidepanel.style.transition = '';
 }
 function applySheetGeometry() {
-  if (!isMobile()) { sideBody.style.height = ''; sidepanel.style.width = ''; sidepanel.style.transform = ''; document.querySelector('.wrap').style.paddingBottom = ''; return; }
-  const maxPx = sheetViewportExtent() * SHEET_MAX_FRAC;
-  if (sheetIsLandscape()) { sideBody.style.height = ''; sidepanel.style.width = maxPx + 'px'; }
-  else { sidepanel.style.width = ''; sideBody.style.height = maxPx + 'px'; }
+  if (!sheetIsCollapsible()) {
+    sideBody.style.height = ''; sidepanel.style.width = ''; sidepanel.style.transform = '';
+    document.querySelector('.wrap').style.paddingBottom = '';
+    return;
+  }
+  sidepanel.style.width = '';
+  sideBody.style.height = (sheetViewportExtent() * SHEET_MAX_FRAC) + 'px';
   positionSheetInstant(sidepanel.classList.contains('open'));
 }
 window.addEventListener('resize', applySheetGeometry);
@@ -4507,7 +4524,7 @@ function switchView(name) {
 document.querySelectorAll('.side-tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
     const name = btn.dataset.view;
-    if (isMobile()) {
+    if (sheetIsCollapsible()) {
       if (btn.classList.contains('active') && sidepanel.classList.contains('open')) { setSheetOpen(false); return; }
       switchView(name); setSheetOpen(true);
     } else { switchView(name); }
@@ -4528,15 +4545,15 @@ if (sheetHandle) {
   let sheetDragStartTime = 0;
   let sheetDragStartWasOpen = false;
 
-  function sheetPointerCoord(e) { return sheetIsLandscape() ? e.clientX : e.clientY; }
+  function sheetPointerCoord(e) { return e.clientY; } // 세로일 때만 드래그가 가능하므로 항상 Y축
 
   sheetHandle.addEventListener('click', () => {
     if (sheetDragOccurred) { sheetDragOccurred = false; return; }
-    if (isMobile()) setSheetOpen(!sidepanel.classList.contains('open'));
+    if (sheetIsCollapsible()) setSheetOpen(!sidepanel.classList.contains('open'));
   });
 
   sheetHandle.addEventListener('pointerdown', (e) => {
-    if (!isMobile()) return;
+    if (!sheetIsCollapsible()) return;
     sheetDragging = true;
     sheetDragOccurred = false;
     sheetDragStartCoord = sheetPointerCoord(e);
@@ -4554,7 +4571,7 @@ if (sheetHandle) {
     const deltaCoord = sheetPointerCoord(e) - sheetDragStartCoord;
     const maxPx = sheetViewportExtent() * SHEET_MAX_FRAC;
     const offset = Math.max(0, Math.min(maxPx, sheetDragStartOffset + deltaCoord));
-    sidepanel.style.transform = (sheetIsLandscape() ? 'translateX(' : 'translateY(') + offset + 'px)';
+    sidepanel.style.transform = 'translateY(' + offset + 'px)';
   });
   function endSheetDrag(e) {
     if (!sheetDragging) return;
