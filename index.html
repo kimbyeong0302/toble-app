@@ -107,7 +107,6 @@
     border: none; border-radius: 16px; padding: 7px 13px; font-size: 12.5px; font-family: inherit;
     cursor: pointer; touch-action: manipulation;
   }
-  #vsb-study, #vsb-memo { background: var(--accent); color: #fff; }
   #vsb-cancel { background: rgba(255,255,255,.18); color: #fff; }
 
   /* ---- 단어별 하이라이트 ---- */
@@ -3593,10 +3592,8 @@
 </div>
 
 <div class="verse-select-bar" id="verse-select-bar" hidden>
-  <span class="vsb-count" id="vsb-count">0개 절 선택됨</span>
+  <span class="vsb-count" id="vsb-count">0개 절 선택됨 · 메뉴의 학습·메모를 눌러보세요</span>
   <div class="vsb-actions">
-    <button id="vsb-study" type="button">묶어서 학습</button>
-    <button id="vsb-memo" type="button">묶어서 메모</button>
     <button id="vsb-cancel" type="button">취소</button>
   </div>
 </div>
@@ -4514,9 +4511,34 @@ function switchView(name) {
   if (name === 'memo' && typeof renderMemoTab === 'function') renderMemoTab();
   if (name === 'map' && typeof renderBookMap === 'function') renderBookMap(currentBook);
 }
+// 학습·메모 탭은 항상 "지금 대상이 되는 절"을 기준으로 동작한다 —
+// 절을 여러 개 선택해뒀으면 선택된 절 전체를, 아니면 마지막으로 누른 절 하나를 대상으로 삼는다.
+// (절 하나를 누르든 여러 개를 묶어 누르든, 학습/메모로 가는 경로는 이 한 곳뿐이다.)
 document.querySelectorAll('.side-tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
     const name = btn.dataset.view;
+    const hasSelection = typeof selectedVerses !== 'undefined' && selectedVerses.length > 0;
+
+    if (hasSelection && (name === 'note' || name === 'memo')) {
+      const keys = selectedVerses.slice();
+      const key = keys.length === 1 ? keys[0] : buildCompositeKey(keys);
+      clearSelection();
+      if (name === 'note') {
+        const verseEls = keys.map(k => versesEl.querySelector('.verse[data-n="' + k + '"]')).filter(Boolean);
+        openStudyFlowForVerses(verseEls, key);
+      } else {
+        openMemoForVerse(key);
+      }
+      if (sheetIsCollapsible()) setSheetOpen(true);
+      return;
+    }
+
+    if (name === 'memo' && !hasSelection && lastTappedVerseKey) {
+      openMemoForVerse(lastTappedVerseKey);
+      if (sheetIsCollapsible()) setSheetOpen(true);
+      return;
+    }
+
     if (sheetIsCollapsible()) {
       if (btn.classList.contains('active') && sidepanel.classList.contains('open')) { setSheetOpen(false); return; }
       switchView(name); setSheetOpen(true);
@@ -4617,8 +4639,9 @@ function renderStudyFlow(n) {
 // 아니면 기존처럼 학습 노트가 있는 절만 학습 흐름을 엽니다.
 // ============================================================
 let currentOpen = null;
+let lastTappedVerseKey = null; // 절을 하나만 눌렀을 때 그 절 — 메뉴의 메모 탭이 어느 절을 대상으로 할지 판단하는 데 쓰임
 
-// 절 하나를 직접 눌러 학습을 열든, 여러 절을 묶어 "묶어서 학습"으로 열든
+// 절 하나를 직접 눌러 학습을 열든, 여러 절을 묶어서 열든(메뉴의 학습 탭으로)
 // 이 함수 하나를 거치게 해서 — 열린 절 표시(.open)와 학습 내용 렌더링이 항상 같은 방식으로 동작한다.
 function openStudyFlowForVerses(verseEls, key) {
   document.querySelectorAll('.verse.open').forEach(el => el.classList.remove('open'));
@@ -4666,7 +4689,7 @@ const vsbCount = document.getElementById('vsb-count');
 function updateSelectBar() {
   if (!selectedVerses.length) { selectBar.hidden = true; return; }
   selectBar.hidden = false;
-  vsbCount.textContent = selectedVerses.length + '개 절 선택됨';
+  vsbCount.textContent = selectedVerses.length + '개 절 선택됨 · 메뉴의 학습·메모를 눌러보세요';
 }
 
 function clearSelection() {
@@ -4708,22 +4731,6 @@ function toggleVerseSelection(v) {
 }
 
 document.getElementById('vsb-cancel').addEventListener('click', clearSelection);
-document.getElementById('vsb-study').addEventListener('click', () => {
-  if (!selectedVerses.length) return;
-  const keys = selectedVerses.slice();
-  const key = keys.length === 1 ? keys[0] : buildCompositeKey(keys);
-  const verseEls = keys.map(k => versesEl.querySelector('.verse[data-n="' + k + '"]')).filter(Boolean);
-  clearSelection();
-  openStudyFlowForVerses(verseEls, key);
-  if (isMobile()) setSheetOpen(true);
-});
-document.getElementById('vsb-memo').addEventListener('click', () => {
-  if (!selectedVerses.length) return;
-  const key = selectedVerses.length === 1 ? selectedVerses[0] : buildCompositeKey(selectedVerses);
-  clearSelection();
-  openMemoForVerse(key);
-  if (isMobile()) setSheetOpen(true);
-});
 
 versesEl.querySelectorAll('.verse').forEach(v => {
   const n = v.dataset.n;
@@ -4759,6 +4766,8 @@ versesEl.querySelectorAll('.verse').forEach(v => {
       toggleVerseSelection(v);
       return;
     }
+
+    lastTappedVerseKey = n;
 
     if (isMemoTabActive()) {
       openMemoForVerse(n);
