@@ -451,7 +451,7 @@
   #a2hs-close { background: none; border: none; color: #fff; opacity: .85; font-size: 15px; padding: 6px 8px; cursor: pointer; flex: 0 0 auto; }
   #a2hs-close:active { opacity: 1; }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1200px) {
     .read-layout { grid-template-columns: 1fr; }
     .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
     body.sheet-open .wrap { padding-bottom: calc(75vh + 60px); }
@@ -483,19 +483,23 @@
     }
     .hl-toolbar-bar {
       flex-direction: column; align-items: center; gap: 6px;
-      padding: 9px 6px; border-radius: 18px;
+      padding: 9px 6px; border-radius: 18px; overflow: hidden;
       background: var(--card); border: 1px solid var(--line);
       box-shadow: 0 6px 20px rgba(43,38,32,.18); transition: none;
     }
     .hl-toolbar-wrap.stuck .hl-toolbar-bar { box-shadow: 0 6px 20px rgba(43,38,32,.18); }
     .hl-toolbar-label { display: none; }
     .hl-drag-handle {
-      display: block; width: 20px; height: 16px; margin: 0 auto 2px;
+      display: flex; align-items: center; justify-content: center; gap: 3px;
+      width: auto; padding: 6px 4px 8px; margin: 0 auto;
       cursor: grab; touch-action: none;
-      background-image: radial-gradient(circle, var(--ink-soft) 1.3px, transparent 1.4px);
-      background-size: 6px 6px; background-repeat: repeat; opacity: .55;
     }
-    .hl-drag-handle:active { cursor: grabbing; opacity: .9; }
+    .hl-drag-handle .hdh-dot {
+      width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0;
+      background: var(--ink-soft); opacity: .55;
+    }
+    .hl-drag-handle:active .hdh-dot { opacity: .9; }
+    .hl-drag-handle:active { cursor: grabbing; }
     .hl-toolbar-tools { flex-direction: column; gap: 6px; }
     .hl-tool { width: 25px; height: 25px; font-size: 10.5px; }
     .hl-tool[data-tool="off"] { width: 34px; height: 21px; border-radius: 11px; font-size: 9px; padding: 0; }
@@ -548,7 +552,9 @@
       <div id="hl-sentinel"></div>
       <div class="hl-toolbar-wrap" id="hl-toolbar-wrap">
         <div class="hl-toolbar-bar">
-          <div class="hl-drag-handle" id="hl-drag-handle" role="button" aria-label="위치 옮기기"></div>
+          <div class="hl-drag-handle" id="hl-drag-handle" role="button" aria-label="위치 옮기기">
+            <span class="hdh-dot"></span><span class="hdh-dot"></span><span class="hdh-dot"></span>
+          </div>
           <span class="hl-toolbar-label">🖊 형광펜</span>
           <div class="hl-toolbar-tools" id="hl-toolbar-tools">
             <button class="hl-tool active" data-tool="off" title="끄기(읽기 모드)">끄기</button>
@@ -4442,7 +4448,7 @@ document.addEventListener('touchstart', function () {}, { passive: true });
 
 const sidepanel = document.getElementById('sidepanel');
 const noteView = document.getElementById('view-note');
-const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+const isMobile = () => window.matchMedia('(max-width: 1200px)').matches;
 
 // ---- 형광펜 도구 막대: 손잡이를 잡고 끌어서 원하는 자리에 놓기 ----
 (function setupHlToolbarDrag() {
@@ -4474,6 +4480,7 @@ const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
   }
   restorePosition();
   window.addEventListener('resize', restorePosition);
+  window.addEventListener('orientationchange', () => setTimeout(restorePosition, 150));
 
   let dragging = false;
   let startX = 0, startY = 0, startLeft = 0, startTop = 0;
