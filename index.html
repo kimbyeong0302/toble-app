@@ -375,11 +375,11 @@
   .bm-ch-kr { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700; color: var(--ink); }
   .bm-ch-en { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
   .bm-chapters-empty { margin: 30px 4px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
-  .bm-chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+  .bm-chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; }
   .bm-chapter-btn {
-    aspect-ratio: 1;
-    border: 1px solid var(--line); background: var(--card); border-radius: 12px;
-    font-size: 27px; font-weight: 600; color: var(--ink); cursor: pointer; font-family: inherit; touch-action: manipulation;
+    aspect-ratio: 1; max-width: 56px;
+    border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+    font-size: 16px; font-weight: 600; color: var(--ink); cursor: pointer; font-family: inherit; touch-action: manipulation;
   }
   .bm-chapter-btn:active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -4580,11 +4580,12 @@ function showPage(n) {
   if (structView && structView.classList.contains('active') && typeof renderStructureTab === 'function') {
     renderStructureTab();
   }
+  lsSet('last_book', currentBook);
+  lsSet('last_page_' + currentBook, String(n));
 }
 
 document.getElementById('page-prev').addEventListener('click', () => showPage(currentPage - 1));
 document.getElementById('page-next').addEventListener('click', () => showPage(currentPage + 1));
-showPage(1);
 
 // ============================================================
 // 책 전환 — 성경 목록에서 다른 책의 장을 고르면 호출됨
@@ -4708,7 +4709,7 @@ const bookModal = document.getElementById('book-modal');
 const bmColBooks = document.getElementById('bm-col-books');
 const bmColChapters = document.getElementById('bm-col-chapters');
 const NT_CATEGORIES = ['복음서', '역사서 (신약)', '바울서신', '공동서신', '예언서'];
-let selectedBookName = '룻기'; // 모달을 열었을 때 기본으로 보여줄 책
+let selectedBookName = '룻기'; // 모달을 열었을 때 기본으로 보여줄 책 (restoreLastPosition에서 마지막으로 읽던 책으로 갱신됨)
 
 function renderBookColumn() {
   function section(label) {
@@ -5228,6 +5229,19 @@ function openMemoForVerse(key) {
     }
   }, 80);
 }
+
+// ============================================================
+// 마지막으로 읽던 책·장을 기억해뒀다가, 앱을 다시 열면 그 자리부터 이어서 보여줌
+// ============================================================
+(function restoreLastPosition() {
+  const savedBookId = lsGet('last_book', 'ruth');
+  const savedBook = BOOKS.find(b => b.id === savedBookId && b.available);
+  const targetBookId = savedBook ? savedBookId : currentBook;
+  const savedPage = parseInt(lsGet('last_page_' + targetBookId, '1'), 10) || 1;
+  if (savedBook && savedBookId !== currentBook) setBook(savedBookId);
+  showPage(savedPage);
+  selectedBookName = (BOOKS.find(b => b.id === currentBook) || {}).name || '룻기';
+})();
 </script>
 </body>
 </html>
