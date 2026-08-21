@@ -156,6 +156,11 @@
 
   aside { position: sticky; top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; max-height: calc(100vh - 32px); overflow: hidden; }
   .sheet-handle { display: none; }
+  .sheet-location {
+    font-family: 'Noto Serif KR', serif; font-size: 18px; font-weight: 700;
+    color: var(--ink); text-align: center; white-space: nowrap;
+    padding: 2px 14px 10px; background: var(--card);
+  }
   .side-tabs { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
   .tab-row { display: flex; gap: 6px; justify-content: center; }
   .side-tabs button { flex: 0 0 72px; width: 72px; min-height: 40px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-soft); padding: 10px 4px; border-radius: 18px; font-size: 12.5px; font-family: inherit; cursor: pointer; transition: all .15s; text-align: center; }
@@ -488,6 +493,7 @@
     .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
     body.sheet-open .wrap { padding-bottom: calc(60vh + 60px); }
     .verse { font-size: 17px; }
+    .sheet-location { font-size: 17px; }
     aside {
       position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none;
       border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none;
@@ -3349,6 +3355,7 @@
 
     <aside id="sidepanel">
       <div class="sheet-handle" id="sheet-handle" role="button" aria-label="메뉴 열고 닫기"></div>
+      <div class="sheet-location" id="sheet-location">룻기 1장</div>
       <div class="side-tabs">
         <div class="tab-row">
           <button data-view="structure">구조</button>
@@ -4590,6 +4597,17 @@ function renderStudyFlow(n) {
 // ============================================================
 let currentOpen = null;
 
+// 절 하나를 직접 눌러 학습을 열든, 여러 절을 묶어 "묶어서 학습"으로 열든
+// 이 함수 하나를 거치게 해서 — 열린 절 표시(.open)와 학습 내용 렌더링이 항상 같은 방식으로 동작한다.
+function openStudyFlowForVerses(verseEls, key) {
+  document.querySelectorAll('.verse.open').forEach(el => el.classList.remove('open'));
+  currentOpen = null;
+  verseEls.forEach(el => el.classList.add('open'));
+  if (verseEls.length === 1) currentOpen = verseEls[0];
+  renderStudyFlow(key);
+  switchView('note');
+}
+
 function isMemoTabActive() {
   const v = document.getElementById('view-memo');
   return !!(v && v.classList.contains('active'));
@@ -4671,11 +4689,11 @@ function toggleVerseSelection(v) {
 document.getElementById('vsb-cancel').addEventListener('click', clearSelection);
 document.getElementById('vsb-study').addEventListener('click', () => {
   if (!selectedVerses.length) return;
-  const key = selectedVerses.length === 1 ? selectedVerses[0] : buildCompositeKey(selectedVerses);
+  const keys = selectedVerses.slice();
+  const key = keys.length === 1 ? keys[0] : buildCompositeKey(keys);
+  const verseEls = keys.map(k => versesEl.querySelector('.verse[data-n="' + k + '"]')).filter(Boolean);
   clearSelection();
-  if (currentOpen) { currentOpen.classList.remove('open'); currentOpen = null; }
-  renderStudyFlow(key);
-  switchView('note');
+  openStudyFlowForVerses(verseEls, key);
   if (isMobile()) setSheetOpen(true);
 });
 document.getElementById('vsb-memo').addEventListener('click', () => {
@@ -4731,10 +4749,7 @@ versesEl.querySelectorAll('.verse').forEach(v => {
       noteView.innerHTML = DEFAULT_PANEL;
       return;
     }
-    if (currentOpen) currentOpen.classList.remove('open');
-    currentOpen = v; v.classList.add('open');
-    renderStudyFlow(n);
-    switchView('note');
+    openStudyFlowForVerses([v], n);
   });
 });
 
@@ -4774,6 +4789,8 @@ function showPage(n) {
   document.getElementById('page-indicator').textContent = n + ' / ' + total;
   const bnbChapterEl = document.getElementById('bnb-chapter');
   if (bnbChapterEl) bnbChapterEl.textContent = n + '장';
+  const sheetLocationEl = document.getElementById('sheet-location');
+  if (sheetLocationEl) sheetLocationEl.textContent = (BOOK_LABELS[currentBook] || '') + ' ' + n + '장';
   versesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   exampleShown = false;
   const structView = document.getElementById('view-structure');
