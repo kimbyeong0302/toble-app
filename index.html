@@ -510,7 +510,8 @@
     .sheet-handle:active::after { background: var(--accent); }
     .side-tabs { padding: 2px 14px 10px; }
     .side-body {
-      height: 60vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+      padding-bottom: calc(40px + env(safe-area-inset-bottom));
     }
     .facts { grid-template-columns: 1fr 1fr; }
     .verse-select-bar { bottom: calc(78px + env(safe-area-inset-bottom)); }
@@ -4234,6 +4235,14 @@ function hlwKey(n) { return 'hlw_' + currentBook + '_' + n; }
 function loadWordHighlights(n) { try { return JSON.parse(lsGet(hlwKey(n), '{}')); } catch (e) { return {}; } }
 function saveWordHighlights(n, map) { lsSet(hlwKey(n), JSON.stringify(map)); }
 
+// 절을 선택해서 "문장 단위"로 칠한 하이라이트는 저장은 단어별 맵을 그대로 쓰되,
+// 이 표시를 따로 남겨둬서 — 지울 때 단어 하나씩이 아니라 절 전체가 한 번에 지워지게 한다.
+// 단어를 하나씩 눌러 칠한 경우엔 이 표시가 없으므로 기존처럼 단어 단위로 정확히 지워진다.
+function hlsKey(n) { return 'hls_' + currentBook + '_' + n; }
+function getSentenceHighlight(n) { return lsGet(hlsKey(n), '') || null; }
+function setSentenceHighlight(n, color) { lsSet(hlsKey(n), color); }
+function clearSentenceHighlight(n) { lsRemove(hlsKey(n)); }
+
 // 절 본문을 어절 단위로 쪼개 각 어절을 <span class="word">로 감싼다 (공백은 그대로 텍스트로 둠)
 function wrapWordsInVerse(vtext) {
   const text = vtext.textContent;
@@ -4303,10 +4312,12 @@ function applyHighlightToSelectedVerses(tool) {
     if (!verseEl) return;
     if (tool === 'erase') {
       saveWordHighlights(key, {});
+      clearSentenceHighlight(key);
     } else {
       const map = {};
       verseEl.querySelectorAll('.word').forEach(w => { map[w.dataset.wi] = tool; });
       saveWordHighlights(key, map);
+      setSentenceHighlight(key, tool); // 절 전체를 한 덩어리로 칠했다는 표시 — 지울 때 통째로 지워지게
     }
     applyWordHighlightsForVerse(verseEl); // 같은 색 단어 사이 공백까지 이어 칠해서 문장 전체가 끊기지 않게 보이도록
   });
@@ -4358,13 +4369,22 @@ versesEl.addEventListener('click', (e) => {
   e.stopPropagation();
   const verseEl = wordEl.closest('.verse');
   const key = verseEl.dataset.n;
-  const map = loadWordHighlights(key);
   if (hlTool === 'erase') {
-    delete map[wordEl.dataset.wi];
+    if (getSentenceHighlight(key)) {
+      // 절을 선택해서 문장 단위로 칠한 하이라이트는 한 단어만 지워도 절 전체가 함께 지워진다
+      saveWordHighlights(key, {});
+      clearSentenceHighlight(key);
+    } else {
+      const map = loadWordHighlights(key);
+      delete map[wordEl.dataset.wi];
+      saveWordHighlights(key, map);
+    }
   } else {
+    const map = loadWordHighlights(key);
     map[wordEl.dataset.wi] = hlTool;
+    saveWordHighlights(key, map);
+    clearSentenceHighlight(key); // 단어를 직접 고쳤으니 더 이상 '절 전체' 상태로 보지 않는다
   }
-  saveWordHighlights(key, map);
   applyWordHighlightsForVerse(verseEl);
 }, true);
 
@@ -4378,6 +4398,7 @@ document.querySelectorAll('.verse .clear-hl').forEach(btn => {
     if (!Object.keys(map).length) return;
     if (!confirm('이 절의 형광펜 표시를 모두 지울까요?')) return;
     saveWordHighlights(key, {});
+    clearSentenceHighlight(key);
     applyWordHighlightsForVerse(verseEl);
   });
 });
