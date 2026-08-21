@@ -225,6 +225,16 @@
     background: var(--card); color: var(--ink); margin-bottom: 14px;
   }
   #dict-input:focus { outline: none; border-color: var(--accent); }
+  .dict-book-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .dict-book-tabs:empty { display: none; }
+  .dict-book-tab {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    padding: 5px 11px; border-radius: 14px; font-size: 12px; font-family: inherit;
+    cursor: pointer; touch-action: manipulation; white-space: nowrap;
+  }
+  .dict-book-tab .dbt-count { font-size: 10.5px; opacity: .75; margin-left: 2px; }
+  .dict-book-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dict-book-tab.disabled { opacity: .4; cursor: default; }
   .dict-result-label { font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
   .dict-hit {
     background: var(--note-bg); border-radius: 10px; padding: 10px 12px;
@@ -445,7 +455,14 @@
     .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
     body.sheet-open .wrap { padding-bottom: calc(75vh + 60px); }
     .verse { font-size: 17px; }
-    aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none; border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none; box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50; }
+    aside {
+      position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none;
+      border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none;
+      box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50;
+      transform: translateY(75vh); transition: transform .34s cubic-bezier(.4,0,.2,1);
+      will-change: transform;
+    }
+    aside.open { transform: translateY(0); }
     .sheet-handle {
       display: flex; align-items: center; justify-content: center;
       padding: 10px 0 6px; cursor: pointer; touch-action: manipulation;
@@ -454,10 +471,8 @@
     .sheet-handle:active::after { background: var(--accent); }
     .side-tabs { padding: 2px 14px 10px; }
     .side-body {
-      max-height: 0; overflow-y: hidden; padding-bottom: 0;
-      transition: max-height .34s cubic-bezier(.4,0,.2,1), padding-bottom .34s cubic-bezier(.4,0,.2,1);
+      height: 75vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
-    aside.open .side-body { max-height: 75vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
     .facts { grid-template-columns: 1fr 1fr; }
 
     #hl-sentinel { display: none; }
@@ -3630,6 +3645,7 @@
         <div class="side-view" id="view-dict">
           <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 지금까지 등록된 성경 전체(룻기·마가복음·누가복음·마태복음) 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다.</div>
           <input type="text" id="dict-input" placeholder="예: 기업, 인애, 이방 여인, 헤세드...">
+          <div class="dict-book-tabs" id="dict-book-tabs"></div>
           <div id="dict-results"><div class="struct-hint">검색어를 입력해보세요.</div></div>
         </div>
 
@@ -5102,22 +5118,73 @@ let VERSE_INDEX = buildVerseIndex();
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function escapeHtmlDict(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
+let dictLastQuery = '';
+let dictVerseHits = [];
+let dictNoteHits = [];
+let dictActiveBook = null;
+
 function runDictSearch(qRaw) {
   const resultsEl = document.getElementById('dict-results');
+  const tabsEl = document.getElementById('dict-book-tabs');
   const q = (qRaw || '').trim();
-  if (!q) { resultsEl.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>'; return; }
+  dictLastQuery = q;
+  if (!q) {
+    if (tabsEl) tabsEl.innerHTML = '';
+    resultsEl.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>';
+    return;
+  }
 
-  const verseHits = VERSE_INDEX.filter(v => v.text.includes(q));
-  const noteHits = [];
+  dictVerseHits = VERSE_INDEX.filter(v => v.text.includes(q));
+  dictNoteHits = [];
   Object.keys(BOOK_NOTES).forEach(bookId => {
     const notesObj = BOOK_NOTES[bookId];
     Object.keys(notesObj).forEach(k => {
       const n = notesObj[k];
       if ((n.t && n.t.includes(q)) || (n.b && n.b.includes(q)) || (n.g && n.g.includes(q))) {
-        noteHits.push({ book: bookId, key: k, note: n });
+        dictNoteHits.push({ book: bookId, key: k, note: n });
       }
     });
   });
+
+  const countsByBook = {};
+  BOOKS.filter(b => b.available).forEach(b => { countsByBook[b.id] = 0; });
+  dictVerseHits.forEach(v => { countsByBook[v.book] = (countsByBook[v.book] || 0) + 1; });
+  dictNoteHits.forEach(h => { countsByBook[h.book] = (countsByBook[h.book] || 0) + 1; });
+
+  const bookIdsWithHits = Object.keys(countsByBook).filter(id => countsByBook[id] > 0);
+  if (bookIdsWithHits.includes(currentBook)) dictActiveBook = currentBook;
+  else if (bookIdsWithHits.length) dictActiveBook = bookIdsWithHits[0];
+  else dictActiveBook = currentBook;
+
+  renderDictTabs(countsByBook);
+  renderDictResultsForActiveBook();
+}
+
+function renderDictTabs(countsByBook) {
+  const tabsEl = document.getElementById('dict-book-tabs');
+  if (!tabsEl) return;
+  const availableBooks = BOOKS.filter(b => b.available);
+  tabsEl.innerHTML = availableBooks.map(b => {
+    const cnt = countsByBook[b.id] || 0;
+    const cls = ['dict-book-tab'];
+    if (b.id === dictActiveBook) cls.push('active');
+    if (cnt === 0) cls.push('disabled');
+    return `<button class="${cls.join(' ')}" data-book="${b.id}"${cnt === 0 ? ' disabled' : ''}>${BOOK_LABELS[b.id] || b.name}<span class="dbt-count">${cnt}</span></button>`;
+  }).join('');
+  tabsEl.querySelectorAll('.dict-book-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      dictActiveBook = btn.dataset.book;
+      renderDictTabs(countsByBook);
+      renderDictResultsForActiveBook();
+    });
+  });
+}
+
+function renderDictResultsForActiveBook() {
+  const resultsEl = document.getElementById('dict-results');
+  const q = dictLastQuery;
+  const verseHits = dictVerseHits.filter(v => v.book === dictActiveBook);
+  const noteHits = dictNoteHits.filter(h => h.book === dictActiveBook);
 
   let html = '';
   html += `<div class="dict-result-label">본문에서 (${verseHits.length}건)</div>`;
@@ -5126,8 +5193,7 @@ function runDictSearch(qRaw) {
   } else {
     verseHits.forEach(v => {
       const marked = escapeHtmlDict(v.text).replace(new RegExp(escapeRegExp(q), 'g'), m => `<mark>${m}</mark>`);
-      const label = BOOK_LABELS[v.book] || v.book;
-      html += `<div class="dict-hit" data-key="${v.key}" data-book="${v.book}"><div class="dh-ref">${label} ${v.chapter}:${v.verse}</div>${marked}</div>`;
+      html += `<div class="dict-hit" data-key="${v.key}" data-book="${v.book}"><div class="dh-ref">${v.chapter}:${v.verse}</div>${marked}</div>`;
     });
   }
 
@@ -5138,9 +5204,8 @@ function runDictSearch(qRaw) {
     noteHits.forEach(hit => {
       const n = hit.note;
       const [c, v] = hit.key.split('-');
-      const label = BOOK_LABELS[hit.book] || hit.book;
       const body = escapeHtmlDict(n.b || '').replace(new RegExp(escapeRegExp(q), 'g'), m => `<mark>${m}</mark>`);
-      html += `<div class="dict-hit" data-key="${hit.key}" data-book="${hit.book}"><div class="dh-ref">${label} ${c}:${v} · ${escapeHtmlDict(n.t)}</div>${body}</div>`;
+      html += `<div class="dict-hit" data-key="${hit.key}" data-book="${hit.book}"><div class="dh-ref">${c}:${v} · ${escapeHtmlDict(n.t)}</div>${body}</div>`;
     });
   }
 
