@@ -4747,7 +4747,7 @@ function updateSelectBar() {
 
 function clearSelection() {
   selectedVerses.forEach(key => {
-    const el = versesEl.querySelector('.verse[data-n="' + key + '"]');
+    const el = versesEl.querySelector('.book-content[data-book="' + currentBook + '"] .verse[data-n="' + key + '"]');
     if (!el) return;
     el.classList.remove('selected');
     const xBtn = el.querySelector('.deselect-x');
@@ -4785,6 +4785,9 @@ function toggleVerseSelection(v) {
 
 document.getElementById('vsb-cancel').addEventListener('click', clearSelection);
 
+// 스와이프로 다음/이전 장 넘기기 뒤에 오는 트레일링 click이 절을 여는 걸 막기 위한 플래그
+let contentSwipeOccurred = false;
+
 versesEl.querySelectorAll('.verse').forEach(v => {
   const n = v.dataset.n;
   let pressTimer = null;
@@ -4813,6 +4816,7 @@ versesEl.querySelectorAll('.verse').forEach(v => {
 
   v.addEventListener('click', (e) => {
     if (e.target.closest('.clear-hl')) return;
+    if (contentSwipeOccurred) { contentSwipeOccurred = false; return; }
     if (longPressFired) { longPressFired = false; return; }
 
     if (inSelectionMode()) {
@@ -4835,6 +4839,36 @@ versesEl.querySelectorAll('.verse').forEach(v => {
     openStudyFlowForVerses([v], n);
   });
 });
+
+// ============================================================
+// 좌우로 스와이프하면 책장을 넘기듯 이전/다음 장으로 이동
+// (마우스 드래그는 본문 텍스트 선택과 겹치므로 터치/펜에서만 동작)
+// ============================================================
+(function() {
+  const SWIPE_MIN_DIST = 60;
+  let swiping = false;
+  let swipeStartX = 0, swipeStartY = 0;
+
+  versesEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;
+    if (hlTool !== 'off') return;
+    swiping = true;
+    swipeStartX = e.clientX;
+    swipeStartY = e.clientY;
+  });
+  versesEl.addEventListener('pointerup', (e) => {
+    if (!swiping) return;
+    swiping = false;
+    const deltaX = e.clientX - swipeStartX;
+    const deltaY = e.clientY - swipeStartY;
+    if (Math.abs(deltaX) < SWIPE_MIN_DIST) return;
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return; // 세로 스크롤과 헷갈리지 않도록 가로 움직임이 뚜렷할 때만
+    contentSwipeOccurred = true;
+    if (deltaX < 0) showPage(currentPage + 1); // 왼쪽으로 밀면 다음 장
+    else showPage(currentPage - 1); // 오른쪽으로 밀면 이전 장
+  });
+  versesEl.addEventListener('pointercancel', () => { swiping = false; });
+})();
 
 let exampleShown = false;
 
@@ -4892,6 +4926,9 @@ document.getElementById('page-next').addEventListener('click', () => showPage(cu
 // ============================================================
 function setBook(bookId) {
   if (bookId === currentBook) return;
+  // 장-절 번호(예: "1-3")는 책마다 겹치므로, 책을 바꾸기 전에 이전 책의 선택을 반드시 비운다.
+  // (안 그러면 다른 책의 같은 장-절 번호가 선택 배열에 남아 취소가 안 되는 것처럼 꼬인다)
+  if (typeof clearSelection === 'function') clearSelection();
   currentBook = bookId;
 
   document.querySelectorAll('.book-content').forEach(el => {
