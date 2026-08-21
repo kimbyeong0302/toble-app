@@ -68,6 +68,7 @@
   header .app-name { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
   header h1 { font-family: 'Noto Serif KR', serif; font-size: 28px; font-weight: 700; }
   header .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  .bnb-chapter { font-size: 14px; font-weight: 700; color: var(--accent); margin-top: 3px; }
   header .mode-note { margin-top: 10px; font-size: 12px; color: var(--ink-soft); background: var(--note-bg); display: inline-block; padding: 6px 14px; border-radius: 14px; }
 
   .read-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; padding-top: 16px; }
@@ -304,17 +305,28 @@
 
   .book-modal {
     position: fixed; inset: 0; z-index: 1500;
-    background: var(--bg);
-    display: flex; flex-direction: column;
-    transform: translateY(100%);
-    transition: transform .28s ease;
+    background: rgba(30, 26, 20, .4);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden;
+    transition: opacity .22s ease, visibility 0s linear .22s;
   }
-  .book-modal.open { transform: translateY(0); }
+  .book-modal.open { opacity: 1; visibility: visible; transition: opacity .22s ease; }
+  .book-modal-panel {
+    width: 100%; max-width: 440px; max-height: min(78vh, 620px);
+    background: var(--bg); border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(20,16,10,.3);
+    transform: translateY(14px) scale(.97);
+    transition: transform .24s cubic-bezier(.3,.9,.3,1.05);
+  }
+  .book-modal.open .book-modal-panel { transform: translateY(0) scale(1); }
   .book-modal-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: max(16px, env(safe-area-inset-top)) 14px 12px;
+    padding: 16px 14px 12px;
     border-bottom: 1px solid var(--line);
     background: var(--card);
+    flex: 0 0 auto;
   }
   .bm-close {
     background: none; border: none; font-size: 14px; color: var(--ink-soft);
@@ -323,13 +335,13 @@
   .bm-close:active { color: var(--accent); }
   .bm-title { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 700; color: var(--ink); }
 
-  .book-modal-body { flex: 1; display: flex; overflow: hidden; }
+  .book-modal-body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
   .bm-col { overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .bm-col-books {
-    flex: 0 0 56%; max-width: 56%; padding: 12px 6px 60px 12px;
+    flex: 0 0 54%; max-width: 54%; padding: 12px 6px 24px 12px;
     border-right: 1px solid var(--line);
   }
-  .bm-col-chapters { flex: 1; padding: 12px 12px 60px 10px; }
+  .bm-col-chapters { flex: 1; padding: 12px 12px 24px 10px; }
 
   .bm-section-label {
     font-size: 11px; font-weight: 700; color: var(--accent);
@@ -362,10 +374,11 @@
   .bm-ch-kr { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700; color: var(--ink); }
   .bm-ch-en { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
   .bm-chapters-empty { margin: 30px 4px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
-  .bm-chapter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .bm-chapter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
   .bm-chapter-btn {
-    aspect-ratio: 1; border: 1px solid var(--line); background: var(--card); border-radius: 10px;
-    font-size: 15px; color: var(--ink); cursor: pointer; font-family: inherit; touch-action: manipulation;
+    aspect-ratio: 1; max-width: 52px; max-height: 52px; margin: 0 auto;
+    border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+    font-size: 13.5px; color: var(--ink); cursor: pointer; font-family: inherit; touch-action: manipulation;
   }
   .bm-chapter-btn:active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -427,14 +440,17 @@
 
   @media (max-width: 900px) {
     .read-layout { grid-template-columns: 1fr; }
-    .wrap { padding-bottom: 90px; }
+    .wrap { padding-bottom: 90px; transition: padding-bottom .32s cubic-bezier(.4,0,.2,1); }
     body.sheet-open .wrap { padding-bottom: calc(46vh + 60px); }
     .verse { font-size: 17px; }
     aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none; border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none; box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50; }
     aside::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 8px auto 0; }
     .side-tabs { padding: 8px 14px 10px; }
-    .side-body { display: none; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
-    aside.open .side-body { display: block; height: 46vh; }
+    .side-body {
+      max-height: 0; overflow-y: hidden; padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      transition: max-height .32s cubic-bezier(.4,0,.2,1);
+    }
+    aside.open .side-body { max-height: 46vh; overflow-y: auto; }
     .facts { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -457,18 +473,21 @@
   <header>
     <div class="app-name">토블 : 성경을 톺아보다</div>
     <button id="book-nav-btn" class="book-nav-btn"><span class="bnb-name">룻기</span><span class="bnb-chevron">▾</span></button>
+    <div class="bnb-chapter" id="bnb-chapter">1장</div>
     <div class="sub">개역한글판 · 4장 85절 · 메길로트(다섯 두루마리)</div>
     <div class="mode-note">학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입</div>
   </header>
 
   <div id="book-modal" class="book-modal">
-    <div class="book-modal-header">
-      <div class="bm-title">성경 목록</div>
-      <button id="book-modal-close" class="bm-close">닫기 ✕</button>
-    </div>
-    <div class="book-modal-body">
-      <div class="bm-col bm-col-books" id="bm-col-books"></div>
-      <div class="bm-col bm-col-chapters" id="bm-col-chapters"></div>
+    <div class="book-modal-panel">
+      <div class="book-modal-header">
+        <div class="bm-title">성경 목록</div>
+        <button id="book-modal-close" class="bm-close">닫기 ✕</button>
+      </div>
+      <div class="book-modal-body">
+        <div class="bm-col bm-col-books" id="bm-col-books"></div>
+        <div class="bm-col bm-col-chapters" id="bm-col-chapters"></div>
+      </div>
     </div>
   </div>
 
@@ -4541,6 +4560,8 @@ function showPage(n) {
   document.getElementById('page-next').disabled = (n === total);
   document.getElementById('page-next').textContent = (n === total) ? '마지막 장' : '다음 장 →';
   document.getElementById('page-indicator').textContent = n + ' / ' + total;
+  const bnbChapterEl = document.getElementById('bnb-chapter');
+  if (bnbChapterEl) bnbChapterEl.textContent = n + '장';
   versesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   exampleShown = false;
   const structView = document.getElementById('view-structure');
@@ -4741,6 +4762,7 @@ function closeBookModal() {
 
 document.getElementById('book-nav-btn').addEventListener('click', openBookModal);
 document.getElementById('book-modal-close').addEventListener('click', closeBookModal);
+bookModal.addEventListener('click', (e) => { if (e.target === bookModal) closeBookModal(); });
 
 
 // ============================================================
