@@ -127,6 +127,7 @@
   .hl-tool[data-tool="blue"] { background: #c9dcf0; }
 
   aside { position: sticky; top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; max-height: calc(100vh - 32px); overflow: hidden; }
+  .sheet-handle { display: none; }
   .side-tabs { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
   .tab-row { display: flex; gap: 6px; justify-content: center; }
   .side-tabs button { flex: 0 0 72px; width: 72px; min-height: 40px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-soft); padding: 10px 4px; border-radius: 18px; font-size: 12.5px; font-family: inherit; cursor: pointer; transition: all .15s; text-align: center; }
@@ -374,11 +375,11 @@
   .bm-ch-kr { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700; color: var(--ink); }
   .bm-ch-en { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
   .bm-chapters-empty { margin: 30px 4px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
-  .bm-chapter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .bm-chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
   .bm-chapter-btn {
-    aspect-ratio: 1; max-width: 52px; max-height: 52px; margin: 0 auto;
-    border: 1px solid var(--line); background: var(--card); border-radius: 10px;
-    font-size: 13.5px; color: var(--ink); cursor: pointer; font-family: inherit; touch-action: manipulation;
+    aspect-ratio: 1;
+    border: 1px solid var(--line); background: var(--card); border-radius: 12px;
+    font-size: 27px; font-weight: 600; color: var(--ink); cursor: pointer; font-family: inherit; touch-action: manipulation;
   }
   .bm-chapter-btn:active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -389,7 +390,6 @@
 
   @media (max-width: 480px) {
     .bm-col-books { flex-basis: 52%; max-width: 52%; }
-    .bm-chapter-grid { grid-template-columns: repeat(4, 1fr); }
   }
 
 
@@ -440,17 +440,22 @@
 
   @media (max-width: 900px) {
     .read-layout { grid-template-columns: 1fr; }
-    .wrap { padding-bottom: 90px; transition: padding-bottom .32s cubic-bezier(.4,0,.2,1); }
-    body.sheet-open .wrap { padding-bottom: calc(46vh + 60px); }
+    .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
+    body.sheet-open .wrap { padding-bottom: calc(75vh + 60px); }
     .verse { font-size: 17px; }
     aside { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none; border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none; box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50; }
-    aside::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 8px auto 0; }
-    .side-tabs { padding: 8px 14px 10px; }
-    .side-body {
-      max-height: 0; overflow-y: hidden; padding-bottom: calc(18px + env(safe-area-inset-bottom));
-      transition: max-height .32s cubic-bezier(.4,0,.2,1);
+    .sheet-handle {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 0 6px; cursor: pointer; touch-action: manipulation;
     }
-    aside.open .side-body { max-height: 46vh; overflow-y: auto; }
+    .sheet-handle::after { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
+    .sheet-handle:active::after { background: var(--accent); }
+    .side-tabs { padding: 2px 14px 10px; }
+    .side-body {
+      max-height: 0; overflow-y: hidden; padding-bottom: 0;
+      transition: max-height .34s cubic-bezier(.4,0,.2,1), padding-bottom .34s cubic-bezier(.4,0,.2,1);
+    }
+    aside.open .side-body { max-height: 75vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
     .facts { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -3240,6 +3245,7 @@
     </div>
 
     <aside id="sidepanel">
+      <div class="sheet-handle" id="sheet-handle" role="button" aria-label="메뉴 열고 닫기"></div>
       <div class="side-tabs">
         <div class="tab-row">
           <button data-view="structure">구조</button>
@@ -3599,7 +3605,7 @@
         <div class="side-view" id="view-structure"></div>
 
         <div class="side-view" id="view-dict">
-          <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 룻기 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다. (지금은 룻기 안에서만 검색되는 미니 사전입니다)</div>
+          <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 지금까지 등록된 성경 전체(룻기·마가복음·누가복음·마태복음) 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다.</div>
           <input type="text" id="dict-input" placeholder="예: 기업, 인애, 이방 여인, 헤세드...">
           <div id="dict-results"><div class="struct-hint">검색어를 입력해보세요.</div></div>
         </div>
@@ -4407,6 +4413,12 @@ document.querySelectorAll('.side-tabs button').forEach(btn => {
     } else { switchView(name); }
   });
 });
+const sheetHandle = document.getElementById('sheet-handle');
+if (sheetHandle) {
+  sheetHandle.addEventListener('click', () => {
+    if (isMobile()) setSheetOpen(!sidepanel.classList.contains('open'));
+  });
+}
 
 const DEFAULT_PANEL = `
   <div class="default-guide">
@@ -4610,15 +4622,10 @@ function setBook(bookId) {
 
   renderPeople();
   applyAllOverlaysForCurrentBook();
-  if (typeof buildVerseIndex === 'function') {
-    VERSE_INDEX = buildVerseIndex();
-    const dictHint = document.querySelector('#view-dict .struct-hint');
-    if (dictHint) dictHint.textContent = `궁금한 단어를 입력하면 ${book ? book.name : ''} 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다. (지금은 ${book ? book.name : ''} 안에서만 검색되는 미니 사전입니다)`;
-    const dictResults = document.getElementById('dict-results');
-    if (dictResults) dictResults.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>';
-    const dictInputEl = document.getElementById('dict-input');
-    if (dictInputEl) dictInputEl.value = '';
-  }
+  const dictResults = document.getElementById('dict-results');
+  if (dictResults) dictResults.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>';
+  const dictInputEl = document.getElementById('dict-input');
+  if (dictInputEl) dictInputEl.value = '';
   showPage(1);
 }
 
@@ -5055,13 +5062,14 @@ applyAllOverlaysForCurrentBook();
 // ============================================================
 function buildVerseIndex() {
   const idx = [];
-  const bookContent = document.querySelector('.book-content[data-book="' + currentBook + '"]');
-  if (!bookContent) return idx;
-  bookContent.querySelectorAll('.verse[data-n]').forEach(v => {
-    const key = v.dataset.n;
-    const [c, verse] = key.split('-');
-    const vt = v.querySelector('.vtext');
-    idx.push({ key: key, chapter: c, verse: verse, text: vt ? vt.textContent : '' });
+  document.querySelectorAll('.book-content[data-book]').forEach(bookContent => {
+    const bookId = bookContent.dataset.book;
+    bookContent.querySelectorAll('.verse[data-n]').forEach(v => {
+      const key = v.dataset.n;
+      const [c, verse] = key.split('-');
+      const vt = v.querySelector('.vtext');
+      idx.push({ key: key, book: bookId, chapter: c, verse: verse, text: vt ? vt.textContent : '' });
+    });
   });
   return idx;
 }
@@ -5075,14 +5083,16 @@ function runDictSearch(qRaw) {
   const q = (qRaw || '').trim();
   if (!q) { resultsEl.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>'; return; }
 
-  const bookLabel = BOOK_LABELS[currentBook] || '룻기';
-  const notesObj = BOOK_NOTES[currentBook] || TEACHER_NOTES_RUTH;
-
-  const re = new RegExp(escapeRegExp(q), 'g');
   const verseHits = VERSE_INDEX.filter(v => v.text.includes(q));
-  const noteHits = Object.keys(notesObj).filter(k => {
-    const n = notesObj[k];
-    return (n.t && n.t.includes(q)) || (n.b && n.b.includes(q)) || (n.g && n.g.includes(q));
+  const noteHits = [];
+  Object.keys(BOOK_NOTES).forEach(bookId => {
+    const notesObj = BOOK_NOTES[bookId];
+    Object.keys(notesObj).forEach(k => {
+      const n = notesObj[k];
+      if ((n.t && n.t.includes(q)) || (n.b && n.b.includes(q)) || (n.g && n.g.includes(q))) {
+        noteHits.push({ book: bookId, key: k, note: n });
+      }
+    });
   });
 
   let html = '';
@@ -5092,7 +5102,8 @@ function runDictSearch(qRaw) {
   } else {
     verseHits.forEach(v => {
       const marked = escapeHtmlDict(v.text).replace(new RegExp(escapeRegExp(q), 'g'), m => `<mark>${m}</mark>`);
-      html += `<div class="dict-hit" data-key="${v.key}"><div class="dh-ref">${bookLabel} ${v.chapter}:${v.verse}</div>${marked}</div>`;
+      const label = BOOK_LABELS[v.book] || v.book;
+      html += `<div class="dict-hit" data-key="${v.key}" data-book="${v.book}"><div class="dh-ref">${label} ${v.chapter}:${v.verse}</div>${marked}</div>`;
     });
   }
 
@@ -5100,21 +5111,23 @@ function runDictSearch(qRaw) {
   if (!noteHits.length) {
     html += `<div class="struct-hint">노트 설명 중에는 일치하는 내용이 없습니다.</div>`;
   } else {
-    noteHits.forEach(k => {
-      const n = notesObj[k];
-      const [c, v] = k.split('-');
+    noteHits.forEach(hit => {
+      const n = hit.note;
+      const [c, v] = hit.key.split('-');
+      const label = BOOK_LABELS[hit.book] || hit.book;
       const body = escapeHtmlDict(n.b || '').replace(new RegExp(escapeRegExp(q), 'g'), m => `<mark>${m}</mark>`);
-      html += `<div class="dict-hit" data-key="${k}"><div class="dh-ref">${bookLabel} ${c}:${v} · ${escapeHtmlDict(n.t)}</div>${body}</div>`;
+      html += `<div class="dict-hit" data-key="${hit.key}" data-book="${hit.book}"><div class="dh-ref">${label} ${c}:${v} · ${escapeHtmlDict(n.t)}</div>${body}</div>`;
     });
   }
 
   resultsEl.innerHTML = html;
   resultsEl.querySelectorAll('.dict-hit').forEach(el => {
-    el.addEventListener('click', () => jumpToVerseFromDict(el.dataset.key));
+    el.addEventListener('click', () => jumpToVerseFromDict(el.dataset.key, el.dataset.book));
   });
 }
 
-function jumpToVerseFromDict(key) {
+function jumpToVerseFromDict(key, bookId) {
+  if (bookId && bookId !== currentBook) setBook(bookId);
   const chap = Number(key.split('-')[0]);
   showPage(chap);
   setTimeout(() => {
