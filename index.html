@@ -485,24 +485,26 @@
 
   @media (max-width: 1400px) {
     .read-layout { grid-template-columns: 1fr; }
-    .wrap { transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
+    .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
+    body.sheet-open .wrap { padding-bottom: calc(60vh + 60px); }
     .verse { font-size: 17px; }
     aside {
       position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none;
       border-radius: 16px 16px 0 0; border: 1px solid var(--line); border-bottom: none;
       box-shadow: 0 -6px 24px rgba(43,38,32,.14); z-index: 50;
-      transition: transform .34s cubic-bezier(.4,0,.2,1);
+      transform: translateY(60vh); transition: transform .34s cubic-bezier(.4,0,.2,1);
       will-change: transform;
     }
+    aside.open { transform: translateY(0); }
     .sheet-handle {
       display: flex; align-items: center; justify-content: center;
-      padding: 14px 0 10px; cursor: pointer; touch-action: none; user-select: none;
+      padding: 14px 0 10px; cursor: pointer; touch-action: manipulation; user-select: none;
     }
     .sheet-handle::after { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
     .sheet-handle:active::after { background: var(--accent); }
     .side-tabs { padding: 2px 14px 10px; }
     .side-body {
-      overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      height: 60vh; overflow-y: auto; padding-bottom: calc(18px + env(safe-area-inset-bottom));
     }
     .facts { grid-template-columns: 1fr 1fr; }
     .verse-select-bar { bottom: calc(78px + env(safe-area-inset-bottom)); }
@@ -540,21 +542,21 @@
     }
   }
 
-  /* 가로 모드(아이패드 가로 포함): 메뉴 시트가 아래가 아니라 오른쪽에서 열림 */
-  /* 가로 방향: 예전처럼 본문과 메뉴가 나란히 항상 펼쳐져 있는 데스크탑형 레이아웃 —
-     손잡이로 여닫는 시트는 세로 방향에서만 사용한다 */
+  /* 가로 방향(아이패드 가로 포함): 예전처럼 본문과 메뉴가 나란히 항상 펼쳐져 있는
+     데스크탑형 레이아웃 — 손잡이로 여닫는 시트는 세로 방향에서만 사용한다 */
   @media (max-width: 1400px) and (orientation: landscape) {
     .read-layout { grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; }
     aside {
       position: sticky; top: 12px; left: auto; right: auto; bottom: auto;
       max-height: calc(100vh - 24px); width: auto;
       border-radius: 16px; border: 1px solid var(--line);
-      box-shadow: none;
+      box-shadow: none; transform: none;
     }
     .sheet-handle { display: none; }
     .side-tabs { padding: 12px 14px; }
-    .side-body { padding: 18px 20px 22px; }
+    .side-body { height: auto; padding: 18px 20px 22px; }
     .verse-select-bar { bottom: 24px; }
+    body.sheet-open .wrap { padding-bottom: 90px; }
   }
 </style>
 </head>
@@ -4462,54 +4464,17 @@ const isMobile = () => window.matchMedia('(max-width: 1400px)').matches;
 })();
 
 // ============================================================
-// 메뉴 시트 크기·방향 — 세로일 땐 아래에서, 가로일 땐 오른쪽에서 열리고,
-// 열리는/닫히는 정도는 손잡이를 끌어서 사용자가 원하는 만큼 조절할 수 있음
+// 메뉴 시트 — 세로일 땐 아래에서 손잡이/탭을 눌러 화면의 60%까지 열리는 시트로,
+// 가로일 땐 예전처럼 본문 옆에 항상 펼쳐진 데스크탑형 레이아웃으로 보여준다.
+// 여닫는 높이는 고정값이며(60%/메뉴명만 보이는 높이) 제스처로 임의 조절하지 않는다.
 // ============================================================
 const sideBody = sidepanel.querySelector('.side-body');
-const SHEET_MAX_FRAC = 0.95;
-
-// 가로 방향일 땐 예전처럼 본문 옆에 메뉴가 항상 펼쳐져 있는 데스크탑형 레이아웃을 쓰고,
-// 세로일 때만 손잡이로 여닫는(제스처로 크기 조절 가능한) 시트를 쓴다.
 function sheetIsLandscape() { return isMobile() && window.matchMedia('(orientation: landscape)').matches; }
 function sheetIsCollapsible() { return isMobile() && !sheetIsLandscape(); }
-function sheetViewportExtent() { return window.innerHeight; }
-function sheetFracKey(base) { return base + '_y'; }
-function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-function getSheetOpenFrac() { return clampNum(parseFloat(lsGet(sheetFracKey('sheet_open_frac'), '0.75')) || 0.75, 0.15, SHEET_MAX_FRAC); }
-function getSheetClosedFrac() { return clampNum(parseFloat(lsGet(sheetFracKey('sheet_closed_frac'), '0')) || 0, 0, SHEET_MAX_FRAC); }
-
-function positionSheet(open) {
-  if (!sheetIsCollapsible()) { sidepanel.style.transform = ''; document.querySelector('.wrap').style.paddingBottom = ''; return; }
-  const extent = sheetViewportExtent();
-  const maxPx = extent * SHEET_MAX_FRAC;
-  const frac = open ? getSheetOpenFrac() : getSheetClosedFrac();
-  const offset = Math.max(0, maxPx - extent * frac);
-  sidepanel.style.transform = 'translateY(' + offset + 'px)';
-  document.querySelector('.wrap').style.paddingBottom = open ? (extent * frac + 60) + 'px' : '90px';
-}
-function positionSheetInstant(open) {
-  sidepanel.style.transition = 'none';
-  positionSheet(open);
-  void sidepanel.offsetHeight;
-  sidepanel.style.transition = '';
-}
-function applySheetGeometry() {
-  if (!sheetIsCollapsible()) {
-    sideBody.style.height = ''; sidepanel.style.width = ''; sidepanel.style.transform = '';
-    document.querySelector('.wrap').style.paddingBottom = '';
-    return;
-  }
-  sidepanel.style.width = '';
-  sideBody.style.height = (sheetViewportExtent() * SHEET_MAX_FRAC) + 'px';
-  positionSheetInstant(sidepanel.classList.contains('open'));
-}
-window.addEventListener('resize', applySheetGeometry);
-window.addEventListener('orientationchange', () => setTimeout(applySheetGeometry, 150));
 
 function setSheetOpen(open) {
   sidepanel.classList.toggle('open', open);
   document.body.classList.toggle('sheet-open', open);
-  positionSheet(open);
 }
 function switchView(name) {
   document.querySelectorAll('.side-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
@@ -4532,83 +4497,10 @@ document.querySelectorAll('.side-tabs button').forEach(btn => {
 });
 const sheetHandle = document.getElementById('sheet-handle');
 if (sheetHandle) {
-  // 손가락으로 끌어서 시트를 여닫는 제스처 — 세로일 땐 위/아래, 가로일 땐 좌/우.
-  // 살짝 움직이면 그냥 탭으로 간주하고, 크게 끌면 그 지점을 새 열림/닫힘 기준으로 저장한다.
-  // 실제로 드래그가 일어났을 땐 뒤이어 발생하는 click 이벤트가 방금 정한 상태를
-  // 다시 뒤집어버리지 않도록 sheetDragOccurred로 막는다 (탭과 드래그가 같은 손가락
-  // 동작에서 함께 발생해 서로 충돌하던 버그의 원인).
-  const TAP_TOLERANCE = 10;
-  let sheetDragging = false;
-  let sheetDragOccurred = false;
-  let sheetDragStartCoord = 0;
-  let sheetDragStartOffset = 0;
-  let sheetDragStartTime = 0;
-  let sheetDragStartWasOpen = false;
-
-  function sheetPointerCoord(e) { return e.clientY; } // 세로일 때만 드래그가 가능하므로 항상 Y축
-
   sheetHandle.addEventListener('click', () => {
-    if (sheetDragOccurred) { sheetDragOccurred = false; return; }
     if (sheetIsCollapsible()) setSheetOpen(!sidepanel.classList.contains('open'));
   });
-
-  sheetHandle.addEventListener('pointerdown', (e) => {
-    if (!sheetIsCollapsible()) return;
-    sheetDragging = true;
-    sheetDragOccurred = false;
-    sheetDragStartCoord = sheetPointerCoord(e);
-    sheetDragStartTime = Date.now();
-    sheetDragStartWasOpen = sidepanel.classList.contains('open');
-    const extent = sheetViewportExtent();
-    const maxPx = extent * SHEET_MAX_FRAC;
-    const startFrac = sheetDragStartWasOpen ? getSheetOpenFrac() : getSheetClosedFrac();
-    sheetDragStartOffset = Math.max(0, maxPx - extent * startFrac);
-    sidepanel.style.transition = 'none';
-    if (sheetHandle.setPointerCapture) sheetHandle.setPointerCapture(e.pointerId);
-  });
-  sheetHandle.addEventListener('pointermove', (e) => {
-    if (!sheetDragging) return;
-    const deltaCoord = sheetPointerCoord(e) - sheetDragStartCoord;
-    const maxPx = sheetViewportExtent() * SHEET_MAX_FRAC;
-    const offset = Math.max(0, Math.min(maxPx, sheetDragStartOffset + deltaCoord));
-    sidepanel.style.transform = 'translateY(' + offset + 'px)';
-  });
-  function endSheetDrag(e) {
-    if (!sheetDragging) return;
-    sheetDragging = false;
-    sidepanel.style.transition = '';
-    const deltaCoord = sheetPointerCoord(e) - sheetDragStartCoord;
-    const deltaTime = Math.max(1, Date.now() - sheetDragStartTime);
-    const velocity = deltaCoord / deltaTime; // px/ms, 음수 = 열리는 방향
-
-    if (Math.abs(deltaCoord) <= TAP_TOLERANCE) {
-      positionSheet(sheetDragStartWasOpen); // 살짝 움직인 것뿐이면 원래 상태로 복귀 (탭 처리는 click에서)
-      return;
-    }
-
-    sheetDragOccurred = true; // 뒤따라올 click이 이 결과를 뒤집지 못하게 막는다
-
-    const extent = sheetViewportExtent();
-    const maxPx = extent * SHEET_MAX_FRAC;
-    const releaseOffset = Math.max(0, Math.min(maxPx, sheetDragStartOffset + deltaCoord));
-    const revealedFrac = clampNum((maxPx - releaseOffset) / extent, 0, SHEET_MAX_FRAC);
-
-    let goingOpen;
-    if (velocity < -0.5) goingOpen = true;
-    else if (velocity > 0.5) goingOpen = false;
-    else goingOpen = deltaCoord < 0;
-
-    if (sheetDragStartWasOpen) {
-      lsSet(sheetFracKey('sheet_closed_frac'), String(clampNum(revealedFrac, 0, getSheetOpenFrac() - 0.05)));
-    } else {
-      lsSet(sheetFracKey('sheet_open_frac'), String(clampNum(revealedFrac, 0.15, SHEET_MAX_FRAC)));
-    }
-    setSheetOpen(goingOpen);
-  }
-  sheetHandle.addEventListener('pointerup', endSheetDrag);
-  sheetHandle.addEventListener('pointercancel', endSheetDrag);
 }
-applySheetGeometry();
 
 const DEFAULT_PANEL = `
   <div class="default-guide">
