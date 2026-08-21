@@ -465,7 +465,7 @@
     aside.open { transform: translateY(0); }
     .sheet-handle {
       display: flex; align-items: center; justify-content: center;
-      padding: 10px 0 6px; cursor: pointer; touch-action: manipulation;
+      padding: 14px 0 10px; cursor: pointer; touch-action: none; user-select: none;
     }
     .sheet-handle::after { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
     .sheet-handle:active::after { background: var(--accent); }
@@ -4457,6 +4457,49 @@ if (sheetHandle) {
   sheetHandle.addEventListener('click', () => {
     if (isMobile()) setSheetOpen(!sidepanel.classList.contains('open'));
   });
+
+  // 손가락으로 위/아래 스와이프해서 시트를 여닫는 제스처
+  let sheetDragging = false;
+  let sheetDragStartY = 0;
+  let sheetDragStartOffset = 0;
+  let sheetDragStartTime = 0;
+  const sheetClosedOffset = () => window.innerHeight * 0.75;
+
+  sheetHandle.addEventListener('pointerdown', (e) => {
+    if (!isMobile()) return;
+    sheetDragging = true;
+    sheetDragStartY = e.clientY;
+    sheetDragStartTime = Date.now();
+    sheetDragStartOffset = sidepanel.classList.contains('open') ? 0 : sheetClosedOffset();
+    sidepanel.style.transition = 'none';
+    if (sheetHandle.setPointerCapture) sheetHandle.setPointerCapture(e.pointerId);
+  });
+  sheetHandle.addEventListener('pointermove', (e) => {
+    if (!sheetDragging) return;
+    const deltaY = e.clientY - sheetDragStartY;
+    const offset = Math.max(0, Math.min(sheetClosedOffset(), sheetDragStartOffset + deltaY));
+    sidepanel.style.transform = 'translateY(' + offset + 'px)';
+  });
+  function endSheetDrag(e) {
+    if (!sheetDragging) return;
+    sheetDragging = false;
+    const deltaY = e.clientY - sheetDragStartY;
+    const deltaTime = Math.max(1, Date.now() - sheetDragStartTime);
+    const velocity = deltaY / deltaTime; // px/ms, 음수 = 위로 스와이프
+    sidepanel.style.transition = '';
+    sidepanel.style.transform = '';
+    if (Math.abs(deltaY) > 8) {
+      const closedOffset = sheetClosedOffset();
+      const offset = sheetDragStartOffset + deltaY;
+      let shouldOpen;
+      if (velocity < -0.5) shouldOpen = true;
+      else if (velocity > 0.5) shouldOpen = false;
+      else shouldOpen = offset < closedOffset * 0.75;
+      setSheetOpen(shouldOpen);
+    }
+  }
+  sheetHandle.addEventListener('pointerup', endSheetDrag);
+  sheetHandle.addEventListener('pointercancel', endSheetDrag);
 }
 
 const DEFAULT_PANEL = `
