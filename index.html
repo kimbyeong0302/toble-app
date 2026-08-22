@@ -89,7 +89,16 @@
 
   .sect { margin: 26px 10px 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
   .sect::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-  .verse { font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 1.95; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: background .15s; position: relative; }
+  .verse {
+    font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 1.95; padding: 6px 10px;
+    border-radius: 8px; cursor: pointer; transition: background .15s; position: relative;
+    touch-action: manipulation;
+    /* iOS 자체의 길게 눌러 선택하는 문자 선택 도구(돋보기)가 절 전체 영역 어디서든
+       끼어들지 않게 한다 — 안 그러면 절을 길게 눌러 묶어 선택하려 할 때 우리 JS의
+       450ms 타이머가 끝나기 전에 iOS가 먼저 그 제스처를 가로채 pointercancel을
+       보내는 경우가 있어, 특히 화면이 좁은 아이폰에서 선택이 잘 안 되는 걸로 보였다. */
+    -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  }
   .verse .num { font-family: 'Noto Sans KR', sans-serif; font-size: 12px; color: var(--accent); font-weight: 700; vertical-align: super; margin-right: 5px; }
   .vtext { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .verse.has-note .num::after { content: "✦"; font-size: 9px; margin-left: 3px; vertical-align: middle; }
@@ -4847,7 +4856,7 @@ versesEl.querySelectorAll('.verse').forEach(v => {
   });
   v.addEventListener('pointermove', (e) => {
     if (!pressTimer) return;
-    if (Math.abs(e.clientX - downX) > 10 || Math.abs(e.clientY - downY) > 10) {
+    if (Math.abs(e.clientX - downX) > 14 || Math.abs(e.clientY - downY) > 14) {
       clearTimeout(pressTimer); pressTimer = null;
     }
   });
