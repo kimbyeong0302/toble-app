@@ -351,6 +351,16 @@
     background: var(--card); color: var(--ink); margin-bottom: 14px;
   }
   #dict-input:focus { outline: none; border-color: var(--accent); }
+  #dict-korean-def:empty { display: none; }
+  .dict-korean-def-box {
+    background: var(--note-bg); border-radius: 10px; padding: 12px 14px;
+    margin-bottom: 14px; font-size: 13px; line-height: 1.6;
+  }
+  .dict-korean-def-label { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .dict-korean-def-list { list-style: none; counter-reset: dict-def; margin: 0; padding: 0; }
+  .dict-korean-def-list li { counter-increment: dict-def; margin-top: 5px; padding-left: 20px; position: relative; color: var(--ink); }
+  .dict-korean-def-list li:first-child { margin-top: 0; }
+  .dict-korean-def-list li::before { content: counter(dict-def) "."; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
   .dict-book-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
   .dict-book-tabs:empty { display: none; }
   .dict-book-tab {
@@ -3711,6 +3721,7 @@
         <div class="side-view" id="view-dict">
           <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 지금까지 등록된 성경 전체(룻기·마가복음·누가복음·마태복음) 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다.</div>
           <input type="text" id="dict-input" placeholder="예: 기업, 인애, 이방 여인, 헤세드...">
+          <div id="dict-korean-def"></div>
           <div class="dict-book-tabs" id="dict-book-tabs"></div>
           <div id="dict-results"><div class="struct-hint">검색어를 입력해보세요.</div></div>
         </div>
@@ -5812,6 +5823,38 @@ function renderBookMap(bookId) {
   }
 }
 
+// ============================================================
+// 국어사전 뜻풀이 — 국립국어원 우리말샘 오픈API를 CORS 프록시(Cloudflare Worker)로 경유해서 불러온다.
+// (오픈API 자체가 브라우저 직접 호출용 CORS 헤더를 안 보내줘서, 요청을 대신 전달해주는 프록시가 필요하다)
+// ============================================================
+const DICT_PROXY_URL = 'https://toble-dict-proxy.kimbyeong.workers.dev/';
+let dictDefRequestSeq = 0;
+
+async function fetchKoreanDefinition(word) {
+  const seq = ++dictDefRequestSeq;
+  const el = document.getElementById('dict-korean-def');
+  if (!el) return;
+  try {
+    const resp = await fetch(DICT_PROXY_URL + '?q=' + encodeURIComponent(word));
+    if (seq !== dictDefRequestSeq) return; // 그 사이 새 검색어가 들어왔으면 이 응답은 버린다
+    if (!resp.ok) { el.innerHTML = ''; return; }
+    const data = await resp.json();
+    const items = (data.channel && data.channel.item) || [];
+    const defs = [];
+    items.forEach(item => {
+      if (item.word !== word) return; // 정확히 일치하는 표제어만 (구·문장은 제외)
+      (item.sense || []).forEach(s => { if (s.definition) defs.push(s.definition); });
+    });
+    if (!defs.length) { el.innerHTML = ''; return; }
+    let html = '<div class="dict-korean-def-box"><div class="dict-korean-def-label">국어사전</div><ol class="dict-korean-def-list">';
+    defs.slice(0, 4).forEach(d => { html += '<li>' + escapeHtmlDict(d) + '</li>'; });
+    html += '</ol></div>';
+    el.innerHTML = html;
+  } catch (e) {
+    if (seq === dictDefRequestSeq) el.innerHTML = ''; // 네트워크 오류 시 조용히 생략 — 본문/노트 검색은 그대로 보여준다
+  }
+}
+
 let dictLastQuery = '';
 let dictVerseHits = [];
 let dictNoteHits = [];
@@ -5820,13 +5863,17 @@ let dictActiveBook = null;
 function runDictSearch(qRaw) {
   const resultsEl = document.getElementById('dict-results');
   const tabsEl = document.getElementById('dict-book-tabs');
+  const defEl = document.getElementById('dict-korean-def');
   const q = (qRaw || '').trim();
   dictLastQuery = q;
   if (!q) {
     if (tabsEl) tabsEl.innerHTML = '';
     resultsEl.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>';
+    if (defEl) defEl.innerHTML = '';
+    dictDefRequestSeq++; // 진행 중이던 사전 요청이 있었다면 결과를 무효화
     return;
   }
+  fetchKoreanDefinition(q);
 
   dictVerseHits = VERSE_INDEX.filter(v => v.text.includes(q));
   dictNoteHits = [];
