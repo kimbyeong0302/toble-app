@@ -328,6 +328,17 @@
   }
   .dict-hit:hover { background: var(--accent-soft); }
   .dict-hit .dh-ref { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 3px; }
+
+  /* ---- 히스토리 탭: 최근 눌러본 절 최대 10개 ---- */
+  .history-card {
+    background: var(--note-bg); border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 8px; cursor: pointer; font-size: 13px; line-height: 1.6;
+    transition: background .15s; touch-action: manipulation;
+  }
+  .history-card:active { background: var(--accent-soft); }
+  .history-time { font-size: 10.5px; color: var(--ink-soft); margin-bottom: 2px; }
+  .history-ref { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 3px; }
+  .history-text { color: var(--ink); }
   .dict-hit mark { background: #fdf0a8; padding: 0 1px; border-radius: 2px; }
 
   /* ---- 메모 탭 ---- */
@@ -396,6 +407,7 @@
     .memo-chapter-btn:hover { border-color: var(--accent); color: var(--accent); }
     .memo-back-btn:hover { opacity: .75; }
     .memo-ref:hover { opacity: .75; }
+    .history-card:hover { background: var(--accent-soft); }
   }
 
   footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.8; }
@@ -3442,11 +3454,14 @@
           <button data-view="context">배경</button>
           <button data-view="people">인물</button>
           <button data-view="map">지도</button>
+          <button data-view="history">히스토리</button>
         </div>
       </div>
       <div class="side-body">
 
         <div class="side-view active" id="view-note"></div>
+
+        <div class="side-view" id="view-history"></div>
 
         <div class="side-view" id="view-context">
           <div class="ctx-book" data-book="ruth">
@@ -4588,6 +4603,7 @@ function switchView(name) {
   }
   if (name === 'memo' && typeof renderMemoTab === 'function') renderMemoTab();
   if (name === 'map' && typeof renderBookMap === 'function') renderBookMap(currentBook);
+  if (name === 'history' && typeof renderHistoryTab === 'function') renderHistoryTab();
 }
 // 학습·메모 탭은 항상 "지금 대상이 되는 절"을 기준으로 동작한다 —
 // 절을 여러 개 선택해뒀으면 선택된 절 전체를, 아니면 마지막으로 누른 절 하나를 대상으로 삼는다.
@@ -4781,7 +4797,10 @@ function openStudyFlowForVerses(verseEls, key) {
   document.querySelectorAll('.verse.open').forEach(el => el.classList.remove('open'));
   currentOpen = null;
   verseEls.forEach(el => el.classList.add('open'));
-  if (verseEls.length === 1) currentOpen = verseEls[0];
+  if (verseEls.length === 1) {
+    currentOpen = verseEls[0];
+    if (typeof pushHistory === 'function') pushHistory(currentBook, key); // 단일 절을 눌러 볼 때만 히스토리에 남긴다
+  }
   renderStudyFlow(key);
   switchView('note');
 }
@@ -5980,6 +5999,70 @@ function openMemoForVerse(key) {
       card.focus();
     }
   }, 80);
+}
+
+// ============================================================
+// 히스토리 — 최근 눌러본 절 최대 10개, 언제 봤는지와 함께 기록
+// (책을 가리지 않는 전체 히스토리라 책별 접두사 없이 하나의 키에 저장)
+// ============================================================
+const HISTORY_KEY = 'toble_history';
+function loadHistory() { try { return JSON.parse(lsGet(HISTORY_KEY, '[]')); } catch (e) { return []; } }
+function saveHistory(list) { lsSet(HISTORY_KEY, JSON.stringify(list)); }
+
+function pushHistory(bookId, key) {
+  let list = loadHistory();
+  list = list.filter(h => !(h.book === bookId && h.key === key)); // 같은 절을 다시 보면 맨 위로 끌어올림
+  list.unshift({ book: bookId, key: key, ts: Date.now() });
+  if (list.length > 10) list = list.slice(0, 10);
+  saveHistory(list);
+}
+
+function formatHistoryTime(ts) {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + hh + ':' + mi;
+}
+
+function historyRefLabel(bookId, key) {
+  const bookLabel = (typeof BOOK_LABELS !== 'undefined' && BOOK_LABELS[bookId]) || '';
+  const parts = key.split('-');
+  return bookLabel + ' ' + parts[0] + '장 ' + parts[1] + '절';
+}
+
+function historyVerseText(bookId, key) {
+  const el = document.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + key + '"] .vtext');
+  return el ? el.textContent : '';
+}
+
+function jumpToHistoryVerse(bookId, key) {
+  if (bookId !== currentBook) setBook(bookId);
+  showPage(Number(key.split('-')[0]));
+  setTimeout(() => {
+    const el = versesEl.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + key + '"]');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}
+
+function renderHistoryTab() {
+  const wrap = document.getElementById('view-history');
+  const list = loadHistory();
+  if (!list.length) {
+    wrap.innerHTML = `<div class="struct-hint">아직 눌러본 말씀이 없습니다. 본문에서 절을 누르면 최근 10개까지 여기 기록됩니다.</div>`;
+    return;
+  }
+  let html = '';
+  list.forEach(h => {
+    html += `<div class="history-card" data-book="${h.book}" data-key="${h.key}">
+      <div class="history-time">${formatHistoryTime(h.ts)}</div>
+      <div class="history-ref">${escapeHtmlDict(historyRefLabel(h.book, h.key))}</div>
+      <div class="history-text">${escapeHtmlDict(historyVerseText(h.book, h.key))}</div>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.history-card').forEach(card => {
+    card.addEventListener('click', () => jumpToHistoryVerse(card.dataset.book, card.dataset.key));
+  });
 }
 
 // ============================================================
