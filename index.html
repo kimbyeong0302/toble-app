@@ -101,6 +101,10 @@
   .bnb-chapter { font-size: 21px; font-weight: 700; color: var(--accent); margin-top: 3px; }
   header .mode-note { font-size: 12px; color: var(--ink-soft); background: var(--note-bg); display: inline-block; padding: 6px 14px; border-radius: 14px; }
   .mode-switch-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+  /* 학자 노트 표시 스위치 — 읽기 모드일 때만 보인다 (학습 모드에선 애초에 각주가 안 뜨니 의미가 없다) */
+  .notes-switch-row { display: none; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
+  body.reading-mode .notes-switch-row { display: flex; }
+  .notes-switch-label { font-size: 12px; color: var(--ink-soft); }
 
   /* 아이폰 스타일 토글 스위치 — 왼쪽(꺼짐)이 학습 모드, 오른쪽(켜짐·초록)이 읽기 모드 */
   .ios-switch { position: relative; display: inline-flex; width: 44px; height: 26px; flex: 0 0 auto; }
@@ -116,9 +120,9 @@
   .ios-switch.on .ios-switch-track { background: #5c8a3a; }
   .ios-switch.on .ios-switch-thumb { transform: translateX(18px); }
 
-  /* 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 표시 */
+  /* 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 표시 (학자 노트 스위치로 껐으면 숨김) */
   .inline-note { display: none; }
-  body.reading-mode .inline-note {
+  body.reading-mode:not(.notes-hidden) .inline-note {
     display: block; margin: 2px 10px 16px; padding: 10px 14px;
     border-left: 3px solid var(--accent); background: var(--note-bg); border-radius: 0 8px 8px 0;
     font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; line-height: 1.7; color: var(--ink);
@@ -784,6 +788,13 @@
         <span class="ios-switch-track"><span class="ios-switch-thumb"></span></span>
       </label>
       <div class="mode-note" id="mode-note">학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입</div>
+    </div>
+    <div class="notes-switch-row" id="notes-switch-row">
+      <label class="ios-switch" title="학자 노트 표시 켜기/끄기">
+        <input type="checkbox" id="notes-switch" checked>
+        <span class="ios-switch-track"><span class="ios-switch-thumb"></span></span>
+      </label>
+      <div class="notes-switch-label">학자 노트</div>
     </div>
   </header>
 
@@ -4509,6 +4520,25 @@ if (modeSwitchInput) {
   });
 }
 applyAppMode();
+
+// 읽기 모드 안에서 학자 노트(각주) 표시 자체를 껐다 켰다 하는 스위치
+let notesEnabled = lsGet('reading_notes_enabled', '1') === '1';
+function applyNotesEnabled() {
+  document.body.classList.toggle('notes-hidden', !notesEnabled);
+  const notesSwitchEl = document.getElementById('notes-switch');
+  if (notesSwitchEl) notesSwitchEl.checked = notesEnabled;
+  const notesSwitchLabel = document.querySelector('#notes-switch-row .ios-switch');
+  if (notesSwitchLabel) notesSwitchLabel.classList.toggle('on', notesEnabled);
+}
+const notesSwitchInput = document.getElementById('notes-switch');
+if (notesSwitchInput) {
+  notesSwitchInput.addEventListener('change', (e) => {
+    notesEnabled = e.target.checked;
+    lsSet('reading_notes_enabled', notesEnabled ? '1' : '0');
+    applyNotesEnabled();
+  });
+}
+applyNotesEnabled();
 
 const versesEl = document.getElementById('verses');
 
