@@ -3861,7 +3861,7 @@
         <div class="side-view" id="view-dict">
           <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 지금까지 등록된 성경 전체(룻기·마가복음·누가복음·마태복음) 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다.</div>
           <input type="search" id="dict-input" name="toble-dict-query" placeholder="예: 기업, 인애, 이방 여인, 헤세드..."
-            autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search">
+            autocomplete="dict-search-no-suggest" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" readonly>
           <div id="dict-korean-def"></div>
           <div class="dict-book-tabs" id="dict-book-tabs"></div>
           <div id="dict-results"><div class="struct-hint">검색어를 입력해보세요.</div></div>
@@ -6347,6 +6347,15 @@ dictInput.addEventListener('input', (e) => {
   clearTimeout(dictTimer);
   const val = e.target.value;
   dictTimer = setTimeout(() => runDictSearch(val), 150);
+});
+// iOS에서 이 칸에 연락처 자동완성(QuickType 제안)이 뜨는 문제 대응책 —
+// readonly 상태로 두었다가 실제로 손가락이 닿는 순간에만 편집 가능하게 풀어준다.
+// (iOS가 "이 칸은 원래 입력 가능한 칸이었다"는 걸 미리 알아채고 연락처 제안을 준비해두는 걸
+// 늦춰서, 그 판단에 끼어드는 사파리의 자동완성 휴리스틱을 피해보려는 방편이다)
+['touchstart', 'mousedown'].forEach(evt => {
+  dictInput.addEventListener(evt, function onFirstTouch() {
+    dictInput.removeAttribute('readonly');
+  }, { once: true });
 });
 
 // ============================================================

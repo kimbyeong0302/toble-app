@@ -1,6 +1,6 @@
 // 토블 서비스 워커 — 오프라인에서도 앱이 열리도록 핵심 파일을 캐시합니다.
 // 버전을 올리면(예: v2, v3) 이전 캐시를 지우고 새 파일로 교체됩니다.
-const CACHE_NAME = 'toble-cache-v48';
+const CACHE_NAME = 'toble-cache-v49';
 const CORE_ASSETS = [
   './',
   './index.html',
