@@ -798,6 +798,7 @@
             <button class="hl-tool" data-tool="pink" title="분홍"></button>
             <button class="hl-tool" data-tool="blue" title="파랑"></button>
             <button class="hl-tool" data-tool="erase" title="지우개">✕</button>
+            <button class="hl-tool" data-tool="copy" title="선택한 절 복사">📋</button>
           </div>
           <button class="hl-toggle-btn" id="hl-toggle-btn">숨기기</button>
         </div>
@@ -4582,9 +4583,54 @@ function applyHighlightToSelectedVerses(tool) {
   });
   clearSelection();
 }
+// ---- 선택한 절 복사 ----
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('execCommand copy failed'));
+    } catch (e) { reject(e); }
+  });
+}
+function flashHlToolLabel(btn, msg) {
+  const original = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => { btn.textContent = original; }, 1300);
+}
+function copySelectedVerses() {
+  const btn = document.querySelector('.hl-tool[data-tool="copy"]');
+  if (typeof selectedVerses === 'undefined' || !selectedVerses.length) {
+    if (btn) flashHlToolLabel(btn, '❕');
+    return;
+  }
+  const bookLabel = (typeof BOOK_LABELS !== 'undefined' && BOOK_LABELS[currentBook]) || '';
+  const sorted = selectedVerses.slice().sort((a, b) => verseSortValue(a) - verseSortValue(b));
+  const text = sorted.map(key => {
+    const parts = key.split('-');
+    const vtextEl = versesEl.querySelector('.book-content[data-book="' + currentBook + '"] .verse[data-n="' + key + '"] .vtext');
+    const verseText = vtextEl ? vtextEl.textContent : '';
+    return bookLabel + ' ' + parts[0] + ':' + parts[1] + ' ' + verseText;
+  }).join('\n');
+
+  copyTextToClipboard(text)
+    .then(() => { if (btn) flashHlToolLabel(btn, '✅'); })
+    .catch(() => { if (btn) flashHlToolLabel(btn, '⚠️'); });
+}
+
 document.querySelectorAll('.hl-tool').forEach(btn => {
   btn.addEventListener('click', () => {
     const tool = btn.dataset.tool;
+    if (tool === 'copy') { copySelectedVerses(); return; } // 복사는 색칠/지우기와 무관한 별도 동작
     // 절을 선택해둔 상태라면, 단어 단위 색칠 모드로 들어가지 않고
     // 선택된 절 전체를 그 색으로(또는 지우개면 전체 지움) 한 번에 칠한다.
     if (typeof selectedVerses !== 'undefined' && selectedVerses.length && tool !== 'off') {
