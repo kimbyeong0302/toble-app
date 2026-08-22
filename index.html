@@ -123,12 +123,19 @@
   /* 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 표시. 전체 스위치가 꺼져 있어도
      특정 절을 선택해 "학자노트 보기"를 누르면 그 절만 force-show로 강제로 펼쳐 볼 수 있다. */
   .inline-note {
-    display: none; margin: 2px 10px 16px; padding: 10px 14px;
+    display: none; position: relative; margin: 2px 10px 16px; padding: 10px 14px;
     border-left: 3px solid var(--accent); background: var(--note-bg); border-radius: 0 8px 8px 0;
     font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; line-height: 1.7; color: var(--ink);
   }
   body.reading-mode:not(.notes-hidden) .inline-note { display: block; }
-  body.reading-mode .inline-note.force-show { display: block; }
+  body.reading-mode .inline-note.force-show { display: block; padding-right: 32px; }
+  .inline-note-close {
+    display: none; position: absolute; top: 8px; right: 8px;
+    background: none; border: none; color: var(--ink-soft); font-size: 13px; line-height: 1;
+    cursor: pointer; padding: 4px; touch-action: manipulation;
+  }
+  .inline-note.force-show .inline-note-close { display: block; }
+  .inline-note-close:active { color: var(--accent); }
   .inline-note-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
   .inline-note-body { margin-bottom: 4px; }
   .inline-note-grammar { color: var(--ink-soft); font-size: 12px; margin-bottom: 4px; }
@@ -4486,7 +4493,8 @@ function renderInlineNotes() {
       noteEl.className = 'inline-note';
       v.insertAdjacentElement('afterend', noteEl);
     }
-    let html = '<div class="inline-note-title">' + escapeHtmlDict(note.t) + '</div>';
+    let html = '<button class="inline-note-close" title="학자 노트 닫기">✕</button>';
+    html += '<div class="inline-note-title">' + escapeHtmlDict(note.t) + '</div>';
     html += '<div class="inline-note-body">' + escapeHtmlDict(note.b) + '</div>';
     if (note.g) html += '<div class="inline-note-grammar"><strong>원어·문법</strong>' + escapeHtmlDict(note.g) + '</div>';
     if (note.r) html += '<div class="inline-note-ref">참조: ' + escapeHtmlDict(note.r) + '</div>';
@@ -5125,13 +5133,24 @@ function compositeRefLabel(key) {
 const selectBar = document.getElementById('verse-select-bar');
 const vsbCount = document.getElementById('vsb-count');
 
+function selectionHasInlineNote() {
+  return selectedVerses.some(key => {
+    const verseEl = versesEl.querySelector('.book-content[data-book="' + currentBook + '"] .verse[data-n="' + key + '"]');
+    const noteEl = verseEl ? verseEl.nextElementSibling : null;
+    return !!(noteEl && noteEl.classList.contains('inline-note'));
+  });
+}
 function updateSelectBar() {
   if (!selectedVerses.length) { selectBar.hidden = true; return; }
   selectBar.hidden = false;
   const isReading = typeof appMode !== 'undefined' && appMode === 'reading';
   vsbCount.textContent = selectedVerses.length + '개 절 선택됨' + (isReading ? '' : ' · 메뉴의 학습·메모를 눌러보세요');
   const viewNoteBtn = document.getElementById('vsb-view-note');
-  if (viewNoteBtn) viewNoteBtn.hidden = !isReading;
+  if (viewNoteBtn) {
+    // 학자노트가 있는 절을 골랐을 때만, 그리고 전체 학자노트가 이미 켜져 있지 않을 때만 의미가 있다
+    const notesAlreadyOnGlobally = typeof notesEnabled !== 'undefined' && notesEnabled;
+    viewNoteBtn.hidden = !(isReading && !notesAlreadyOnGlobally && selectionHasInlineNote());
+  }
 }
 
 // 읽기 모드에서, 전체 학자노트가 꺼져 있어도 선택한 절만 각주를 강제로 펼쳐 본다
@@ -5147,6 +5166,16 @@ function viewNoteForSelectedVerses() {
   clearSelection();
 }
 document.getElementById('vsb-view-note').addEventListener('click', viewNoteForSelectedVerses);
+
+// 학자노트 보기로 강제로 펼친 각주의 X 버튼 — renderInlineNotes()가 innerHTML을 다시 그릴 수 있어서
+// 개별 버튼에 리스너를 직접 붙이지 않고 위임(delegation)으로 처리한다
+document.addEventListener('click', (e) => {
+  const closeBtn = e.target.closest('.inline-note-close');
+  if (!closeBtn) return;
+  e.stopPropagation();
+  const noteEl = closeBtn.closest('.inline-note');
+  if (noteEl) noteEl.classList.remove('force-show');
+});
 
 function clearSelection() {
   selectedVerses.forEach(key => {
