@@ -410,7 +410,9 @@
     width: 100%; border: 1px solid var(--line); border-radius: 20px;
     padding: 10px 16px; font-size: 14px; font-family: inherit;
     background: var(--card); color: var(--ink); margin-bottom: 14px;
+    -webkit-appearance: none; appearance: none; /* type=search의 iOS 기본 모양을 지우고 기존 디자인 그대로 유지 */
   }
+  #dict-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
   #dict-input:focus { outline: none; border-color: var(--accent); }
   #dict-korean-def:empty { display: none; }
   .dict-korean-def-box {
@@ -3830,7 +3832,8 @@
 
         <div class="side-view" id="view-dict">
           <div class="struct-hint" style="margin-bottom:10px;">궁금한 단어를 입력하면 지금까지 등록된 성경 전체(룻기·마가복음·누가복음·마태복음) 본문과 학자 노트 안에서 그 단어가 어디에, 어떻게 쓰였는지 찾아드립니다.</div>
-          <input type="text" id="dict-input" placeholder="예: 기업, 인애, 이방 여인, 헤세드...">
+          <input type="search" id="dict-input" name="toble-dict-query" placeholder="예: 기업, 인애, 이방 여인, 헤세드..."
+            autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search">
           <div id="dict-korean-def"></div>
           <div class="dict-book-tabs" id="dict-book-tabs"></div>
           <div id="dict-results"><div class="struct-hint">검색어를 입력해보세요.</div></div>
@@ -5776,7 +5779,8 @@ function renderStructureTab() {
     blocks.forEach((b, idx) => {
       html += `<div class="block-card" style="border-left-color:${b.color}" data-id="${b.id}">
         <div class="b-row">
-          <input type="text" class="b-title" placeholder="이 단락의 제목 (예: 나오미의 계획)" value="${(b.title || '').replace(/"/g, '&quot;')}">
+          <input type="text" class="b-title" placeholder="이 단락의 제목 (예: 나오미의 계획)" value="${(b.title || '').replace(/"/g, '&quot;')}"
+            autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
           <div class="b-actions">
             <button class="b-up" title="위로" ${idx === 0 ? 'disabled style="opacity:.25;cursor:default;"' : ''}>↑</button>
             <button class="b-down" title="아래로" ${idx === blocks.length - 1 ? 'disabled style="opacity:.25;cursor:default;"' : ''}>↓</button>
