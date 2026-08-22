@@ -120,13 +120,15 @@
   .ios-switch.on .ios-switch-track { background: #5c8a3a; }
   .ios-switch.on .ios-switch-thumb { transform: translateX(18px); }
 
-  /* 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 표시 (학자 노트 스위치로 껐으면 숨김) */
-  .inline-note { display: none; }
-  body.reading-mode:not(.notes-hidden) .inline-note {
-    display: block; margin: 2px 10px 16px; padding: 10px 14px;
+  /* 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 표시. 전체 스위치가 꺼져 있어도
+     특정 절을 선택해 "학자노트 보기"를 누르면 그 절만 force-show로 강제로 펼쳐 볼 수 있다. */
+  .inline-note {
+    display: none; margin: 2px 10px 16px; padding: 10px 14px;
     border-left: 3px solid var(--accent); background: var(--note-bg); border-radius: 0 8px 8px 0;
     font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; line-height: 1.7; color: var(--ink);
   }
+  body.reading-mode:not(.notes-hidden) .inline-note { display: block; }
+  body.reading-mode .inline-note.force-show { display: block; }
   .inline-note-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
   .inline-note-body { margin-bottom: 4px; }
   .inline-note-grammar { color: var(--ink-soft); font-size: 12px; margin-bottom: 4px; }
@@ -186,9 +188,14 @@
     cursor: pointer; touch-action: manipulation;
   }
   #vsb-cancel { background: rgba(255,255,255,.18); color: #fff; }
+  #vsb-view-note { background: var(--accent); color: #fff; }
+  #vsb-view-note[hidden] { display: none; }
 
   /* ---- 단어별 하이라이트 ---- */
-  .word { border-radius: 3px; padding: 0 1px; }
+  /* 단어(.word)와 그 사이 공백을 잇는 조각(.wsp)에 같은 둥근 모서리를 줘서, 이어 칠한
+     하이라이트가 모나지 않고 하나의 부드러운 띠처럼 보이게 한다 (.wsp는 공백이라 여백은 그대로 둔다) */
+  .word { border-radius: 4px; padding: 0 1px; }
+  .wsp { border-radius: 4px; }
   #verses.hl-mode .word { cursor: pointer; }
   #verses.hl-mode .word:active { opacity: .65; }
   .hlw-yellow { background: #fdf0a8; }
@@ -731,7 +738,7 @@
     .hl-toolbar-tools { flex-direction: column; gap: 6px; }
     .hl-tool { width: 25px; height: 25px; font-size: 10.5px; }
     .hl-tool[data-tool="off"] { width: 34px; height: 21px; border-radius: 11px; font-size: 9px; padding: 0; }
-    .hl-tool[data-tool="copy"] { width: 34px; height: 21px; border-radius: 11px; font-size: 9px; padding: 0; }
+    .hl-tool[data-tool="copy"] { width: auto; height: 21px; border-radius: 11px; font-size: 9px; padding: 0 8px; white-space: nowrap; }
     .hl-toggle-btn {
       margin-left: 0; width: 34px; padding: 4px 0; font-size: 10px;
       line-height: 1.25; white-space: normal; text-align: center;
@@ -797,7 +804,7 @@
         <input type="checkbox" id="notes-switch" checked>
         <span class="ios-switch-track"><span class="ios-switch-thumb"></span></span>
       </label>
-      <div class="notes-switch-label">학자 노트</div>
+      <div class="notes-switch-label">전체 학자노트 ON/OFF</div>
     </div>
   </header>
 
@@ -3839,6 +3846,7 @@
 <div class="verse-select-bar" id="verse-select-bar" hidden>
   <span class="vsb-count" id="vsb-count">0개 절 선택됨 · 메뉴의 학습·메모를 눌러보세요</span>
   <div class="vsb-actions">
+    <button id="vsb-view-note" type="button" hidden>학자노트 보기</button>
     <button id="vsb-cancel" type="button">취소</button>
   </div>
 </div>
@@ -4532,6 +4540,10 @@ function applyNotesEnabled() {
   if (notesSwitchEl) notesSwitchEl.checked = notesEnabled;
   const notesSwitchLabel = document.querySelector('#notes-switch-row .ios-switch');
   if (notesSwitchLabel) notesSwitchLabel.classList.toggle('on', notesEnabled);
+  // 전체 스위치를 끄면 개별로 "학자노트 보기"로 펼쳐뒀던 절도 함께 정리해서 깔끔하게 전부 꺼지게 한다
+  if (!notesEnabled) {
+    document.querySelectorAll('.inline-note.force-show').forEach(el => el.classList.remove('force-show'));
+  }
 }
 const notesSwitchInput = document.getElementById('notes-switch');
 if (notesSwitchInput) {
@@ -4667,7 +4679,7 @@ function flashHlToolLabel(btn, msg) {
 function copySelectedVerses() {
   const btn = document.querySelector('.hl-tool[data-tool="copy"]');
   if (typeof selectedVerses === 'undefined' || !selectedVerses.length) {
-    if (btn) flashHlToolLabel(btn, '❕');
+    if (btn) flashHlToolLabel(btn, '절을 선택해주세요');
     return;
   }
   const bookLabel = (typeof BOOK_LABELS !== 'undefined' && BOOK_LABELS[currentBook]) || '';
@@ -4680,8 +4692,8 @@ function copySelectedVerses() {
   }).join('\n');
 
   copyTextToClipboard(text)
-    .then(() => { if (btn) flashHlToolLabel(btn, '✅'); })
-    .catch(() => { if (btn) flashHlToolLabel(btn, '⚠️'); });
+    .then(() => { if (btn) flashHlToolLabel(btn, '복사 성공'); })
+    .catch(() => { if (btn) flashHlToolLabel(btn, '복사 실패'); });
 }
 
 document.querySelectorAll('.hl-tool').forEach(btn => {
@@ -5116,8 +5128,25 @@ const vsbCount = document.getElementById('vsb-count');
 function updateSelectBar() {
   if (!selectedVerses.length) { selectBar.hidden = true; return; }
   selectBar.hidden = false;
-  vsbCount.textContent = selectedVerses.length + '개 절 선택됨 · 메뉴의 학습·메모를 눌러보세요';
+  const isReading = typeof appMode !== 'undefined' && appMode === 'reading';
+  vsbCount.textContent = selectedVerses.length + '개 절 선택됨' + (isReading ? '' : ' · 메뉴의 학습·메모를 눌러보세요');
+  const viewNoteBtn = document.getElementById('vsb-view-note');
+  if (viewNoteBtn) viewNoteBtn.hidden = !isReading;
 }
+
+// 읽기 모드에서, 전체 학자노트가 꺼져 있어도 선택한 절만 각주를 강제로 펼쳐 본다
+function viewNoteForSelectedVerses() {
+  selectedVerses.forEach(key => {
+    const verseEl = versesEl.querySelector('.book-content[data-book="' + currentBook + '"] .verse[data-n="' + key + '"]');
+    const noteEl = verseEl ? verseEl.nextElementSibling : null;
+    if (noteEl && noteEl.classList.contains('inline-note')) {
+      noteEl.classList.add('force-show');
+      noteEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+  clearSelection();
+}
+document.getElementById('vsb-view-note').addEventListener('click', viewNoteForSelectedVerses);
 
 function clearSelection() {
   selectedVerses.forEach(key => {
