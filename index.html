@@ -5352,20 +5352,30 @@ versesEl.querySelectorAll('.verse').forEach(v => {
       return;
     }
 
+    // 이미 강조돼있는(눌려있는) 절을 다시 누르면 그냥 닫는다 — 학습/읽기 모드 공통
     if (currentOpen === v) {
       v.classList.remove('open'); currentOpen = null;
       noteView.innerHTML = DEFAULT_PANEL;
       return;
     }
-    // 읽기 모드에서는 탭으로 학습 흐름을 열지 않는다 — 학자 노트는 이미 본문 아래에 각주로 보인다.
-    // 다만 절을 눌러본 기록 자체는 학습 모드와 마찬가지로 히스토리에 남긴다.
+    // 읽기 모드와 학습 모드는 절을 눌렀을 때 하는 일이 서로 완전히 다르므로 아예 분리한다.
+    // (읽기 모드가 학습 흐름 코드 안에 얹혀 있으면 계속 헷갈리는 문제가 생겨서 각자 독립된 함수로 뺐다)
     if (typeof appMode !== 'undefined' && appMode === 'reading') {
-      if (typeof pushHistory === 'function') pushHistory(currentBook, n);
-      return;
+      handleReadingModeVerseTap(v, n);
+    } else {
+      openStudyFlowForVerses([v], n);
     }
-    openStudyFlowForVerses([v], n);
   });
 });
+
+// 읽기 모드 전용 — 절을 누르면 학습 흐름을 여는 대신 그 절을 강조 표시하고 히스토리에 남긴다.
+// (학자 노트는 이미 본문 절 아래에 각주로 따로 떠 있어서 별도로 열 게 없다)
+function handleReadingModeVerseTap(v, n) {
+  if (currentOpen) currentOpen.classList.remove('open');
+  currentOpen = v;
+  v.classList.add('open');
+  if (typeof pushHistory === 'function') pushHistory(currentBook, n);
+}
 
 // ============================================================
 // 좌우로 스와이프하면 책장을 넘기듯 이전/다음 장으로 이동
