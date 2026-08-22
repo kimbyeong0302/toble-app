@@ -236,9 +236,39 @@
   }
   .map-popup { font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; max-width: 230px; line-height: 1.5; }
   .map-popup strong { display: block; font-size: 14px; margin-bottom: 4px; color: var(--accent); }
-  .map-popup-verse { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
-  .map-popup-verse .mpv-ref { display: block; font-size: 10.5px; color: var(--accent); font-weight: 700; margin-bottom: 2px; }
-  .map-popup-more { margin-top: 6px; font-size: 11px; color: var(--ink-soft); }
+  .map-popup-geo { margin-top: 4px; }
+  .mpg-row { margin-top: 4px; }
+  .mpg-label {
+    display: inline-block; min-width: 40px; font-size: 10.5px; font-weight: 700;
+    color: var(--accent); margin-right: 4px;
+  }
+  .map-popup-note { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 11.5px; }
+
+  /* 번호가 들어간 지도 마커 — 기존 핀 실루엣(물방울 모양)은 유지하고 안에 번호만 넣는다 */
+  .map-num-pin {
+    width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    background: var(--accent); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .map-num-pin span {
+    display: block; transform: rotate(45deg); color: #fff; font-weight: 700; font-size: 12.5px;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  /* ---- 지도 아래 지명 목록: 번호·지명·이 책에서 그 지명이 나온 말씀 ---- */
+  #map-loc-list { margin-top: 16px; }
+  .map-loc-card { background: var(--note-bg); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .map-loc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .map-loc-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700; flex: 0 0 auto;
+  }
+  .map-loc-name { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+  .map-loc-verse { font-size: 12.5px; color: var(--ink); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .map-loc-verse:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  .map-loc-verse .mlv-ref { display: block; font-size: 10.5px; color: var(--accent); font-weight: 700; margin-bottom: 2px; }
+  .map-loc-empty { font-size: 12px; color: var(--ink-soft); }
 
   /* ---- 학습 흐름(관찰→해석→적용→학자노트) ---- */
   .step { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px dashed var(--line); }
@@ -3611,6 +3641,7 @@
         <div class="side-view" id="view-map">
           <div id="leaflet-map" class="leaflet-map-el"></div>
           <p class="map-caption" id="leaflet-map-caption">지도를 보려면 인터넷 연결이 필요합니다. 위성/일반 지도 전환은 지도 오른쪽 위 버튼에서 할 수 있습니다.</p>
+          <div id="map-loc-list"></div>
         </div>
 
         <div class="side-view" id="view-structure"></div>
@@ -5479,8 +5510,9 @@ function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function escapeHtmlDict(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 // ============================================================
-// 지도 — 실제 좌표 + 위성/일반 지도(Leaflet, 인터넷 필요). 절 본문에서
-// 그 지명이 나오는 절을 자동으로 찾아 마커 팝업에 함께 보여준다.
+// 지도 — 실제 좌표 + 위성/일반 지도(Leaflet, 인터넷 필요).
+// 마커는 번호가 매겨져 있고, 누르면 성경 시대 기준의 지형·기후 정보가 뜬다.
+// (본문 말씀은 팝업이 아니라 지도 아래 목록에서 번호·지명과 함께 보여준다)
 // ============================================================
 const MAP_LOCATIONS = {
   ruth: [
@@ -5511,11 +5543,81 @@ const MAP_LOCATIONS = {
   ]
 };
 
+// 지명별 지리·기후 정보 — 성경 시대(고대 근동) 기준. 절 해석에 참고할 만한 배경 정보 위주로 정리.
+const LOCATION_INFO = {
+  '베들레헴': {
+    elevation: '해발 약 775m',
+    terrain: '유다 산지의 완만한 구릉지 — 석회암 토양의 계단식 밭이 발달',
+    climate: '지중해성 기후. 여름(6~9월)은 덥고 건조(한낮 약 28~32℃), 겨울(12~2월)은 서늘하고 비가 오며 드물게 눈도 옴(한낮 약 10~13℃)',
+    season: '보리 수확은 4~5월, 밀 수확은 5~6월경 — "보리 추수 시작할 때"(룻 1:22)와 시기가 맞아떨어진다',
+    note: '지명 자체가 히브리어로 "빵집"(베이트-레헴)이라는 뜻일 만큼, 예로부터 곡창지대로 알려진 작은 농경 마을이었다.'
+  },
+  '모압': {
+    elevation: '해발 약 700~900m 고원지대 (사해와의 경계 쪽은 급격히 낮아짐)',
+    terrain: '사해 동쪽의 건조한 고원 — 협곡과 목초지가 섞인 지형',
+    climate: '반건조 기후. 유다 산지보다 강수량이 적고 여름이 더 더움(한낮 약 33~37℃), 겨울은 비교적 온화',
+    season: '고원 특유의 초지 덕분에 목축에 유리했고, 이스라엘에 흉년이 들 때 피난처가 되기도 했다(룻 1:1)',
+    note: '이스라엘과는 요단 협곡·사해를 사이에 두고 떨어진 이웃 나라로, 구약에서 종종 적대 관계로 그려진다.'
+  },
+  '나사렛': {
+    elevation: '해발 약 350m',
+    terrain: '갈릴리 하부 산지의 작은 분지 마을 — 주변이 언덕으로 둘러싸임',
+    climate: '지중해성 기후. 여름은 덥고 건조(한낮 약 27~31℃), 겨울은 온화하고 비가 잦음(한낮 약 12~15℃)',
+    season: '국제 무역로에서 벗어난 외진 위치라 예수 시대엔 인구 수백 명 안팎의 무명 마을이었다',
+    note: '"나사렛에서 무슨 선한 것이 날 수 있느냐"(요 1:46)는 반응이 나올 만큼 당시엔 하찮게 여겨지던 곳이었다.'
+  },
+  '가버나움': {
+    elevation: '해발 약 -210m (갈릴리 호수 수면과 비슷한 해수면 아래)',
+    terrain: '갈릴리 호수 북서쪽 연안의 어업·교역 마을',
+    climate: '해수면보다 낮고 호수의 영향을 받아 온화한 편 — 여름은 무덥고 습함(한낮 약 33~36℃), 겨울도 산지보다 따뜻함(한낮 약 16~18℃)',
+    season: '로마 시대 주요 통행로의 세관 소재지였고, 어업이 지역 경제의 중심이었다',
+    note: '예수께서 나사렛을 떠나 이 마을을 사역의 근거지로 삼으셨다(마 4:13).'
+  },
+  '예루살렘': {
+    elevation: '해발 약 750~830m',
+    terrain: '유다 산지 능선 위의 바위투성이 요새 도시',
+    climate: '지중해성 기후지만 고지대라 밤낮 기온차가 큼. 여름은 건조하고 선선한 편(한낮 약 26~29℃), 겨울은 쌀쌀하고 간혹 눈도 내림(한낮 약 9~12℃)',
+    season: '지대가 높아 자체 수원이 부족했고, 기혼 샘 등 소수의 수원과 저수조에 의존했다',
+    note: '이스라엘의 정치·종교적 중심지로, 지형 자체가 방어에 유리해 오랫동안 요새 도시로 기능했다.'
+  },
+  '요단강': {
+    elevation: '해발 약 -210m(갈릴리 호수)에서 -430m(사해)까지 — 지구상 육지 중 가장 낮은 지대',
+    terrain: '갈릴리 호수에서 사해로 이어지는 요단 지구대 — 강 주변만 푸르고 양옆은 메마른 사막',
+    climate: '지구대 특유의 고온건조 기후. 여름은 매우 무더움(한낮 35℃ 이상), 겨울도 산지보다 따뜻함(한낮 약 18~20℃)',
+    season: '주변 사막과 대비되는 좁고 푸른 녹지대라 예로부터 경계·이동로로 쓰였다',
+    note: '여호수아의 가나안 입성(수 3장)과 예수의 세례(마 3장) 등 굵직한 사건의 무대다.'
+  },
+  '갈릴리': {
+    elevation: '해발 약 -210m (호수 수면 기준)',
+    terrain: '주변이 언덕으로 둘러싸인 담수호 — 이스라엘 최대의 민물 호수',
+    climate: '해수면보다 낮아 온화한 편. 여름은 무덥고 습함(한낮 약 33~36℃), 겨울은 비교적 따뜻함(한낮 약 16~18℃)',
+    season: '주변 언덕 지형 때문에 바람이 골짜기로 몰리면서 갑작스러운 돌풍이 자주 인다',
+    note: '어업이 지역 경제의 중심이었고, 예수의 갈릴리 사역과 여러 표적(풍랑을 잔잔케 하심 등)의 배경이다.'
+  },
+  '애굽': {
+    elevation: '해발 0~20m 안팎 (나일 삼각주 저지대)',
+    terrain: '나일강이 만든 광활한 삼각주 평야 — 강 주변을 벗어나면 곧 사막',
+    climate: '건조 사막 기후지만 나일강 범람 덕에 삼각주 자체는 매우 비옥. 여름은 매우 무더움(한낮 35℃ 이상), 겨울은 온화(한낮 약 19~22℃)',
+    season: '나일강의 정기적인 범람이 토양을 비옥하게 해, 흉년이 들 때 주변 지역이 곡식을 구하러 오는 곳이었다',
+    note: '아브라함·요셉의 가족부터 예수의 가족(마 2:13-15)까지, 성경에서 거듭 위기 때의 피난처로 등장한다.'
+  }
+};
+
 let leafletMapInstance = null;
 let leafletMarkerLayer = null;
+function mapNumberIcon(num) {
+  return L.divIcon({
+    className: 'map-num-pin-wrap',
+    html: '<div class="map-num-pin"><span>' + num + '</span></div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -26]
+  });
+}
 function renderBookMap(bookId) {
   const container = document.getElementById('leaflet-map');
   const captionEl = document.getElementById('leaflet-map-caption');
+  const listEl = document.getElementById('map-loc-list');
   if (!container || typeof L === 'undefined') {
     if (captionEl) captionEl.textContent = '지도를 불러오지 못했습니다 — 인터넷 연결을 확인해주세요.';
     return;
@@ -5541,20 +5643,38 @@ function renderBookMap(bookId) {
   leafletMarkerLayer.clearLayers();
 
   const bounds = [];
-  locations.forEach(loc => {
+  let listHtml = '';
+  locations.forEach((loc, i) => {
+    const num = i + 1;
+    const info = LOCATION_INFO[loc.name] || {};
+
+    // 마커 팝업 — 성경 시대 기준 지형·기후 정보 (본문 말씀은 여기 안 넣고 지도 아래 목록에서 보여줌)
+    let popupHtml = '<div class="map-popup"><strong>' + num + '. ' + escapeHtmlDict(loc.name) + '</strong><div class="map-popup-geo">';
+    if (info.elevation) popupHtml += '<div class="mpg-row"><span class="mpg-label">고도</span>' + escapeHtmlDict(info.elevation) + '</div>';
+    if (info.terrain) popupHtml += '<div class="mpg-row"><span class="mpg-label">지형</span>' + escapeHtmlDict(info.terrain) + '</div>';
+    if (info.climate) popupHtml += '<div class="mpg-row"><span class="mpg-label">기후</span>' + escapeHtmlDict(info.climate) + '</div>';
+    if (info.season) popupHtml += '<div class="mpg-row"><span class="mpg-label">절기</span>' + escapeHtmlDict(info.season) + '</div>';
+    popupHtml += '</div>';
+    if (info.note) popupHtml += '<div class="map-popup-note">' + escapeHtmlDict(info.note) + '</div>';
+    popupHtml += '</div>';
+
+    L.marker([loc.lat, loc.lng], { icon: mapNumberIcon(num) }).addTo(leafletMarkerLayer).bindPopup(popupHtml);
+    bounds.push([loc.lat, loc.lng]);
+
+    // 지도 아래 목록 — 번호·지명과, 이 책 본문에서 그 지명이 나오는 말씀
     const hits = VERSE_INDEX.filter(v => v.book === bookId && v.text.includes(loc.name)).slice(0, 3);
-    let html = '<div class="map-popup"><strong>' + escapeHtmlDict(loc.name) + '</strong>';
+    listHtml += '<div class="map-loc-card">';
+    listHtml += '<div class="map-loc-head"><span class="map-loc-num">' + num + '</span><span class="map-loc-name">' + escapeHtmlDict(loc.name) + '</span></div>';
     if (hits.length) {
-      html += hits.map(h =>
-        '<div class="map-popup-verse"><span class="mpv-ref">' + h.chapter + ':' + h.verse + '</span>' + escapeHtmlDict(h.text) + '</div>'
+      listHtml += hits.map(h =>
+        '<div class="map-loc-verse"><span class="mlv-ref">' + h.chapter + ':' + h.verse + '</span>' + escapeHtmlDict(h.text) + '</div>'
       ).join('');
     } else {
-      html += '<div class="map-popup-more">이 책 본문에서 이 지명이 직접 언급된 절은 찾지 못했습니다.</div>';
+      listHtml += '<div class="map-loc-empty">이 책 본문에서 이 지명이 직접 언급된 절은 찾지 못했습니다.</div>';
     }
-    html += '</div>';
-    L.marker([loc.lat, loc.lng]).addTo(leafletMarkerLayer).bindPopup(html);
-    bounds.push([loc.lat, loc.lng]);
+    listHtml += '</div>';
   });
+  if (listEl) listEl.innerHTML = listHtml;
 
   setTimeout(() => {
     leafletMapInstance.invalidateSize();
@@ -5564,7 +5684,7 @@ function renderBookMap(bookId) {
 
   if (captionEl) {
     const bookLabel = (typeof BOOK_LABELS !== 'undefined' && BOOK_LABELS[bookId]) || '';
-    captionEl.textContent = bookLabel + '에 등장하는 지명을 실제 좌표로 표시했습니다. 마커를 누르면 본문에서 그 지명이 나오는 절을 볼 수 있습니다.';
+    captionEl.textContent = bookLabel + '에 등장하는 지명을 실제 좌표로 표시했습니다. 마커(숫자)를 누르면 성경 시대 기준 지형·기후 정보를 볼 수 있고, 지도 아래에서 관련 말씀을 확인할 수 있습니다.';
   }
 }
 
