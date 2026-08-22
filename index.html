@@ -24,6 +24,7 @@
   :root {
     --bg: #faf9f6; --card: #ffffff; --ink: #1c2733; --ink-soft: #5b6774;
     --accent: #13304f; --accent-soft: #e3e8ee; --line: #e2e6ea; --note-bg: #eef1f5;
+    --verse-font-size: 18px;
   }
   /* 읽기 모드 — 눈에 편안한 연두색 테마. 학습 모드(브라운)와 시각적으로 구분된다 */
   body.reading-mode {
@@ -131,7 +132,7 @@
   .sect { margin: 26px 10px 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
   .sect::after { content: ""; flex: 1; height: 1px; background: var(--line); }
   .verse {
-    font-family: 'Noto Serif KR', serif; font-size: 18px; line-height: 1.95; padding: 6px 10px;
+    font-family: 'Noto Serif KR', serif; font-size: var(--verse-font-size, 18px); line-height: 1.95; padding: 6px 10px;
     border-radius: 8px; cursor: pointer; transition: background .15s; position: relative;
     touch-action: manipulation;
     /* iOS 자체의 길게 눌러 선택하는 문자 선택 도구(돋보기)가 절 전체 영역 어디서든
@@ -351,6 +352,31 @@
   .my-sect-label { margin: 18px 10px 4px; font-size: 12px; font-weight: 700; padding: 4px 10px; display: inline-block; border-radius: 6px; border-left: 4px solid; background: var(--note-bg); color: var(--ink); }
   .page.hide-author-sect .sect { display: none; }
   .struct-reset { display: block; text-align: center; font-size: 11px; color: var(--ink-soft); text-decoration: underline; cursor: pointer; margin-top: 14px; }
+
+  /* ---- 설정 탭: 본문 글자 크기 슬라이더 ---- */
+  .settings-section-title { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .font-size-row { display: flex; align-items: center; gap: 10px; }
+  .font-size-icon { font-family: 'Noto Serif KR', serif; color: var(--ink-soft); flex: 0 0 auto; }
+  .font-size-icon.small { font-size: 12px; }
+  .font-size-icon.large { font-size: 22px; }
+  #font-size-slider {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 2px; background: var(--line); outline: none; touch-action: manipulation;
+  }
+  #font-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.3); cursor: pointer;
+  }
+  #font-size-slider::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff;
+    background: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.3); cursor: pointer;
+  }
+  #font-size-slider::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
+  .font-size-preview {
+    font-family: 'Noto Serif KR', serif; font-size: var(--verse-font-size, 18px); line-height: 1.7;
+    color: var(--ink); background: var(--note-bg); border-radius: 8px; padding: 12px 14px; margin-top: 14px;
+  }
 
   /* ---- 사전 검색 탭 ---- */
   #dict-input {
@@ -634,7 +660,7 @@
     .read-layout { grid-template-columns: 1fr; }
     .wrap { padding-bottom: 90px; transition: padding-bottom .34s cubic-bezier(.4,0,.2,1); }
     body.sheet-open .wrap { padding-bottom: calc(60vh + 60px); }
-    .verse { font-size: 17px; }
+    .verse { font-size: var(--verse-font-size, 17px); }
     .sheet-location { font-size: 17px; }
     aside {
       position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-height: none;
@@ -3533,6 +3559,15 @@
         <div class="side-view" id="view-history"></div>
 
         <div class="side-view" id="view-settings">
+          <div class="settings-section-title">본문 글자 크기</div>
+          <div class="font-size-row">
+            <span class="font-size-icon small">가</span>
+            <input type="range" id="font-size-slider" min="14" max="28" step="1" value="18">
+            <span class="font-size-icon large">가</span>
+          </div>
+          <div class="font-size-preview" id="font-size-preview">태초에 하나님이 천지를 창조하시니라</div>
+
+          <div class="settings-section-title" style="margin-top:22px;">백업</div>
           <div class="struct-hint" style="margin-bottom:14px;">메모·하이라이트·히스토리 등은 이 기기의 브라우저 안에만 저장됩니다. 브라우저 데이터를 지우거나 기기를 바꾸면 사라지니, 가끔 백업 파일로 내보내두세요.</div>
           <button class="struct-btn" id="settings-export-btn" style="width:100%; margin-bottom:10px;">📤 백업 파일로 내보내기</button>
           <label class="struct-btn" id="settings-import-btn" style="width:100%; display:block; text-align:center; box-sizing:border-box; cursor:pointer;">
@@ -6306,6 +6341,24 @@ if (settingsImportInput) {
     e.target.value = ''; // 같은 파일을 다시 골라도 change가 또 발생하게
   });
 }
+
+// ---- 본문 글자 크기 슬라이더 ----
+const FONT_SIZE_DEFAULT = 18;
+let verseFontSize = parseInt(lsGet('verse_font_size', String(FONT_SIZE_DEFAULT)), 10) || FONT_SIZE_DEFAULT;
+function applyVerseFontSize() {
+  document.documentElement.style.setProperty('--verse-font-size', verseFontSize + 'px');
+  const sliderEl = document.getElementById('font-size-slider');
+  if (sliderEl) sliderEl.value = String(verseFontSize);
+}
+const fontSizeSlider = document.getElementById('font-size-slider');
+if (fontSizeSlider) {
+  fontSizeSlider.addEventListener('input', (e) => {
+    verseFontSize = parseInt(e.target.value, 10);
+    lsSet('verse_font_size', String(verseFontSize));
+    applyVerseFontSize();
+  });
+}
+applyVerseFontSize();
 
 // ============================================================
 // 마지막으로 읽던 책·장을 기억해뒀다가, 앱을 다시 열면 그 자리부터 이어서 보여줌
