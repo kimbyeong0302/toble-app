@@ -62,6 +62,9 @@
   }
 
   html { touch-action: manipulation; } /* 더블탭 확대·300ms 탭 지연 제거 (iOS 대응) */
+  /* #verses는 세로 스크롤은 그대로 두되(pan-y), 가로 스와이프는 브라우저가 가로채지 않고
+     JS 제스처가 처리하게 한다 — 없으면 아이패드 사파리에서 가로 스와이프가 씹히는 경우가 있다 */
+  #verses { touch-action: pan-y; }
   body {
     background: var(--bg); color: var(--ink); font-family: 'Noto Sans KR', sans-serif; line-height: 1.7;
     padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
@@ -77,6 +80,12 @@
   header .mode-note { margin-top: 10px; font-size: 12px; color: var(--ink-soft); background: var(--note-bg); display: inline-block; padding: 6px 14px; border-radius: 14px; }
 
   .read-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; padding-top: 16px; }
+
+  /* 장이 넘어갈 때 스와이프/버튼 어느 쪽이든 넘어간 걸 눈으로 알 수 있게 살짝 슬라이드+페이드 */
+  @keyframes pageFlipFromRight { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pageFlipFromLeft { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: translateX(0); } }
+  .page-flip-next { animation: pageFlipFromRight .32s ease-out; }
+  .page-flip-prev { animation: pageFlipFromLeft .32s ease-out; }
 
   .sect { margin: 26px 10px 8px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
   .sect::after { content: ""; flex: 1; height: 1px; background: var(--line); }
@@ -503,7 +512,10 @@
     aside.open { transform: translateY(0); }
     .sheet-handle {
       display: flex; align-items: center; justify-content: center;
-      padding: 14px 0 10px; cursor: pointer; touch-action: manipulation; user-select: none;
+      padding: 14px 0 10px; cursor: pointer; touch-action: none; user-select: none;
+      /* manipulation은 세로 팬(스크롤)을 그대로 허용해버려서, 시트가 열려 있을 때
+         아래로 스와이프해 닫는 제스처를 브라우저가 가로채 씹어버리는 경우가 있었다.
+         손잡이는 순전히 커스텀 드래그 전용이라 none으로 완전히 넘겨받는다. */
     }
     .sheet-handle::after { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
     .sheet-handle:active::after { background: var(--accent); }
@@ -4883,15 +4895,23 @@ function getPageCount() { return BOOK_CHAPTER_COUNTS[currentBook] || 1; }
 function showPage(n) {
   const total = getPageCount();
   n = Math.max(1, Math.min(total, n));
+  const prevPage = currentPage;
   currentPage = n;
   const bookContent = document.querySelector('.book-content[data-book="' + currentBook + '"]');
   if (!bookContent) return;
   let found = false;
+  let shownPageEl = null;
   bookContent.querySelectorAll('.page').forEach(p => {
     const match = Number(p.dataset.page) === n;
     p.hidden = !match;
-    if (match) found = true;
+    if (match) { found = true; shownPageEl = p; }
   });
+  // 장이 바뀐 걸 눈으로 확인할 수 있게 살짝 슬라이드+페이드 애니메이션을 매번 다시 재생한다
+  if (found && shownPageEl && n !== prevPage) {
+    shownPageEl.classList.remove('page-flip-next', 'page-flip-prev');
+    void shownPageEl.offsetWidth;
+    shownPageEl.classList.add(n > prevPage ? 'page-flip-next' : 'page-flip-prev');
+  }
   const placeholder = bookContent.querySelector('.page-placeholder');
   if (placeholder) {
     placeholder.hidden = found;
