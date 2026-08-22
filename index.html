@@ -105,6 +105,8 @@
   .notes-switch-row { display: none; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
   body.reading-mode .notes-switch-row { display: flex; }
   .notes-switch-label { font-size: 12px; color: var(--ink-soft); }
+  .notes-switch-hint { display: none; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+  body.reading-mode .notes-switch-hint { display: block; }
 
   /* 아이폰 스타일 토글 스위치 — 왼쪽(꺼짐)이 학습 모드, 오른쪽(켜짐·초록)이 읽기 모드 */
   .ios-switch { position: relative; display: inline-flex; width: 44px; height: 26px; flex: 0 0 auto; }
@@ -141,6 +143,23 @@
   .inline-note-grammar { color: var(--ink-soft); font-size: 12px; margin-bottom: 4px; }
   .inline-note-grammar strong { color: var(--accent); font-weight: 700; margin-right: 4px; }
   .inline-note-ref { color: var(--ink-soft); font-size: 11px; }
+
+  /* 학자 노트 참조(예: "마태복음 16:21") 중, 지금 등록된 성경 안에서 실제로 찾을 수 있는 절만
+     밑줄 있는 링크로 보이고, 누르면 그 절 내용이 작은 카드로 독립적으로 떠서 미리 보인다 */
+  .ref-link { color: var(--accent); text-decoration: underline; cursor: pointer; touch-action: manipulation; }
+  .ref-popup {
+    position: fixed; inset: 0; z-index: 1600;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(30, 26, 20, .35); padding: 20px;
+  }
+  .ref-popup[hidden] { display: none; }
+  .ref-popup-card {
+    max-width: 320px; width: 100%; background: var(--card); border-radius: 14px;
+    padding: 14px 16px; box-shadow: 0 16px 40px rgba(0,0,0,.3); cursor: pointer; touch-action: manipulation;
+  }
+  .ref-popup-label { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+  .ref-popup-text { font-family: 'Noto Serif KR', serif; font-size: 15px; line-height: 1.7; color: var(--ink); }
+  .ref-popup-hint { margin-top: 8px; font-size: 11px; color: var(--ink-soft); }
 
   .read-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; padding-top: 16px; }
 
@@ -815,6 +834,7 @@
       </label>
       <div class="notes-switch-label">전체 학자노트 ON/OFF</div>
     </div>
+    <div class="notes-switch-hint" id="notes-switch-hint">절 앞에 ✦ 표시가 있는 절은 학자 노트가 있는 절입니다.</div>
   </header>
 
   <div id="book-modal" class="book-modal">
@@ -854,6 +874,14 @@
         </label>
         <div id="settings-status" style="margin-top:10px; font-size:12px; color:var(--ink-soft);"></div>
       </div>
+    </div>
+  </div>
+
+  <div id="ref-popup" class="ref-popup" hidden>
+    <div class="ref-popup-card" id="ref-popup-card">
+      <div class="ref-popup-label" id="ref-popup-label"></div>
+      <div class="ref-popup-text" id="ref-popup-text"></div>
+      <div class="ref-popup-hint">눌러서 본문으로 이동</div>
     </div>
   </div>
 
@@ -4262,6 +4290,70 @@ function getNoteForBook(bookId, key) {
 }
 function getNote(key) { return getNoteForBook(currentBook, key); }
 
+// ============================================================
+// 학자 노트의 "참조"(r) 문구 — "마태복음 16:21, 20:19"처럼 여러 구절이 쉼표로 이어지고,
+// 책 이름이 없으면 바로 앞에서 언급된 책(또는 이 노트 자신의 책)을 그대로 이어받는다.
+// 그중 지금 등록된 성경(룻기·마가복음·누가복음·마태복음) 안에서 실제로 찾을 수 있는 절만
+// 클릭 가능한 링크로 바꾸고, 나머지(등록 안 된 책이거나 장만 가리키는 경우)는 그대로 글자로 둔다.
+// ============================================================
+const REF_BOOK_ALIASES = { '룻기': 'ruth', '룻': 'ruth', '마가복음': 'mark', '누가복음': 'luke', '마태복음': 'matthew' };
+
+function verseExistsInBook(bookId, chapter, verse) {
+  return !!document.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + chapter + '-' + verse + '"]');
+}
+
+function renderRefsHtml(refText, ownBookId) {
+  const segments = refText.split(/,\s*/);
+  let lastBookId = ownBookId;
+  let lastKnownUnavailable = false;
+  const parts = segments.map(seg => {
+    const trimmed = seg.trim();
+    let rest = trimmed;
+    let bookId = lastBookId;
+    let knownUnavailable = lastKnownUnavailable;
+    const bookMatch = trimmed.match(/^([가-힣]+)\s+(.+)$/);
+    if (bookMatch) {
+      rest = bookMatch[2];
+      if (REF_BOOK_ALIASES[bookMatch[1]]) { bookId = REF_BOOK_ALIASES[bookMatch[1]]; knownUnavailable = false; }
+      else { bookId = null; knownUnavailable = true; }
+      lastBookId = bookId; lastKnownUnavailable = knownUnavailable;
+    }
+    const cvMatch = !/장\s*$/.test(rest) && rest.match(/^(\d+):(\d+)/);
+    if (bookId && !knownUnavailable && cvMatch && verseExistsInBook(bookId, cvMatch[1], cvMatch[2])) {
+      return '<span class="ref-link" data-book="' + bookId + '" data-chapter="' + cvMatch[1] + '" data-verse="' + cvMatch[2] + '">' + escapeHtmlDict(trimmed) + '</span>';
+    }
+    return escapeHtmlDict(trimmed);
+  });
+  return parts.join(', ');
+}
+
+function showRefPopup(bookId, chapter, verse) {
+  const vtextEl = document.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + chapter + '-' + verse + '"] .vtext');
+  if (!vtextEl) return;
+  document.getElementById('ref-popup-label').textContent = (BOOK_LABELS[bookId] || '') + ' ' + chapter + '장 ' + verse + '절';
+  document.getElementById('ref-popup-text').textContent = vtextEl.textContent;
+  const popup = document.getElementById('ref-popup');
+  popup.dataset.book = bookId;
+  popup.dataset.key = chapter + '-' + verse;
+  popup.hidden = false;
+}
+function closeRefPopup() { document.getElementById('ref-popup').hidden = true; }
+document.getElementById('ref-popup').addEventListener('click', (e) => {
+  const popup = document.getElementById('ref-popup');
+  if (e.target === popup) { closeRefPopup(); return; }
+  if (e.target.closest('#ref-popup-card')) {
+    const bookId = popup.dataset.book, key = popup.dataset.key;
+    closeRefPopup();
+    if (typeof jumpToHistoryVerse === 'function') jumpToHistoryVerse(bookId, key);
+  }
+});
+document.addEventListener('click', (e) => {
+  const refLink = e.target.closest('.ref-link');
+  if (!refLink) return;
+  e.stopPropagation();
+  showRefPopup(refLink.dataset.book, refLink.dataset.chapter, refLink.dataset.verse);
+});
+
 const PEOPLE_MARK = [
   { n: "예수", role: "주인공 · 나사렛 출신", v: "1장 이후 전체", b: "갈릴리 나사렛 출신. 세례 요한에게 세례를 받은 뒤 하나님 나라를 선포하며 갈릴리 전역에서 가르치고, 병자를 고치고, 귀신을 쫓아내십니다." },
   { n: "세례 요한", role: "예수의 사역을 예비한 선지자", v: "1:4–8", b: "낙타털 옷을 입고 광야에서 회개의 세례를 전파합니다. 이사야가 예언한 '광야에서 외치는 소리'로 소개됩니다." },
@@ -4500,7 +4592,7 @@ function renderInlineNotes() {
     html += '<div class="inline-note-title">' + escapeHtmlDict(note.t) + '</div>';
     html += '<div class="inline-note-body">' + escapeHtmlDict(note.b) + '</div>';
     if (note.g) html += '<div class="inline-note-grammar"><strong>원어·문법</strong>' + escapeHtmlDict(note.g) + '</div>';
-    if (note.r) html += '<div class="inline-note-ref">참조: ' + escapeHtmlDict(note.r) + '</div>';
+    if (note.r) html += '<div class="inline-note-ref">참조: ' + renderRefsHtml(note.r, bookId) + '</div>';
     noteEl.innerHTML = html;
   });
 }
@@ -5043,7 +5135,7 @@ function renderStudyFlow(n) {
     <div class="step-label">참고 · 학자들의 관찰과 배경 지식</div>
     ${tn ? `<h3 style="margin-top:6px;">${tn.t}</h3><div class="note-body"><p>${tn.b}</p></div>
       ${tn.g ? `<div class="grammar"><div class="g-label">문법 포인트</div>${tn.g}</div>` : ''}
-      ${tn.r ? `<div class="refs"><strong>함께 읽기</strong> · ${tn.r}</div>` : ''}
+      ${tn.r ? `<div class="refs"><strong>함께 읽기</strong> · ${renderRefsHtml(tn.r, currentBook)}</div>` : ''}
       <p class="compare-hint">스스로 적은 내용과 비교해보세요 — 다르다고 틀린 게 아닙니다. 학자들이 무엇에 주목했는지 확인하고, 필요하면 위 칸을 다시 고쳐 써보세요.</p>`
       : `<p style="font-size:13px; color:var(--ink-soft);">${isMulti ? '이 구간에는' : '이 절에는'} 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 ${isMulti ? '이 구간' : '이 절'}에 대한 당신의 연구 결과입니다.</p>`}
   </div>`;
@@ -5271,8 +5363,12 @@ versesEl.querySelectorAll('.verse').forEach(v => {
       noteView.innerHTML = DEFAULT_PANEL;
       return;
     }
-    // 읽기 모드에서는 탭으로 학습 흐름을 열지 않는다 — 학자 노트는 이미 본문 아래에 각주로 보인다
-    if (typeof appMode !== 'undefined' && appMode === 'reading') return;
+    // 읽기 모드에서는 탭으로 학습 흐름을 열지 않는다 — 학자 노트는 이미 본문 아래에 각주로 보인다.
+    // 다만 절을 눌러본 기록 자체는 학습 모드와 마찬가지로 히스토리에 남긴다.
+    if (typeof appMode !== 'undefined' && appMode === 'reading') {
+      if (typeof pushHistory === 'function') pushHistory(currentBook, n);
+      return;
+    }
     openStudyFlowForVerses([v], n);
   });
 });
