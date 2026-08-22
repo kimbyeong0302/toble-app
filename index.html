@@ -186,12 +186,6 @@
   .verse.has-note .num::after { content: "✦"; font-size: 9px; margin-left: 3px; vertical-align: middle; }
   .verse.open { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
   .verse.selected { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); outline: 2px dashed var(--accent); outline-offset: -2px; }
-  /* 히스토리 등에서 특정 절로 이동했을 때 눈에 띄게 잠깐 강조 */
-  @keyframes verseJumpFlash {
-    0%, 55% { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
-    100% { background: transparent; box-shadow: none; }
-  }
-  .verse-jump-highlight { animation: verseJumpFlash 1.8s ease-out; }
   .deselect-x {
     display: inline-flex; align-items: center; justify-content: center;
     width: 18px; height: 18px; border-radius: 50%; margin-right: 5px;
@@ -6326,18 +6320,19 @@ function jumpToVerseFromDict(key, bookId) {
     const el = bookContent ? bookContent.querySelector('.verse[data-n="' + key + '"]') : null;
     if (!el) return;
     if (currentOpen) currentOpen.classList.remove('open');
+    currentOpen = el;
+    el.classList.add('open');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // 읽기 모드에는 애초에 메뉴에 "학습" 탭이 없으니, 사전에서 절로 이동할 때도 학습 흐름을
+    // 열거나 메뉴 시트를 끌어올리지 않고 본문 이동 + 강조 표시만 한다.
+    if (typeof appMode !== 'undefined' && appMode === 'reading') return;
     if (el.classList.contains('has-note')) {
-      currentOpen = el;
-      el.classList.add('open');
       renderStudyFlow(key);
-      switchView('note');
     } else {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      switchView('note');
       noteView.innerHTML = DEFAULT_PANEL;
     }
+    switchView('note');
     if (isMobile()) setSheetOpen(true);
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 160);
 }
 
@@ -6564,11 +6559,10 @@ function jumpToHistoryVerse(bookId, key) {
     const el = versesEl.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + key + '"]');
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // 어느 절인지 바로 눈에 띄도록 잠깐 강조했다가 자연스럽게 사라지게 한다
-    el.classList.remove('verse-jump-highlight');
-    void el.offsetWidth;
-    el.classList.add('verse-jump-highlight');
-    setTimeout(() => el.classList.remove('verse-jump-highlight'), 1800);
+    // 어느 절인지 알 수 있게, 다른 곳으로 다시 이동하기 전까지 계속 눌린 상태로 표시해둔다
+    if (currentOpen) currentOpen.classList.remove('open');
+    currentOpen = el;
+    el.classList.add('open');
   }, 300);
 }
 
