@@ -699,7 +699,10 @@
       padding-bottom: calc(40px + env(safe-area-inset-bottom));
     }
     .facts { grid-template-columns: 1fr 1fr; }
-    .verse-select-bar { bottom: calc(78px + env(safe-area-inset-bottom)); }
+    /* 메뉴 시트가 접혀 있을 땐(손잡이+장 이름+탭만 보이는 상태) 그 위로 간격을 두고 뜨게 해서
+       절 선택 팝업이 탭을 가리지 않게 한다. 시트가 열려 있을 땐 기존 위치 그대로. */
+    .verse-select-bar { bottom: calc(184px + env(safe-area-inset-bottom)); }
+    body.sheet-open .verse-select-bar { bottom: calc(78px + env(safe-area-inset-bottom)); }
 
     #hl-sentinel { display: none; }
     .hl-toolbar-wrap {
