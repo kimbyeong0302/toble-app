@@ -5269,8 +5269,8 @@ versesEl.querySelectorAll('.verse').forEach(v => {
     if (Math.abs(deltaX) < SWIPE_MIN_DIST) return;
     if (Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return; // 세로 스크롤과 헷갈리지 않도록 가로 움직임이 뚜렷할 때만
     contentSwipeOccurred = true;
-    if (deltaX < 0) showPage(currentPage + 1); // 왼쪽으로 밀면 다음 장
-    else showPage(currentPage - 1); // 오른쪽으로 밀면 이전 장
+    if (deltaX < 0) goToNextChapterOrBook(); // 왼쪽으로 밀면 다음 장(마지막 장이면 다음 책)
+    else goToPrevChapterOrBook(); // 오른쪽으로 밀면 이전 장(첫 장이면 이전 책)
   });
   versesEl.addEventListener('pointercancel', () => { swiping = false; });
 })();
@@ -5313,9 +5313,24 @@ function showPage(n) {
       if (chEl) chEl.textContent = n + '장';
     }
   }
-  document.getElementById('page-prev').disabled = (n === 1);
-  document.getElementById('page-next').disabled = (n === total);
-  document.getElementById('page-next').textContent = (n === total) ? '마지막 장' : '다음 장 →';
+  // 장 이동은 이제 책 경계에서 멈추지 않고 다음/이전 성경으로 넘어가므로, 버튼을 막는 대신
+  // 경계에서는 "다음 책 1장" / "이전 책 마지막 장"으로 안내하는 라벨을 보여준다.
+  const availIds = BOOKS.filter(b => b.available).map(b => b.id);
+  const bookIdx = availIds.indexOf(currentBook);
+  document.getElementById('page-prev').disabled = false;
+  document.getElementById('page-next').disabled = false;
+  if (n === 1 && availIds.length > 1) {
+    const prevId = availIds[(bookIdx - 1 + availIds.length) % availIds.length];
+    document.getElementById('page-prev').textContent = '← ' + (BOOK_LABELS[prevId] || '') + ' ' + (BOOK_CHAPTER_COUNTS[prevId] || 1) + '장';
+  } else {
+    document.getElementById('page-prev').textContent = '← 이전 장';
+  }
+  if (n === total && availIds.length > 1) {
+    const nextId = availIds[(bookIdx + 1) % availIds.length];
+    document.getElementById('page-next').textContent = (BOOK_LABELS[nextId] || '') + ' 1장 →';
+  } else {
+    document.getElementById('page-next').textContent = '다음 장 →';
+  }
   document.getElementById('page-indicator').textContent = n + ' / ' + total;
   const bnbChapterEl = document.getElementById('bnb-chapter');
   if (bnbChapterEl) bnbChapterEl.textContent = n + '장';
@@ -5331,8 +5346,28 @@ function showPage(n) {
   lsSet('last_page_' + currentBook, String(n));
 }
 
-document.getElementById('page-prev').addEventListener('click', () => showPage(currentPage - 1));
-document.getElementById('page-next').addEventListener('click', () => showPage(currentPage + 1));
+// 지금 책의 마지막 장에서 "다음"을 누르면 (등록된 성경 순서상) 다음 책 1장으로,
+// 첫 장에서 "이전"을 누르면 이전 책의 마지막 장으로 넘어간다 (등록된 책들 사이에서 순환).
+function goToNextChapterOrBook() {
+  if (currentPage < getPageCount()) { showPage(currentPage + 1); return; }
+  const availIds = BOOKS.filter(b => b.available).map(b => b.id);
+  if (availIds.length < 2) { showPage(currentPage + 1); return; }
+  const idx = availIds.indexOf(currentBook);
+  const nextId = availIds[(idx + 1) % availIds.length];
+  setBook(nextId);
+  showPage(1);
+}
+function goToPrevChapterOrBook() {
+  if (currentPage > 1) { showPage(currentPage - 1); return; }
+  const availIds = BOOKS.filter(b => b.available).map(b => b.id);
+  if (availIds.length < 2) { showPage(currentPage - 1); return; }
+  const idx = availIds.indexOf(currentBook);
+  const prevId = availIds[(idx - 1 + availIds.length) % availIds.length];
+  setBook(prevId);
+  showPage(BOOK_CHAPTER_COUNTS[prevId] || 1);
+}
+document.getElementById('page-prev').addEventListener('click', goToPrevChapterOrBook);
+document.getElementById('page-next').addEventListener('click', goToNextChapterOrBook);
 
 // ============================================================
 // 책 전환 — 성경 목록에서 다른 책의 장을 고르면 호출됨
