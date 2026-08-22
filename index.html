@@ -25,6 +25,11 @@
     --bg: #faf7f2; --card: #ffffff; --ink: #2b2620; --ink-soft: #6b6156;
     --accent: #8a6d3b; --accent-soft: #f0e7d8; --line: #e6ddd0; --note-bg: #f6f1e7;
   }
+  /* 읽기 모드 — 눈에 편안한 연두색 테마. 학습 모드(브라운)와 시각적으로 구분된다 */
+  body.reading-mode {
+    --bg: #f5f8ef; --card: #ffffff; --ink: #28331f; --ink-soft: #61705a;
+    --accent: #5c8a3a; --accent-soft: #e5efd9; --line: #dfe9d1; --note-bg: #eef4e3;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   /* ---- 시작 화면(스플래시) ---- */
@@ -77,7 +82,35 @@
   header h1 { font-family: 'Noto Serif KR', serif; font-size: 28px; font-weight: 700; }
   header .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
   .bnb-chapter { font-size: 21px; font-weight: 700; color: var(--accent); margin-top: 3px; }
-  header .mode-note { margin-top: 10px; font-size: 12px; color: var(--ink-soft); background: var(--note-bg); display: inline-block; padding: 6px 14px; border-radius: 14px; }
+  header .mode-note { font-size: 12px; color: var(--ink-soft); background: var(--note-bg); display: inline-block; padding: 6px 14px; border-radius: 14px; }
+  .mode-switch-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+
+  /* 아이폰 스타일 토글 스위치 — 왼쪽(꺼짐)이 학습 모드, 오른쪽(켜짐·초록)이 읽기 모드 */
+  .ios-switch { position: relative; display: inline-flex; width: 44px; height: 26px; flex: 0 0 auto; }
+  .ios-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+  .ios-switch-track {
+    position: absolute; inset: 0; background: #d8d3ca; border-radius: 999px;
+    transition: background .2s;
+  }
+  .ios-switch-thumb {
+    position: absolute; left: 2px; top: 2px; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform .2s;
+  }
+  .ios-switch.on .ios-switch-track { background: #5c8a3a; }
+  .ios-switch.on .ios-switch-thumb { transform: translateX(18px); }
+
+  /* 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 표시 */
+  .inline-note { display: none; }
+  body.reading-mode .inline-note {
+    display: block; margin: 2px 10px 16px; padding: 10px 14px;
+    border-left: 3px solid var(--accent); background: var(--note-bg); border-radius: 0 8px 8px 0;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; line-height: 1.7; color: var(--ink);
+  }
+  .inline-note-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .inline-note-body { margin-bottom: 4px; }
+  .inline-note-grammar { color: var(--ink-soft); font-size: 12px; margin-bottom: 4px; }
+  .inline-note-grammar strong { color: var(--accent); font-weight: 700; margin-right: 4px; }
+  .inline-note-ref { color: var(--ink-soft); font-size: 11px; }
 
   .read-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px; align-items: start; padding-top: 16px; }
 
@@ -673,7 +706,13 @@
     <button id="book-nav-btn" class="book-nav-btn"><span class="bnb-name">룻기</span><span class="bnb-chevron">▾</span></button>
     <div class="bnb-chapter" id="bnb-chapter">1장</div>
     <div class="sub">개역한글판 · 4장 85절 · 메길로트(다섯 두루마리)</div>
-    <div class="mode-note">학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입</div>
+    <div class="mode-switch-row">
+      <label class="ios-switch" title="학습 모드 / 읽기 모드 전환">
+        <input type="checkbox" id="mode-switch">
+        <span class="ios-switch-track"><span class="ios-switch-thumb"></span></span>
+      </label>
+      <div class="mode-note" id="mode-note">학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입</div>
+    </div>
   </header>
 
   <div id="book-modal" class="book-modal">
@@ -4079,15 +4118,16 @@ const TEACHER_NOTES_MATTHEW = {
   "28-19": { t: "지상명령 — 삼위일체적 세례 공식", b: "'아버지와 아들과 성령의 이름으로'라는 단수형 '이름'(복수 '이름들'이 아님) 표현은 세 위격이 한 이름, 곧 한 신성 안에 있다는 것을 암시하는 신약에서 가장 명시적인 삼위일체적 언어 중 하나로 꼽힙니다. '모든 족속'이라는 표현은 마태복음 1장의 이방 여인들, 2장의 동방박사들로 이미 예고되었던 '이방을 향한 확장'이라는 주제가 마지막에 완성되는 지점입니다.", r: "마태복음 1:3, 2:1" }
 };
 
-function getNote(key) {
-  if (currentBook === 'mark') return TEACHER_NOTES_MARK[key];
-  if (currentBook === 'luke') return TEACHER_NOTES_LUKE[key];
-  if (currentBook === 'matthew') return TEACHER_NOTES_MATTHEW[key];
+function getNoteForBook(bookId, key) {
+  if (bookId === 'mark') return TEACHER_NOTES_MARK[key];
+  if (bookId === 'luke') return TEACHER_NOTES_LUKE[key];
+  if (bookId === 'matthew') return TEACHER_NOTES_MATTHEW[key];
   if (currentTrack === 'traditional' && TEACHER_NOTES_TRADITIONAL_OVERRIDES[key]) {
     return TEACHER_NOTES_TRADITIONAL_OVERRIDES[key];
   }
   return TEACHER_NOTES_RUTH[key];
 }
+function getNote(key) { return getNoteForBook(currentBook, key); }
 
 const PEOPLE_MARK = [
   { n: "예수", role: "주인공 · 나사렛 출신", v: "1장 이후 전체", b: "갈릴리 나사렛 출신. 세례 요한에게 세례를 받은 뒤 하나님 나라를 선포하며 갈릴리 전역에서 가르치고, 병자를 고치고, 귀신을 쫓아내십니다." },
@@ -4302,6 +4342,33 @@ function applyTrackUI() {
       renderStudyFlow(currentOpen.dataset.n);
     }
   } catch (e) { /* 초기 로드 시점엔 currentOpen이 아직 선언되지 않았을 수 있음 */ }
+  if (typeof renderInlineNotes === 'function') renderInlineNotes(); // 읽기 모드의 본문 각주도 트랙에 맞춰 다시 그림
+}
+
+// 읽기 모드에서 절 바로 아래에 학자 노트를 각주처럼 붙여넣는다 (학습 모드에서는 CSS로 숨김)
+function renderInlineNotes() {
+  document.querySelectorAll('.verse[data-n]').forEach(v => {
+    const bookEl = v.closest('.book-content');
+    if (!bookEl) return;
+    const bookId = bookEl.dataset.book;
+    const note = getNoteForBook(bookId, v.dataset.n);
+    let noteEl = v.nextElementSibling;
+    if (noteEl && !noteEl.classList.contains('inline-note')) noteEl = null;
+    if (!note) {
+      if (noteEl) noteEl.remove();
+      return;
+    }
+    if (!noteEl) {
+      noteEl = document.createElement('div');
+      noteEl.className = 'inline-note';
+      v.insertAdjacentElement('afterend', noteEl);
+    }
+    let html = '<div class="inline-note-title">' + escapeHtmlDict(note.t) + '</div>';
+    html += '<div class="inline-note-body">' + escapeHtmlDict(note.b) + '</div>';
+    if (note.g) html += '<div class="inline-note-grammar"><strong>원어·문법</strong>' + escapeHtmlDict(note.g) + '</div>';
+    if (note.r) html += '<div class="inline-note-ref">참조: ' + escapeHtmlDict(note.r) + '</div>';
+    noteEl.innerHTML = html;
+  });
 }
 function setTrack(track) {
   currentTrack = track;
@@ -4313,6 +4380,34 @@ document.getElementById('track-traditional').addEventListener('click', () => set
 currentTrack = lsGet('track_ruth', 'academic');
 applyTrackUI();
 
+// ============================================================
+// 학습 모드 / 읽기 모드 — 학습 모드는 절을 눌러 관찰→해석→적용 흐름을 여는 지금까지의 방식,
+// 읽기 모드는 그 대신 학자 노트가 본문 절 바로 아래에 각주처럼 항상 보인다.
+// 두 모드는 테마 색상도 다르다(학습=브라운, 읽기=연두).
+// ============================================================
+let appMode = lsGet('app_mode', 'study');
+function applyAppMode() {
+  document.body.classList.toggle('reading-mode', appMode === 'reading');
+  const modeSwitchEl = document.getElementById('mode-switch');
+  if (modeSwitchEl) modeSwitchEl.checked = (appMode === 'reading');
+  const modeSwitchLabel = document.querySelector('.ios-switch');
+  if (modeSwitchLabel) modeSwitchLabel.classList.toggle('on', appMode === 'reading');
+  const modeNoteEl = document.getElementById('mode-note');
+  if (modeNoteEl) {
+    modeNoteEl.textContent = appMode === 'reading'
+      ? '읽기 모드 · 학자 노트가 본문 절 아래에 각주처럼 표시됩니다'
+      : '학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입';
+  }
+}
+const modeSwitchInput = document.getElementById('mode-switch');
+if (modeSwitchInput) {
+  modeSwitchInput.addEventListener('change', (e) => {
+    appMode = e.target.checked ? 'reading' : 'study';
+    lsSet('app_mode', appMode);
+    applyAppMode();
+  });
+}
+applyAppMode();
 
 const versesEl = document.getElementById('verses');
 
@@ -4936,6 +5031,8 @@ versesEl.querySelectorAll('.verse').forEach(v => {
       noteView.innerHTML = DEFAULT_PANEL;
       return;
     }
+    // 읽기 모드에서는 탭으로 학습 흐름을 열지 않는다 — 학자 노트는 이미 본문 아래에 각주로 보인다
+    if (typeof appMode !== 'undefined' && appMode === 'reading') return;
     openStudyFlowForVerses([v], n);
   });
 });
