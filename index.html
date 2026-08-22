@@ -91,7 +91,8 @@
   header .app-name { font-size: 12px; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; margin-bottom: 0; }
   .settings-gear-btn {
     position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-    background: none; border: none; font-size: 18px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; line-height: 1; cursor: pointer;
     color: var(--ink-soft); padding: 4px 8px; touch-action: manipulation;
   }
   .settings-gear-btn:active { color: var(--accent); }
@@ -221,6 +222,7 @@
   }
   .hl-tool.active { box-shadow: 0 0 0 2.5px var(--accent); }
   .hl-tool[data-tool="off"] { width: auto; border-radius: 14px; padding: 0 12px; font-size: 12px; }
+  .hl-tool[data-tool="copy"] { width: auto; border-radius: 14px; padding: 0 12px; font-size: 12px; white-space: nowrap; }
   .hl-tool[data-tool="yellow"] { background: #fdf0a8; }
   .hl-tool[data-tool="green"] { background: #cfe8c9; }
   .hl-tool[data-tool="pink"] { background: #f6cfd9; }
@@ -721,6 +723,7 @@
     .hl-toolbar-tools { flex-direction: column; gap: 6px; }
     .hl-tool { width: 25px; height: 25px; font-size: 10.5px; }
     .hl-tool[data-tool="off"] { width: 34px; height: 21px; border-radius: 11px; font-size: 9px; padding: 0; }
+    .hl-tool[data-tool="copy"] { width: 34px; height: 21px; border-radius: 11px; font-size: 9px; padding: 0; }
     .hl-toggle-btn {
       margin-left: 0; width: 34px; padding: 4px 0; font-size: 10px;
       line-height: 1.25; white-space: normal; text-align: center;
@@ -764,7 +767,12 @@
   <header>
     <div class="app-name-row">
       <div class="app-name">토블 : 성경을 톺아보다</div>
-      <button id="settings-gear-btn" class="settings-gear-btn" title="설정" aria-label="설정">⚙️</button>
+      <button id="settings-gear-btn" class="settings-gear-btn" title="설정" aria-label="설정">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </div>
     <button id="book-nav-btn" class="book-nav-btn"><span class="bnb-name">룻기</span><span class="bnb-chevron">▾</span></button>
     <div class="bnb-chapter" id="bnb-chapter">1장</div>
@@ -808,7 +816,7 @@
             <button class="hl-tool" data-tool="pink" title="분홍"></button>
             <button class="hl-tool" data-tool="blue" title="파랑"></button>
             <button class="hl-tool" data-tool="erase" title="지우개">✕</button>
-            <button class="hl-tool" data-tool="copy" title="선택한 절 복사">📋</button>
+            <button class="hl-tool" data-tool="copy" title="선택한 절 복사">복사</button>
           </div>
           <button class="hl-toggle-btn" id="hl-toggle-btn">숨기기</button>
         </div>
