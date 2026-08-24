@@ -143,7 +143,7 @@ async function checkAccess() {
   const { data, error } = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
   const isAdmin = !!(data && data.is_admin);
   if (error || !isAdmin) {
-    showGate('관리자만 접근 가능합니다. <a href="#" id="admin-signout-link">다른 계정으로 로그인</a>');
+    showGate('관리자 권한이 없습니다. <a href="#" id="admin-signout-link">다른 계정으로 로그인</a>');
     const link = document.getElementById('admin-signout-link');
     if (link) link.addEventListener('click', async (e) => { e.preventDefault(); await sb.auth.signOut(); checkAccess(); });
     return;
