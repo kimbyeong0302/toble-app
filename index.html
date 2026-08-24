@@ -3950,6 +3950,20 @@ let justConfirmedEmail = false;
   }
 })();
 
+// 회원가입 확인/비밀번호 재설정 링크가 만료됐거나 이미 사용된 경우, Supabase가
+// URL 해시에 error_code(예: otp_expired)를 실어서 돌려보낸다 — 이걸 감지해서 안내한다.
+let authLinkErrorMessage = null;
+(function () {
+  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const errorCode = hashParams.get('error_code');
+  if (errorCode) {
+    authLinkErrorMessage = errorCode === 'otp_expired'
+      ? '링크가 만료되었거나 이미 사용된 것 같습니다. 다시 시도해주세요.'
+      : (hashParams.get('error_description') || '링크 처리 중 오류가 발생했습니다.').replace(/\+/g, ' ');
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+})();
+
 // 비밀번호 재설정 메일의 링크를 눌러 돌아왔을 때 true가 된다 — Supabase가
 // onAuthStateChange에 'PASSWORD_RECOVERY' 이벤트로 알려주므로 별도 URL 마커는 필요 없다.
 // 이 값이 true인 동안은 계정 모달이 평소 로그인/계정 화면 대신 "새 비밀번호 설정" 폼을 보여준다.
@@ -6367,7 +6381,10 @@ if (sb) {
   sb.auth.getSession().then(({ data }) => {
     currentUser = data.session ? data.session.user : null;
     updateAuthHeaderButton();
-    if (justConfirmedEmail) {
+    if (authLinkErrorMessage) {
+      alert(authLinkErrorMessage);
+      authLinkErrorMessage = null;
+    } else if (justConfirmedEmail) {
       if (currentUser) {
         openAuthModal(); // 확인 완료 안내와 함께 계정 모달을 자동으로 열어줌
       } else {
