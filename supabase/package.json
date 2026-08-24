@@ -1,0 +1,13 @@
+{
+  "name": "toble-supabase-migration",
+  "private": true,
+  "description": "index.html 인라인 데이터를 Supabase로 옮기는 1회성 마이그레이션 스크립트 (앱 배포물에는 포함되지 않음)",
+  "scripts": {
+    "migrate:dry": "node migrate.js --dry-run",
+    "migrate": "node migrate.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "dotenv": "^16.4.5"
+  }
+}

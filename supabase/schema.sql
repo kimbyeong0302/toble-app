@@ -1,0 +1,136 @@
+-- 토블 (성경을 톺아보다) — Supabase 스키마 설계안
+-- 이 파일은 아직 실행하지 않았습니다. 검토 후 확정되면 Supabase SQL Editor에서 실행합니다.
+
+-- ============================================================
+-- 1. 공용 콘텐츠 테이블 (모든 사용자가 함께 보는 데이터: 책, 본문, 학자노트, 인물)
+--    쓰기는 관리자(서비스 롤)만, 읽기는 누구나 가능하도록 RLS를 건다.
+-- ============================================================
+
+create table books (
+  id text primary key,                 -- 'ruth', 'matthew' 등 지금 코드의 book id와 동일하게
+  name_ko text not null,                -- '룻기', '마태복음'
+  testament text not null check (testament in ('old', 'new')),
+  order_num int not null,               -- 성경 목차 순서
+  chapter_count int not null,
+  available boolean not null default false
+);
+
+-- 역본(번역본). 지금은 개역한글 하나뿐이지만, 나중에 여러 역본을 추가한다고 하셔서 처음부터 분리해둠
+-- id는 index.html의 기존 VERSIONS 레지스트리와 동일한 키를 그대로 사용한다 ('krv' = 개역한글)
+create table translations (
+  id text primary key,                  -- 'krv'(개역한글) 등
+  name_ko text not null
+);
+
+create table verses (
+  id bigint generated always as identity primary key,
+  book_id text not null references books(id),
+  translation_id text not null references translations(id),
+  chapter int not null,
+  verse int not null,
+  text text not null,
+  unique (book_id, translation_id, chapter, verse)
+);
+create index verses_lookup on verses (book_id, translation_id, chapter);
+
+-- 학자노트 (지금의 TEACHER_NOTES_RUTH 등)
+create table notes (
+  id bigint generated always as identity primary key,
+  book_id text not null references books(id),
+  chapter int not null,
+  verse_start int not null,
+  verse_end int not null,
+  title text,
+  body text not null,
+  grammar_note text,                    -- 원어/문법 설명 (지금 데이터의 g 필드 — 있는 노트에만 존재)
+  refs text                             -- "마태복음 16:21, 20:19" 같은 원문 참조 문자열 (지금 렌더링 방식 그대로 유지)
+);
+create index notes_lookup on notes (book_id, chapter, verse_start, verse_end);
+
+-- 인물 (지금의 PEOPLE_RUTH 등)
+create table people (
+  id bigint generated always as identity primary key,
+  book_id text not null references books(id),
+  name text not null,
+  role text,                            -- 지금 데이터의 role 필드 ("주인공 · 룻의 시모" 등)
+  verse_ref text,                       -- 지금 데이터의 v 필드 ("1장 전반, 이후 지속" 등 등장 구간 설명)
+  body text not null
+);
+create index people_lookup on people (book_id);
+
+alter table books enable row level security;
+alter table translations enable row level security;
+alter table verses enable row level security;
+alter table notes enable row level security;
+alter table people enable row level security;
+
+create policy "공개 읽기" on books for select using (true);
+create policy "공개 읽기" on translations for select using (true);
+create policy "공개 읽기" on verses for select using (true);
+create policy "공개 읽기" on notes for select using (true);
+create policy "공개 읽기" on people for select using (true);
+-- insert/update/delete 정책을 아예 만들지 않음 → 일반 사용자(anon/authenticated)는 쓰기 불가.
+-- 콘텐츠 등록/수정은 Supabase 대시보드나 service_role 키로만 한다.
+
+-- ============================================================
+-- 2. 사용자별 데이터 테이블 (하이라이트, 메모, 학습노트)
+--    각자 자기 것만 읽고 쓸 수 있도록 RLS로 강제한다.
+-- ============================================================
+
+create table highlights (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  book_id text not null references books(id),
+  chapter int not null,
+  verse int not null,
+  highlight_type text not null check (highlight_type in ('verse', 'word', 'sentence')),
+  range_start int,                      -- word/sentence 하이라이트일 때 절 텍스트 안에서의 시작 위치
+  range_end int,
+  color text,
+  created_at timestamptz not null default now()
+);
+
+create table memos (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  book_id text not null references books(id),
+  chapter int not null,
+  verse int not null,
+  content text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table study_notes (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  book_id text not null references books(id),
+  chapter int not null,
+  verse int not null,
+  content text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index highlights_user_lookup on highlights (user_id, book_id, chapter);
+create index memos_user_lookup on memos (user_id, book_id, chapter);
+create index study_notes_user_lookup on study_notes (user_id, book_id, chapter);
+
+alter table highlights enable row level security;
+alter table memos enable row level security;
+alter table study_notes enable row level security;
+
+create policy "본인 조회" on highlights for select using (auth.uid() = user_id);
+create policy "본인 추가" on highlights for insert with check (auth.uid() = user_id);
+create policy "본인 수정" on highlights for update using (auth.uid() = user_id);
+create policy "본인 삭제" on highlights for delete using (auth.uid() = user_id);
+
+create policy "본인 조회" on memos for select using (auth.uid() = user_id);
+create policy "본인 추가" on memos for insert with check (auth.uid() = user_id);
+create policy "본인 수정" on memos for update using (auth.uid() = user_id);
+create policy "본인 삭제" on memos for delete using (auth.uid() = user_id);
+
+create policy "본인 조회" on study_notes for select using (auth.uid() = user_id);
+create policy "본인 추가" on study_notes for insert with check (auth.uid() = user_id);
+create policy "본인 수정" on study_notes for update using (auth.uid() = user_id);
+create policy "본인 삭제" on study_notes for delete using (auth.uid() = user_id);
