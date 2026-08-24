@@ -173,32 +173,49 @@ create table profiles (
   role text not null default 'user' check (role in ('user', 'admin', 'owner'))
 );
 alter table profiles enable row level security;
-create policy "본인 조회" on profiles for select using (auth.uid() = id);
+
+-- is_owner()/is_admin_or_owner(): security definer로 만들어서 함수 안에서 profiles를
+-- 조회할 때 RLS를 타지 않게 한다. 정책 안에 exists(select ... from profiles ...)를
+-- 그대로 박아넣으면, 같은 테이블(profiles)의 SELECT/UPDATE 정책이 서로를 다시
+-- 평가하려 들면서 "infinite recursion detected in policy" 에러가 난다 — 실제로 겪은
+-- 버그이고, 이 두 헬퍼 함수로 우회하는 게 정석 해법이다.
+create or replace function is_owner()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'owner');
+$$;
+
+create or replace function is_admin_or_owner()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('admin', 'owner'));
+$$;
+-- 본인 행은 항상 보이고, owner는 role 변경 대상을 찾아야 하니 모든 행이 보여야 한다
+-- (안 그러면 UPDATE 후보 행 자체가 안 보여서 owner의 role 변경이 "성공했지만 0행 변경"으로
+-- 조용히 실패한다 — 이것도 실제로 겪은 버그).
+create policy "본인 조회 또는 owner는 전체 조회" on profiles for select
+using (auth.uid() = id or is_owner());
 -- insert 정책 없음 — 신규 유저의 profiles 행은 admin_search_users()가 필요할 때 만들어준다.
 
 -- owner만 다른 사용자의 role을 바꿀 수 있다. 대상 행이 지금 owner면 애초에 손 못 대고
 -- (using), 바꾼 결과값도 user/admin만 허용된다(with check) — 이 경로로는 절대 owner를
--- 만들거나 owner를 건드릴 수 없다. admin/user는 이 정책에 아예 해당 안 되므로(exists가
--- false) 자기 role이든 남의 role이든 어떤 변경 시도도 RLS가 그냥 막는다.
+-- 만들거나 owner를 건드릴 수 없다. admin/user는 is_owner()가 false이므로 자기 role이든
+-- 남의 role이든 어떤 변경 시도도 RLS가 그냥 막는다.
 create policy "owner가 user/admin 사이에서 role 변경" on profiles for update
-using (
-  exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'owner')
-  and role <> 'owner'
-)
-with check (
-  exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'owner')
-  and role in ('user', 'admin')
-);
+using (is_owner() and role <> 'owner')
+with check (is_owner() and role in ('user', 'admin'));
 
-create policy "관리자 추가" on notes for insert with check (
-  exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'owner'))
-);
-create policy "관리자 수정" on notes for update using (
-  exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'owner'))
-);
-create policy "관리자 삭제" on notes for delete using (
-  exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'owner'))
-);
+create policy "관리자 추가" on notes for insert with check (is_admin_or_owner());
+create policy "관리자 수정" on notes for update using (is_admin_or_owner());
+create policy "관리자 삭제" on notes for delete using (is_admin_or_owner());
 
 -- 이메일로 사용자를 검색하는 용도. auth.users는 PostgREST로 직접 조회할 수 없어서
 -- security definer 함수로 우회하고, 함수 안에서 호출자가 owner인지 다시 확인한다.
