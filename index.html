@@ -6084,10 +6084,12 @@ function renderAuthModal() {
     return;
   }
   if (currentUser) {
+    // 로그인 직후엔 onAuthStateChange가 초기 세션을 한 번 더 통지하면서 모달이 열려 있는 동안
+    // renderAuthModal()이 여러 번 다시 불릴 수 있다 — 여기서 바로 초기화하면 그 재렌더링 때
+    // 배너가 사라져버리므로, 모달을 닫을 때(closeAuthModal)만 초기화한다.
     const confirmBanner = justConfirmedEmail
       ? '<div class="struct-hint" style="margin-bottom:12px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; color:var(--accent); font-weight:600;">✅ 이메일 확인이 완료되었습니다! 로그인되었습니다.</div>'
       : '';
-    justConfirmedEmail = false; // 한 번 보여줬으면 다시 안 뜨게 초기화
     body.innerHTML = `
       ${confirmBanner}
       <div class="settings-section-title">계정</div>
@@ -6161,7 +6163,7 @@ function updateAuthHeaderButton() {
 
 const authModal = document.getElementById('auth-modal');
 function openAuthModal() { renderAuthModal(); authModal.classList.add('open'); }
-function closeAuthModal() { authModal.classList.remove('open'); }
+function closeAuthModal() { authModal.classList.remove('open'); justConfirmedEmail = false; }
 document.getElementById('auth-header-btn').addEventListener('click', openAuthModal);
 document.getElementById('auth-modal-close').addEventListener('click', closeAuthModal);
 authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuthModal(); });
