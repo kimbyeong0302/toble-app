@@ -288,6 +288,7 @@
   .side-view.active { display: block; }
 
   .side-body h3 { font-family: 'Noto Serif KR', serif; font-size: 17px; color: var(--accent); margin-bottom: 4px; }
+  .back-to-list-link { font-size: 12px; color: var(--accent); cursor: pointer; margin-bottom: 10px; display: inline-block; }
   .verse-ref { font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
   .note-body { font-size: 14px; }
   .note-body p { margin-bottom: 10px; }
@@ -5583,7 +5584,8 @@ function renderStudyFlow(n) {
   const nextLabel = { obs: '다음: 해석 →', interp: '다음: 적용 →', app: '완료 · 학자 노트 보기 →' };
   const isMulti = n.indexOf('+') !== -1;
 
-  let html = `<div class="verse-ref">${compositeRefLabel(n)}</div>`;
+  let html = `<div class="back-to-list-link" data-back-to-list>← 기록한 절 목록으로</div>`;
+  html += `<div class="verse-ref">${compositeRefLabel(n)}</div>`;
   html += `<div class="reset-link" data-reset="${n}">${isMulti ? '이 구간' : '이 절'} 학습 기록 초기화</div>`;
 
   stepFields().forEach((field, idx) => {
@@ -5639,6 +5641,11 @@ function renderStudyFlow(n) {
     if (!confirm(`${isMulti ? '이 구간' : '이 절'}의 관찰·해석·적용 기록을 모두 지울까요? (하이라이트는 유지됩니다)`)) return;
     removeStudyFields(n);
     renderStudyFlow(n);
+  });
+  const backToListLink = noteView.querySelector('[data-back-to-list]');
+  if (backToListLink) backToListLink.addEventListener('click', () => {
+    if (currentOpen) { currentOpen.classList.remove('open'); currentOpen = null; }
+    renderDefaultPanel();
   });
 }
 
@@ -5931,6 +5938,17 @@ function showPage(n) {
   n = Math.max(1, Math.min(total, n));
   const prevPage = currentPage;
   currentPage = n;
+  // 학습 카드가 열려 있는 채로 다른 장으로 넘어가면, 그 절은 이제 화면에 없는 장에
+  // 숨겨진 채로 남아 다시 탭해서 닫을 방법이 없어진다 — 장이 바뀌면 그 절이 지금 장에
+  // 없는 한 카드를 닫고 기본 화면(기록 목록)으로 되돌린다.
+  if (currentOpen) {
+    const openChapter = Number(currentOpen.dataset.n.split('-')[0]);
+    if (openChapter !== n) {
+      currentOpen.classList.remove('open');
+      currentOpen = null;
+      renderDefaultPanel();
+    }
+  }
   const bookContent = document.querySelector('.book-content[data-book="' + currentBook + '"]');
   if (!bookContent) return;
   let found = false;
