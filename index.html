@@ -5769,6 +5769,7 @@ function setBook(bookId) {
   if (currentUser) {
     fetchSupabaseHighlightsForBook(bookId);
     reapplyAllHighlightsForCurrentBook(); // 이미 캐시돼 있으면 즉시 반영, 없으면 fetch 완료 후 반영됨
+    fetchSupabaseMemosForBook(bookId);
   }
   const mapView = document.getElementById('view-map');
   if (mapView && mapView.classList.contains('active') && typeof renderBookMap === 'function') {
@@ -6065,6 +6066,16 @@ if (sb) {
         fetchSupabaseHighlightsForBook(currentBook);
       } else if (typeof reapplyAllHighlightsForCurrentBook === 'function') {
         reapplyAllHighlightsForCurrentBook(); // 로그아웃 시 로컬 하이라이트로 즉시 되돌려 보여줌
+      }
+    }
+    // 메모도 마찬가지 — 계정이 바뀌면 이전 계정의 캐시가 남아있으면 안 된다.
+    if (typeof supabaseMemoCache !== 'undefined') {
+      Object.keys(supabaseMemoCache).forEach(k => delete supabaseMemoCache[k]);
+      if (currentUser) {
+        fetchSupabaseMemosForBook(currentBook);
+      }
+      if (typeof isMemoTabActive === 'function' && isMemoTabActive() && typeof renderMemoTab === 'function') {
+        renderMemoTab(); // 로그인/로그아웃 전환 시 메모 탭이 열려 있으면 즉시 다시 그림
       }
     }
   });
@@ -6802,8 +6813,92 @@ dictInput.addEventListener('input', (e) => {
 // ============================================================
 // 메모 탭 — 학습 노트가 없는 절도 포함해 자유롭게 메모
 // ============================================================
-function loadMemos() { try { return JSON.parse(lsGet('memos_' + currentBook, '{}')); } catch (e) { return {}; } }
-function saveMemos(m) { lsSet('memos_' + currentBook, JSON.stringify(m)); }
+// ============================================================
+// 메모를 Supabase memos 테이블에서 읽고 쓴다 — 하이라이트와 같은 패턴(로그인 시 서버,
+// 로그아웃 시 지금까지의 localStorage 그대로).
+// 다만 메모는 글자 하나 칠 때마다 saveMemos(전체 맵)이 호출되므로, 그대로 매번 서버에
+// 보내면 요청이 너무 잦다 — 그래서 "바뀐 키만" 찾아서 키별로 잠깐(600ms) 기다렸다가
+// 한 번만 저장하는 디바운스를 건다. 실패하면(오프라인 등) 안내만 띄우고, 방금 입력한
+// 글자를 되돌리지는 않는다(하이라이트 색과 달리 텍스트를 지우는 건 훨씬 더 아쉬우므로).
+// ============================================================
+const supabaseMemoCache = {};        // bookId -> { key: content }
+const supabaseMemoFetching = new Set();
+const memoSaveTimers = {};           // "bookId|key" -> setTimeout id
+
+function fetchSupabaseMemosForBook(bookId) {
+  if (!sb || !currentUser || supabaseMemoCache[bookId] || supabaseMemoFetching.has(bookId)) return;
+  supabaseMemoFetching.add(bookId);
+  sb.from('memos')
+    .select('verse_key, content')
+    .eq('book_id', bookId)
+    .then(({ data, error }) => {
+      supabaseMemoFetching.delete(bookId);
+      if (error || !data) return; // 실패 시 로컬처럼 빈 상태로 남김
+      const map = {};
+      data.forEach(row => { map[row.verse_key] = row.content; });
+      supabaseMemoCache[bookId] = map;
+      if (bookId === currentBook && typeof isMemoTabActive === 'function' && isMemoTabActive() && typeof renderMemoTab === 'function') {
+        renderMemoTab();
+      }
+    });
+}
+
+function scheduleMemoSave(bookId, key) {
+  const timerKey = bookId + '|' + key;
+  if (memoSaveTimers[timerKey]) clearTimeout(memoSaveTimers[timerKey]);
+  memoSaveTimers[timerKey] = setTimeout(() => flushMemoSave(bookId, key), 600);
+}
+
+function flushMemoSave(bookId, key) {
+  delete memoSaveTimers[bookId + '|' + key];
+  const cache = supabaseMemoCache[bookId] || {};
+  const content = cache[key];
+  const isEmpty = !content || !content.trim();
+  const request = isEmpty
+    ? sb.from('memos').delete().eq('book_id', bookId).eq('verse_key', key)
+    : sb.from('memos').upsert(
+        { user_id: currentUser.id, book_id: bookId, verse_key: key, content, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,book_id,verse_key' }
+      );
+  request.then(({ error }) => {
+    if (error) flashHighlightError('오프라인이라 저장이 안 됩니다');
+  });
+}
+
+function loadMemos() {
+  if (isLoggedIn()) { return { ...(supabaseMemoCache[currentBook] || {}) }; }
+  try { return JSON.parse(lsGet('memos_' + currentBook, '{}')); } catch (e) { return {}; }
+}
+function saveMemos(m) {
+  if (isLoggedIn()) {
+    const bookId = currentBook;
+    const cache = (supabaseMemoCache[bookId] = supabaseMemoCache[bookId] || {});
+    const allKeys = new Set([...Object.keys(cache), ...Object.keys(m)]);
+    allKeys.forEach(key => {
+      const newVal = Object.prototype.hasOwnProperty.call(m, key) ? m[key] : undefined; // undefined = 이번에 삭제됨
+      if (cache[key] === newVal) return;
+      if (newVal === undefined) delete cache[key]; else cache[key] = newVal;
+      scheduleMemoSave(bookId, key);
+    });
+    return;
+  }
+  lsSet('memos_' + currentBook, JSON.stringify(m));
+}
+
+// 로그인한 사용자에게 "이 기기에 로그인 전 저장된 메모가 있다"는 것만 알려주는 표시.
+// 실제로 가져오는 기능은 아직 없음 — 나중에 하이라이트+메모+학습노트를 한 번에 가져오는
+// 기능을 만들 때 재사용하기 위한 감지 로직만 미리 준비해둔다.
+function hasLocalMemoDataToImport() {
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || k.indexOf('memos_') !== 0) continue;
+    try {
+      const m = JSON.parse(localStorage.getItem(k) || '{}');
+      if (Object.values(m).some(v => (v || '').trim())) return true;
+    } catch (e) { /* 무시 */ }
+  }
+  return false;
+}
 
 function memoRefLabel(key) {
   const parts = compositeParts(key);
@@ -6926,6 +7021,11 @@ function renderMemoBrowseList(wrap, memos) {
 }
 
 function renderMemoTab() {
+  renderMemoTabBody();
+  applyMemoImportHint();
+}
+
+function renderMemoTabBody() {
   const wrap = document.getElementById('view-memo');
   const memos = loadMemos();
 
@@ -6944,6 +7044,21 @@ function renderMemoTab() {
     return;
   }
   renderMemoBrowseList(wrap, memos);
+}
+
+// 로그인 + 로그인 전 로컬 메모가 남아있을 때만, 메모 탭 맨 위에 안내 한 줄을 붙인다.
+// (실제 가져오기 기능은 아직 없음 — 감지만 해서 눈에 띄게 남겨두는 용도)
+function applyMemoImportHint() {
+  const wrap = document.getElementById('view-memo');
+  if (!wrap) return;
+  const existing = wrap.querySelector('.memo-import-hint');
+  if (existing) existing.remove();
+  if (!isLoggedIn() || !hasLocalMemoDataToImport()) return;
+  const hint = document.createElement('div');
+  hint.className = 'memo-import-hint struct-hint';
+  hint.style.cssText = 'margin-bottom:12px; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:8px;';
+  hint.textContent = '📦 이 기기에 로그인 전 저장된 메모가 있습니다. (계정으로 가져오는 기능은 아직 준비 중입니다)';
+  wrap.prepend(hint);
 }
 
 function openMemoForVerse(key) {

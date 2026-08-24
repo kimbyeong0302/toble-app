@@ -108,15 +108,17 @@ create table highlights (
   unique (user_id, book_id, chapter, verse)
 );
 
+-- 실제 로컬 구현(memos_<book> 안의 {key: text} 맵)에 맞춰 정정함: 메모 키가 절 하나가
+-- 아니라 "1-3" 또는 여러 절을 묶은 "1-3+1-4" 같은 복합 키일 수 있어서, chapter/verse로
+-- 쪼개지 않고 그 키 문자열을 그대로 저장한다.
 create table memos (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   book_id text not null references books(id),
-  chapter int not null,
-  verse int not null,
+  verse_key text not null,              -- 로컬 메모 키 그대로 (예: "1-3", "1-3+1-4")
   content text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique (user_id, book_id, verse_key)
 );
 
 create table study_notes (
@@ -131,7 +133,7 @@ create table study_notes (
 );
 
 create index highlights_user_lookup on highlights (user_id, book_id, chapter);
-create index memos_user_lookup on memos (user_id, book_id, chapter);
+create index memos_user_lookup on memos (user_id, book_id);
 create index study_notes_user_lookup on study_notes (user_id, book_id, chapter);
 
 alter table highlights enable row level security;
