@@ -50,6 +50,7 @@
         <label>책 <select id="book-select"></select></label>
         <label>장 <select id="chapter-select"></select></label>
         <span id="signed-in-as" class="sub" style="margin-left:auto;"></span>
+        <button class="btn secondary" id="admin-logout-btn">로그아웃</button>
       </div>
     </div>
 
@@ -103,17 +104,48 @@ function showGate(html) {
   document.getElementById('admin-app').style.display = 'none';
 }
 
+function showLoginForm(message) {
+  showGate(`
+    ${message ? `<div class="sub" style="margin-bottom:14px;">${message}</div>` : ''}
+    <div class="form-field" style="max-width:280px; margin:0 auto 12px;">
+      <label>관리자 이메일</label>
+      <input type="email" id="admin-login-email" autocomplete="username">
+    </div>
+    <div class="form-field" style="max-width:280px; margin:0 auto 12px;">
+      <label>비밀번호</label>
+      <input type="password" id="admin-login-password" autocomplete="current-password">
+    </div>
+    <button class="btn" id="admin-login-btn">로그인</button>
+    <div class="status-msg" id="admin-login-status" style="text-align:center;"></div>
+  `);
+  const submit = async () => {
+    const email = document.getElementById('admin-login-email').value.trim();
+    const password = document.getElementById('admin-login-password').value;
+    const statusEl = document.getElementById('admin-login-status');
+    if (!email || !password) { statusEl.textContent = '이메일과 비밀번호를 입력해주세요.'; statusEl.className = 'status-msg error'; return; }
+    statusEl.textContent = '로그인 중...';
+    statusEl.className = 'status-msg';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { statusEl.textContent = error.message; statusEl.className = 'status-msg error'; return; }
+    checkAccess();
+  };
+  document.getElementById('admin-login-btn').addEventListener('click', submit);
+  document.getElementById('admin-login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+}
+
 async function checkAccess() {
   const { data: { session } } = await sb.auth.getSession();
   currentUser = session ? session.user : null;
   if (!currentUser) {
-    showGate('로그인이 필요합니다. <a href="./index.html">메인 앱에서 로그인</a>한 뒤 이 페이지를 다시 열어주세요.');
+    showLoginForm();
     return;
   }
   const { data, error } = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
   const isAdmin = !!(data && data.is_admin);
   if (error || !isAdmin) {
-    showGate('관리자만 접근 가능합니다.');
+    showGate('관리자만 접근 가능합니다. <a href="#" id="admin-signout-link">다른 계정으로 로그인</a>');
+    const link = document.getElementById('admin-signout-link');
+    if (link) link.addEventListener('click', async (e) => { e.preventDefault(); await sb.auth.signOut(); checkAccess(); });
     return;
   }
   document.getElementById('gate').style.display = 'none';
@@ -248,6 +280,7 @@ async function saveNote() {
 
 document.getElementById('save-btn').addEventListener('click', saveNote);
 document.getElementById('cancel-btn').addEventListener('click', closeEditForm);
+document.getElementById('admin-logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); checkAccess(); });
 
 checkAccess();
 </script>
