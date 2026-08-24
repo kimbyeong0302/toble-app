@@ -99,6 +99,14 @@
     color: var(--ink-soft); padding: 4px 8px; touch-action: manipulation;
   }
   .settings-gear-btn:active { color: var(--accent); }
+  .auth-header-btn {
+    position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; line-height: 1; cursor: pointer;
+    color: var(--ink-soft); padding: 4px 8px; touch-action: manipulation;
+  }
+  .auth-header-btn:active { color: var(--accent); }
+  .auth-header-btn.logged-in { color: var(--accent); }
   header h1 { font-family: 'Noto Serif KR', serif; font-size: 28px; font-weight: 700; }
   header .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
   .bnb-chapter { font-size: 21px; font-weight: 700; color: var(--accent); margin-top: 3px; }
@@ -807,6 +815,12 @@
   <header>
     <div class="app-name-row">
       <div class="app-name">토블 : 성경을 톺아보다</div>
+      <button id="auth-header-btn" class="auth-header-btn" title="로그인" aria-label="로그인">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </button>
       <button id="settings-gear-btn" class="settings-gear-btn" title="설정" aria-label="설정">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -871,6 +885,16 @@
         </label>
         <div id="settings-status" style="margin-top:10px; font-size:12px; color:var(--ink-soft);"></div>
       </div>
+    </div>
+  </div>
+
+  <div id="auth-modal" class="book-modal">
+    <div class="book-modal-panel">
+      <div class="book-modal-header">
+        <div class="bm-title">계정</div>
+        <button id="auth-modal-close" class="bm-close">닫기 ✕</button>
+      </div>
+      <div class="settings-modal-body" id="auth-modal-body"></div>
     </div>
   </div>
 
@@ -5807,6 +5831,114 @@ document.getElementById('settings-gear-btn').addEventListener('click', openSetti
 document.getElementById('settings-modal-close').addEventListener('click', closeSettingsModal);
 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettingsModal(); });
 
+// ============================================================
+// 로그인 — Supabase Auth 이메일 로그인/회원가입/로그아웃.
+// 로그인 여부와 무관하게 본문/노트/인물/배경/지도는 지금처럼 계속 읽기 전용으로 보인다
+// (그 부분은 이미 anon key로 읽고 있어서 따로 손댈 게 없다). 하이라이트/메모/학습노트를
+// 서버에 연결하는 건 아직 하지 않는다 — 여기서는 로그인 자체만 확인한다.
+// ============================================================
+let currentUser = null;
+let authFormMode = 'login'; // 'login' | 'signup'
+
+function setAuthStatus(msg, isError) {
+  const el = document.getElementById('auth-status');
+  if (el) { el.textContent = msg; el.style.color = isError ? '#b0552f' : 'var(--ink-soft)'; }
+}
+
+function renderAuthModal() {
+  const body = document.getElementById('auth-modal-body');
+  if (!body) return;
+  if (!sb) {
+    body.innerHTML = '<div class="struct-hint">로그인 기능을 쓰려면 인터넷 연결이 필요합니다.</div>';
+    return;
+  }
+  if (currentUser) {
+    body.innerHTML = `
+      <div class="settings-section-title">계정</div>
+      <div class="struct-hint" style="margin-bottom:14px;">${escapeHtmlDict(currentUser.email || '')} 계정으로 로그인되어 있습니다.</div>
+      <button class="struct-btn" id="auth-signout-btn" style="width:100%;">로그아웃</button>
+    `;
+    document.getElementById('auth-signout-btn').addEventListener('click', handleSignOut);
+    return;
+  }
+  const isSignup = authFormMode === 'signup';
+  body.innerHTML = `
+    <div class="struct-toolbar" style="margin-bottom:14px;">
+      <button class="struct-btn${isSignup ? ' secondary' : ''}" id="auth-tab-login" style="flex:1;">로그인</button>
+      <button class="struct-btn${isSignup ? '' : ' secondary'}" id="auth-tab-signup" style="flex:1;">회원가입</button>
+    </div>
+    <div class="settings-section-title">${isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</div>
+    <input type="email" id="auth-email" placeholder="이메일" autocomplete="username" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--line); border-radius:8px; font-size:15px;">
+    <input type="password" id="auth-password" placeholder="비밀번호 (6자 이상)" autocomplete="${isSignup ? 'new-password' : 'current-password'}" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:12px; border:1px solid var(--line); border-radius:8px; font-size:15px;">
+    <button class="struct-btn" id="auth-submit-btn" style="width:100%;">${isSignup ? '회원가입' : '로그인'}</button>
+    <div id="auth-status" style="margin-top:10px; font-size:12px; color:var(--ink-soft);"></div>
+  `;
+  document.getElementById('auth-tab-login').addEventListener('click', () => { authFormMode = 'login'; renderAuthModal(); });
+  document.getElementById('auth-tab-signup').addEventListener('click', () => { authFormMode = 'signup'; renderAuthModal(); });
+  document.getElementById('auth-submit-btn').addEventListener('click', () => {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (isSignup) handleSignUp(email, password); else handleSignIn(email, password);
+  });
+}
+
+async function handleSignUp(email, password) {
+  if (!email || !password) { setAuthStatus('이메일과 비밀번호를 입력해주세요.', true); return; }
+  setAuthStatus('처리 중...');
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) { setAuthStatus(error.message, true); return; }
+  if (data.session) {
+    setAuthStatus('가입 완료! 로그인되었습니다.');
+  } else {
+    setAuthStatus('가입 확인 이메일을 보냈습니다. 이메일함을 확인한 뒤 로그인해주세요.');
+  }
+}
+
+async function handleSignIn(email, password) {
+  if (!email || !password) { setAuthStatus('이메일과 비밀번호를 입력해주세요.', true); return; }
+  setAuthStatus('처리 중...');
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { setAuthStatus(error.message, true); return; }
+  closeAuthModal();
+}
+
+async function handleSignOut() {
+  await sb.auth.signOut();
+  closeAuthModal();
+}
+
+function updateAuthHeaderButton() {
+  const btn = document.getElementById('auth-header-btn');
+  if (!btn) return;
+  if (currentUser) {
+    btn.title = currentUser.email + ' · 로그인됨';
+    btn.setAttribute('aria-label', btn.title);
+    btn.classList.add('logged-in');
+  } else {
+    btn.title = '로그인';
+    btn.setAttribute('aria-label', '로그인');
+    btn.classList.remove('logged-in');
+  }
+}
+
+const authModal = document.getElementById('auth-modal');
+function openAuthModal() { renderAuthModal(); authModal.classList.add('open'); }
+function closeAuthModal() { authModal.classList.remove('open'); }
+document.getElementById('auth-header-btn').addEventListener('click', openAuthModal);
+document.getElementById('auth-modal-close').addEventListener('click', closeAuthModal);
+authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuthModal(); });
+
+if (sb) {
+  sb.auth.getSession().then(({ data }) => {
+    currentUser = data.session ? data.session.user : null;
+    updateAuthHeaderButton();
+  });
+  sb.auth.onAuthStateChange((event, session) => {
+    currentUser = session ? session.user : null;
+    updateAuthHeaderButton();
+    if (authModal.classList.contains('open')) renderAuthModal();
+  });
+}
 
 // ============================================================
 // 인물 렌더링 (책이 바뀌면 다시 그림)
