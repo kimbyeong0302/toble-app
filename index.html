@@ -4657,8 +4657,15 @@ function setTrack(track) {
   lsSet('track_ruth', track);
   applyTrackUI();
 }
-document.getElementById('track-academic').addEventListener('click', () => setTrack('academic'));
-document.getElementById('track-traditional').addEventListener('click', () => setTrack('traditional'));
+// 트랙 버튼 클릭 연결 — 배경 탭 HTML이 Supabase 응답으로 통째로 교체되면 버튼 DOM 자체가
+// 새로 생기면서 리스너가 끊기므로, 그때마다 다시 부를 수 있게 함수로 분리해둔다.
+function wireTrackButtons() {
+  const a = document.getElementById('track-academic');
+  const t = document.getElementById('track-traditional');
+  if (a) a.addEventListener('click', () => setTrack('academic'));
+  if (t) t.addEventListener('click', () => setTrack('traditional'));
+}
+wireTrackButtons();
 currentTrack = lsGet('track_ruth', 'academic');
 applyTrackUI();
 
@@ -5617,6 +5624,8 @@ function setBook(bookId) {
   document.querySelectorAll('.ctx-book').forEach(el => {
     el.style.display = (el.dataset.book === bookId) ? '' : 'none';
   });
+  fetchSupabaseExtrasForBook(bookId);
+  applySupabaseContextHtml(bookId); // 이미 캐시돼 있으면 즉시 반영, 아니면 위 fetch가 끝난 뒤 반영됨
   const mapView = document.getElementById('view-map');
   if (mapView && mapView.classList.contains('active') && typeof renderBookMap === 'function') {
     renderBookMap(bookId);
@@ -5838,6 +5847,47 @@ function renderPeople() {
   });
 }
 renderPeople();
+
+// ============================================================
+// 배경(ctx-book HTML)과 지도 좌표를 Supabase book_extras 테이블에서 읽어온다. 책 단위로
+// 한 번만 가져와 캐시해두고, 실패하거나(오프라인 등) sb가 없으면 기존 로컬 배경 HTML/
+// MAP_LOCATIONS를 그대로 쓴다. 구조/사전 탭 코드는 건드리지 않는다.
+// ============================================================
+const supabaseExtrasCache = {};   // bookId -> { context_html, map_locations }
+const supabaseExtrasFetching = new Set();
+
+function applySupabaseContextHtml(bookId) {
+  const extras = supabaseExtrasCache[bookId];
+  if (!extras || !extras.context_html) return;
+  const el = document.querySelector('.ctx-book[data-book="' + bookId + '"]');
+  if (!el) return;
+  el.innerHTML = extras.context_html;
+  if (bookId === 'ruth') {
+    wireTrackButtons(); // innerHTML 교체로 트랙 버튼 DOM이 새로 생겼으니 리스너를 다시 붙인다
+    applyTrackUI();
+  }
+}
+
+function fetchSupabaseExtrasForBook(bookId) {
+  if (!sb || supabaseExtrasCache[bookId] || supabaseExtrasFetching.has(bookId)) return;
+  supabaseExtrasFetching.add(bookId);
+  sb.from('book_extras')
+    .select('context_html, map_locations')
+    .eq('book_id', bookId)
+    .single()
+    .then(({ data, error }) => {
+      supabaseExtrasFetching.delete(bookId);
+      if (error || !data) return; // 실패 시 기존 로컬 배경/지도 데이터 유지
+      supabaseExtrasCache[bookId] = data;
+      if (bookId !== currentBook) return; // 그 사이 다른 책으로 넘어갔으면 화면은 건드리지 않는다
+      applySupabaseContextHtml(bookId);
+      const mapView = document.getElementById('view-map');
+      if (mapView && mapView.classList.contains('active') && typeof renderBookMap === 'function') {
+        renderBookMap(bookId); // 지도 탭이 이미 열려 있었다면 새 좌표로 다시 그림
+      }
+    });
+}
+fetchSupabaseExtrasForBook(currentBook);
 
 // ============================================================
 // 구조 다이어그램 — 나만의 개요 만들기 (장별로 별도 관리)
@@ -6242,7 +6292,11 @@ function renderBookMap(bookId) {
     if (captionEl) captionEl.textContent = '지도를 불러오지 못했습니다 — 인터넷 연결을 확인해주세요.';
     return;
   }
-  const locations = MAP_LOCATIONS[bookId] || [];
+  fetchSupabaseExtrasForBook(bookId); // 지도 탭을 곧장 열었을 때를 대비해 여기서도 트리거
+  const cachedExtras = supabaseExtrasCache[bookId];
+  const locations = (cachedExtras && cachedExtras.map_locations && cachedExtras.map_locations.length > 0)
+    ? cachedExtras.map_locations
+    : (MAP_LOCATIONS[bookId] || []);
   if (!leafletMapInstance) {
     leafletMapInstance = L.map(container, { scrollWheelZoom: false });
     const satellite = L.tileLayer(

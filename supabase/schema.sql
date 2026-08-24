@@ -58,17 +58,28 @@ create table people (
 );
 create index people_lookup on people (book_id);
 
+-- 배경(ctx-book 카드 HTML)과 지도(MAP_LOCATIONS 좌표) — 책마다 한 행.
+-- 요청하신 "map_svg"는 실제로는 없습니다: 지도는 SVG가 아니라 Leaflet + 좌표 배열(JS)로 그려지고
+-- 있어서, 그 좌표 배열을 그대로 옮길 수 있게 map_locations(jsonb)로 이름을 바꿨습니다.
+create table book_extras (
+  book_id text primary key references books(id),
+  context_html text not null,           -- 지금 .ctx-book[data-book] 안의 카드 HTML 통째로
+  map_locations jsonb not null default '[]'::jsonb  -- [{name, lat, lng}, ...] — 지금 MAP_LOCATIONS[bookId]와 동일한 구조
+);
+
 alter table books enable row level security;
 alter table translations enable row level security;
 alter table verses enable row level security;
 alter table notes enable row level security;
 alter table people enable row level security;
+alter table book_extras enable row level security;
 
 create policy "공개 읽기" on books for select using (true);
 create policy "공개 읽기" on translations for select using (true);
 create policy "공개 읽기" on verses for select using (true);
 create policy "공개 읽기" on notes for select using (true);
 create policy "공개 읽기" on people for select using (true);
+create policy "공개 읽기" on book_extras for select using (true);
 -- insert/update/delete 정책을 아예 만들지 않음 → 일반 사용자(anon/authenticated)는 쓰기 불가.
 -- 콘텐츠 등록/수정은 Supabase 대시보드나 service_role 키로만 한다.
 
