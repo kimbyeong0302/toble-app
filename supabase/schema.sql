@@ -121,20 +121,24 @@ create table memos (
   unique (user_id, book_id, verse_key)
 );
 
+-- 실제 로컬 구현(study_<book>_<key>_obs/interp/app/step 네 개의 개별 키)에 맞춰 정정함:
+-- 절 하나(복합 키 포함)당 관찰·해석·적용 세 칸과 진행 단계(step)를 한 행에 묶어 저장한다.
 create table study_notes (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   book_id text not null references books(id),
-  chapter int not null,
-  verse int not null,
-  content text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  verse_key text not null,              -- "1-3" 또는 복합 "1-3+1-4"
+  obs text not null default '',
+  interp text not null default '',
+  app text not null default '',
+  step int not null default 1,
+  updated_at timestamptz not null default now(),
+  unique (user_id, book_id, verse_key)
 );
 
 create index highlights_user_lookup on highlights (user_id, book_id, chapter);
 create index memos_user_lookup on memos (user_id, book_id);
-create index study_notes_user_lookup on study_notes (user_id, book_id, chapter);
+create index study_notes_user_lookup on study_notes (user_id, book_id);
 
 alter table highlights enable row level security;
 alter table memos enable row level security;

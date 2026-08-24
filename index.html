@@ -5302,16 +5302,110 @@ const DEFAULT_PANEL = `
 noteView.innerHTML = DEFAULT_PANEL;
 
 // ============================================================
+// 학습노트(관찰/해석/적용 + 진행 단계)를 Supabase study_notes 테이블에서 읽고 쓴다 —
+// 메모와 같은 패턴. 절 하나(n)당 obs/interp/app/step을 한 행에 묶어 저장하고, 텍스트
+// 입력이니 메모처럼 디바운스(600ms) 후 저장한다. 실패해도 방금 쓴 내용은 지우지 않는다.
+// "초기화" 버튼만 예외적으로 즉시(디바운스 없이) 삭제한다.
+// ============================================================
+const supabaseStudyCache = {};      // bookId -> { key: {obs, interp, app, step} }
+const supabaseStudyFetching = new Set();
+const studySaveTimers = {};         // "bookId|key" -> setTimeout id
+
+function fetchSupabaseStudyForBook(bookId) {
+  if (!sb || !currentUser || supabaseStudyCache[bookId] || supabaseStudyFetching.has(bookId)) return;
+  supabaseStudyFetching.add(bookId);
+  sb.from('study_notes')
+    .select('verse_key, obs, interp, app, step')
+    .eq('book_id', bookId)
+    .then(({ data, error }) => {
+      supabaseStudyFetching.delete(bookId);
+      if (error || !data) return; // 실패 시 로컬처럼 빈 상태로 남김
+      const map = {};
+      data.forEach(row => { map[row.verse_key] = { obs: row.obs || '', interp: row.interp || '', app: row.app || '', step: row.step || 1 }; });
+      supabaseStudyCache[bookId] = map;
+      if (bookId === currentBook && currentOpen && typeof renderStudyFlow === 'function') {
+        renderStudyFlow(currentOpen.dataset.n); // 이미 학습 카드가 열려 있으면 최신 값으로 다시 그림
+      }
+    });
+}
+
+function getStudyField(n, field, fallback) {
+  if (isLoggedIn()) {
+    const entry = (supabaseStudyCache[currentBook] || {})[n];
+    if (!entry) return fallback;
+    return field === 'step' ? String(entry.step) : (entry[field] || '');
+  }
+  return lsGet('study_' + currentBook + '_' + n + '_' + field, fallback);
+}
+function setStudyField(n, field, value) {
+  if (isLoggedIn()) {
+    const bookId = currentBook;
+    const cache = (supabaseStudyCache[bookId] = supabaseStudyCache[bookId] || {});
+    const prev = cache[n] ? { ...cache[n] } : { obs: '', interp: '', app: '', step: 1 };
+    cache[n] = { ...prev, [field]: field === 'step' ? Number(value) : value };
+    const timerKey = bookId + '|' + n;
+    if (studySaveTimers[timerKey]) clearTimeout(studySaveTimers[timerKey]);
+    studySaveTimers[timerKey] = setTimeout(() => flushStudySave(bookId, n), 600);
+    return;
+  }
+  lsSet('study_' + currentBook + '_' + n + '_' + field, value);
+}
+function flushStudySave(bookId, n) {
+  delete studySaveTimers[bookId + '|' + n];
+  const state = (supabaseStudyCache[bookId] || {})[n];
+  if (!state) return; // 그 사이 초기화(삭제)됐으면 아무것도 안 보냄
+  sb.from('study_notes').upsert(
+    { user_id: currentUser.id, book_id: bookId, verse_key: n, obs: state.obs, interp: state.interp, app: state.app, step: state.step, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id,book_id,verse_key' }
+  ).then(({ error }) => {
+    if (error) flashHighlightError('오프라인이라 저장이 안 됩니다');
+  });
+}
+function removeStudyFields(n) {
+  if (isLoggedIn()) {
+    const bookId = currentBook;
+    if (supabaseStudyCache[bookId]) delete supabaseStudyCache[bookId][n];
+    const timerKey = bookId + '|' + n;
+    if (studySaveTimers[timerKey]) { clearTimeout(studySaveTimers[timerKey]); delete studySaveTimers[timerKey]; }
+    sb.from('study_notes').delete().eq('book_id', bookId).eq('verse_key', n).then(({ error }) => {
+      if (error) flashHighlightError('오프라인이라 저장이 안 됩니다');
+    });
+    return;
+  }
+  ['obs', 'interp', 'app', 'step'].forEach(f => lsRemove('study_' + currentBook + '_' + n + '_' + f));
+}
+
+// 로그인 + 로그인 전 로컬 학습 기록이 남아있을 때만 학습 카드 맨 위에 안내 한 줄을 붙인다.
+// (실제 가져오기 기능은 아직 없음 — 감지만 해서 표시해둔다)
+function hasLocalStudyDataToImport() {
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || k.indexOf('study_') !== 0 || k.endsWith('_step')) continue;
+    if ((localStorage.getItem(k) || '').trim()) return true;
+  }
+  return false;
+}
+function applyStudyImportHint() {
+  if (!isLoggedIn() || !hasLocalStudyDataToImport()) return;
+  const hint = document.createElement('div');
+  hint.className = 'study-import-hint struct-hint';
+  hint.style.cssText = 'margin-bottom:12px; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:8px;';
+  hint.textContent = '📦 이 기기에 로그인 전 저장된 학습 기록이 있습니다. (계정으로 가져오는 기능은 아직 준비 중입니다)';
+  noteView.prepend(hint);
+}
+
+// ============================================================
 // 학습 흐름 렌더링
 // ============================================================
 function stepFields() { return ['obs', 'interp', 'app']; }
 
 function renderStudyFlow(n) {
-  const maxStep = parseInt(lsGet('study_' + currentBook + '_' + n + '_step', '1'), 10);
+  fetchSupabaseStudyForBook(currentBook);
+  const maxStep = parseInt(getStudyField(n, 'step', '1'), 10);
   const vals = {
-    obs: lsGet('study_' + currentBook + '_' + n + '_obs', ''),
-    interp: lsGet('study_' + currentBook + '_' + n + '_interp', ''),
-    app: lsGet('study_' + currentBook + '_' + n + '_app', '')
+    obs: getStudyField(n, 'obs', ''),
+    interp: getStudyField(n, 'interp', ''),
+    app: getStudyField(n, 'app', '')
   };
   const labels = { obs: '1 · 관찰', interp: '2 · 해석', app: '3 · 적용' };
   const nextLabel = { obs: '다음: 해석 →', interp: '다음: 적용 →', app: '완료 · 학자 노트 보기 →' };
@@ -5346,10 +5440,11 @@ function renderStudyFlow(n) {
   html += `<div class="progress-dots">${[1,2,3,4].map(i => `<span class="${i <= maxStep ? 'on' : ''}">●</span>`).join('')}</div>`;
 
   noteView.innerHTML = html;
+  applyStudyImportHint();
 
   noteView.querySelectorAll('.step-input').forEach(ta => {
     ta.addEventListener('input', () => {
-      lsSet('study_' + currentBook + '_' + n + '_' + ta.dataset.field, ta.value);
+      setStudyField(n, ta.dataset.field, ta.value);
       const badge = noteView.querySelector(`.saved-badge[data-saved="${ta.dataset.field}"]`);
       badge.textContent = '저장됨';
       clearTimeout(badge._t);
@@ -5359,8 +5454,8 @@ function renderStudyFlow(n) {
   noteView.querySelectorAll('.step-next').forEach(btn => {
     btn.addEventListener('click', () => {
       const goto = parseInt(btn.dataset.goto, 10);
-      const cur = parseInt(lsGet('study_' + currentBook + '_' + n + '_step', '1'), 10);
-      if (goto > cur) lsSet('study_' + currentBook + '_' + n + '_step', String(goto));
+      const cur = parseInt(getStudyField(n, 'step', '1'), 10);
+      if (goto > cur) setStudyField(n, 'step', String(goto));
       renderStudyFlow(n);
       setTimeout(() => {
         const nextEl = noteView.querySelector(`[data-step="${goto}"]`);
@@ -5371,7 +5466,7 @@ function renderStudyFlow(n) {
   const resetLink = noteView.querySelector('.reset-link');
   if (resetLink) resetLink.addEventListener('click', () => {
     if (!confirm(`${isMulti ? '이 구간' : '이 절'}의 관찰·해석·적용 기록을 모두 지울까요? (하이라이트는 유지됩니다)`)) return;
-    ['obs', 'interp', 'app', 'step'].forEach(f => lsRemove('study_' + currentBook + '_' + n + '_' + f));
+    removeStudyFields(n);
     renderStudyFlow(n);
   });
 }
@@ -5770,6 +5865,7 @@ function setBook(bookId) {
     fetchSupabaseHighlightsForBook(bookId);
     reapplyAllHighlightsForCurrentBook(); // 이미 캐시돼 있으면 즉시 반영, 없으면 fetch 완료 후 반영됨
     fetchSupabaseMemosForBook(bookId);
+    fetchSupabaseStudyForBook(bookId);
   }
   const mapView = document.getElementById('view-map');
   if (mapView && mapView.classList.contains('active') && typeof renderBookMap === 'function') {
@@ -6076,6 +6172,16 @@ if (sb) {
       }
       if (typeof isMemoTabActive === 'function' && isMemoTabActive() && typeof renderMemoTab === 'function') {
         renderMemoTab(); // 로그인/로그아웃 전환 시 메모 탭이 열려 있으면 즉시 다시 그림
+      }
+    }
+    // 학습노트도 마찬가지.
+    if (typeof supabaseStudyCache !== 'undefined') {
+      Object.keys(supabaseStudyCache).forEach(k => delete supabaseStudyCache[k]);
+      if (currentUser) {
+        fetchSupabaseStudyForBook(currentBook);
+      }
+      if (currentOpen && typeof renderStudyFlow === 'function') {
+        renderStudyFlow(currentOpen.dataset.n); // 학습 카드가 열려 있으면 즉시 다시 그림
       }
     }
   });
