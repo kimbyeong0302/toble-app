@@ -5399,6 +5399,8 @@ if (sheetHandle) {
   sheetHandle.addEventListener('pointercancel', endSheetDrag);
 }
 
+let studyPanelRenderSeq = 0; // renderDefaultPanel()/renderStudyFlow()가 서로의 비동기 결과를 덮어쓰지 않도록 하는 세대 번호
+
 const DEFAULT_PANEL = `
   <div class="default-guide">
     <p><span class="mark2">✦</span> 표시가 있는 절을 누르면 관찰 → 해석 → 적용 순서로 스스로 채워가는 학습 카드가 열립니다. 각 단계를 마쳐야 다음 단계와 학자 노트가 열립니다.</p>
@@ -5508,8 +5510,6 @@ function scanLocalStudy() {
 // renderStudyFlow()가 그 사이 호출되면(다른 절을 열었으면) 목록 fetch가 뒤늦게 도착해도
 // 화면을 덮어쓰지 않도록 매번 세대(seq) 번호를 찍어 확인한다.
 // ============================================================
-let studyPanelRenderSeq = 0;
-
 function renderDefaultPanel() {
   const mySeq = ++studyPanelRenderSeq;
   noteView.innerHTML = DEFAULT_PANEL;
