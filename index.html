@@ -331,10 +331,19 @@
   .person .vref { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; }
 
   .map-caption { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+  .map-wrap { position: relative; }
   .leaflet-map-el {
     height: 360px; border-radius: 12px; overflow: hidden;
     border: 1px solid var(--line); background: var(--note-bg);
   }
+  .leaflet-map-el.map-zoomed { height: 100%; border-radius: 0; border: none; }
+  .map-zoom-btn {
+    position: absolute; top: 10px; left: 10px; z-index: 401;
+    font-size: 12.5px; padding: 7px 12px; border-radius: 999px; border: none;
+    background: rgba(28,39,51,.62); color: #fff; cursor: pointer;
+    font-family: inherit; touch-action: manipulation;
+  }
+  .map-zoom-btn:active { background: rgba(28,39,51,.8); }
   .map-popup { font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; max-width: 230px; line-height: 1.5; }
   .map-popup strong { display: block; font-size: 14px; margin-bottom: 4px; color: var(--accent); }
   .map-popup-geo { margin-top: 4px; }
@@ -607,6 +616,16 @@
 
   .book-modal-body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
   .settings-modal-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 18px 24px; }
+
+  /* 지도 확대 모달 — book-modal과 같은 톤(dim 배경, 카드 스타일)을 쓰되 패널을 화면의 80% 크기로 키운다 */
+  .map-zoom-modal {
+    padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+             max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  }
+  .map-zoom-panel { width: 80vw; height: 80vh; max-width: 80vw; max-height: 80vh; }
+  .map-zoom-body { padding: 0; }
+  .leaflet-map-zoom-slot { flex: 1; min-height: 0; display: flex; }
+  .leaflet-map-zoom-slot .leaflet-map-el { flex: 1; min-height: 0; }
   .bm-col { overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .bm-col-books {
     flex: 0 0 54%; max-width: 54%; padding: 12px 6px 24px 12px;
@@ -857,6 +876,18 @@
       <div class="book-modal-body">
         <div class="bm-col bm-col-books" id="bm-col-books"></div>
         <div class="bm-col bm-col-chapters" id="bm-col-chapters"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="map-zoom-modal" class="book-modal map-zoom-modal">
+    <div class="book-modal-panel map-zoom-panel">
+      <div class="book-modal-header">
+        <div class="bm-title">지도 확대 보기</div>
+        <button id="map-zoom-modal-close" class="bm-close">닫기 ✕</button>
+      </div>
+      <div class="book-modal-body map-zoom-body">
+        <div class="leaflet-map-zoom-slot" id="leaflet-map-zoom-slot"></div>
       </div>
     </div>
   </div>
@@ -3875,7 +3906,10 @@
         <div class="side-view" id="view-people"></div>
 
         <div class="side-view" id="view-map">
-          <div id="leaflet-map" class="leaflet-map-el"></div>
+          <div class="map-wrap" id="map-wrap">
+            <div id="leaflet-map" class="leaflet-map-el"></div>
+            <button type="button" id="map-zoom-btn" class="map-zoom-btn" aria-label="지도 확대 보기">⤢ 확대 보기</button>
+          </div>
           <p class="map-caption" id="leaflet-map-caption">지도를 보려면 인터넷 연결이 필요합니다. 위성/일반 지도 전환은 지도 오른쪽 위 버튼에서 할 수 있습니다.</p>
           <div id="map-loc-list"></div>
         </div>
@@ -6989,6 +7023,40 @@ function renderBookMap(bookId) {
     captionEl.textContent = bookLabel + '에 등장하는 지명을 실제 좌표로 표시했습니다. 마커(숫자)를 누르면 성경 시대 기준 지형·기후 정보를 볼 수 있고, 지도 아래에서 관련 말씀을 확인할 수 있습니다.';
   }
 }
+
+// ============================================================
+// 지도 확대 보기 — 실제 Leaflet 지도 DOM을 통째로 모달 안으로 옮겼다가 닫을 때 원래 자리로
+// 되돌린다. 지도 인스턴스를 하나만 유지하므로 지금 보고 있던 중심점/확대 배율/마커/팝업이
+// 별도 코드 없이 그대로 이어진다. 옮긴 뒤에는 반드시 invalidateSize()를 호출해야
+// 타일이 깨지지 않는데, book-modal의 패널 전환 애니메이션(.24s)이 끝난 뒤에 불러야 해서
+// 그보다 넉넉하게 딜레이를 준다.
+// ============================================================
+const mapZoomModal = document.getElementById('map-zoom-modal');
+const mapZoomSlot = document.getElementById('leaflet-map-zoom-slot');
+let mapZoomOpen = false;
+
+function openMapZoom() {
+  if (!leafletMapInstance) return; // 지도가 아직 초기화되기 전이면 무시
+  const mapEl = document.getElementById('leaflet-map');
+  mapEl.classList.add('map-zoomed');
+  mapZoomSlot.appendChild(mapEl);
+  mapZoomModal.classList.add('open');
+  mapZoomOpen = true;
+  setTimeout(() => { if (mapZoomOpen) leafletMapInstance.invalidateSize(); }, 300);
+}
+function closeMapZoom() {
+  if (!mapZoomOpen) return;
+  mapZoomModal.classList.remove('open');
+  mapZoomOpen = false;
+  const mapEl = document.getElementById('leaflet-map');
+  const mapWrap = document.getElementById('map-wrap');
+  mapEl.classList.remove('map-zoomed');
+  mapWrap.insertBefore(mapEl, mapWrap.firstChild);
+  setTimeout(() => { if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, 50);
+}
+document.getElementById('map-zoom-btn').addEventListener('click', openMapZoom);
+document.getElementById('map-zoom-modal-close').addEventListener('click', closeMapZoom);
+mapZoomModal.addEventListener('click', (e) => { if (e.target === mapZoomModal) closeMapZoom(); });
 
 // ============================================================
 // 국어사전 뜻풀이 — 국립국어원 우리말샘 오픈API를 CORS 프록시(Cloudflare Worker)로 경유해서 불러온다.
