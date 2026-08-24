@@ -3933,6 +3933,20 @@ const sb = (typeof supabase !== 'undefined')
 let currentUser = null;
 function isLoggedIn() { return !!currentUser; }
 
+// 회원가입 확인 이메일의 링크를 눌러 돌아왔을 때, "확인됐다"는 걸 화면에 명확히 보여주기
+// 위한 표시. handleSignUp()에서 emailRedirectTo에 이 마커를 붙여 보내고, 여기서 감지해서
+// URL은 깨끗하게 지운 뒤 표시만 기억해둔다(실제 안내는 로그인 세션 확인 후에 띄운다).
+let justConfirmedEmail = false;
+(function () {
+  const params = new URLSearchParams(location.search);
+  if (params.get('email_confirmed') === '1') {
+    justConfirmedEmail = true;
+    params.delete('email_confirmed');
+    const newQuery = params.toString();
+    history.replaceState(null, '', location.pathname + (newQuery ? '?' + newQuery : '') + location.hash);
+  }
+})();
+
 // ============================================================
 // 서비스워커 등록 — 이게 있어야 sw.js의 캐시 전략이 실제로 동작해서 오프라인에서도 앱이 열린다.
 // 초기 렌더링을 지연시키지 않도록 load 이벤트 이후에 등록한다.
@@ -6070,7 +6084,12 @@ function renderAuthModal() {
     return;
   }
   if (currentUser) {
+    const confirmBanner = justConfirmedEmail
+      ? '<div class="struct-hint" style="margin-bottom:12px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; color:var(--accent); font-weight:600;">✅ 이메일 확인이 완료되었습니다! 로그인되었습니다.</div>'
+      : '';
+    justConfirmedEmail = false; // 한 번 보여줬으면 다시 안 뜨게 초기화
     body.innerHTML = `
+      ${confirmBanner}
       <div class="settings-section-title">계정</div>
       <div class="struct-hint" style="margin-bottom:14px;">${escapeHtmlDict(currentUser.email || '')} 계정으로 로그인되어 있습니다.</div>
       <button class="struct-btn" id="auth-signout-btn" style="width:100%;">로그아웃</button>
@@ -6102,7 +6121,9 @@ function renderAuthModal() {
 async function handleSignUp(email, password) {
   if (!email || !password) { setAuthStatus('이메일과 비밀번호를 입력해주세요.', true); return; }
   setAuthStatus('처리 중...');
-  const { data, error } = await sb.auth.signUp({ email, password });
+  // 확인 메일의 링크를 누르면 이 주소로 돌아오게 해서, 돌아왔을 때 "확인됐다"는 걸 보여줄 수 있게 한다.
+  const redirectTo = location.origin + location.pathname + '?email_confirmed=1';
+  const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
   if (error) { setAuthStatus(error.message, true); return; }
   if (data.session) {
     setAuthStatus('가입 완료! 로그인되었습니다.');
@@ -6149,6 +6170,14 @@ if (sb) {
   sb.auth.getSession().then(({ data }) => {
     currentUser = data.session ? data.session.user : null;
     updateAuthHeaderButton();
+    if (justConfirmedEmail) {
+      if (currentUser) {
+        openAuthModal(); // 확인 완료 안내와 함께 계정 모달을 자동으로 열어줌
+      } else {
+        justConfirmedEmail = false;
+        alert('이메일 확인 링크가 만료되었거나 이미 사용된 것 같습니다. 다시 로그인해보세요.');
+      }
+    }
   });
   sb.auth.onAuthStateChange((event, session) => {
     currentUser = session ? session.user : null;
