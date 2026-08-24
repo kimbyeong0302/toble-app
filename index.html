@@ -877,12 +877,15 @@
         <div class="font-size-preview" id="font-size-preview">태초에 하나님이 천지를 창조하시니라</div>
 
         <div class="settings-section-title" style="margin-top:22px;">백업</div>
-        <div class="struct-hint" style="margin-bottom:14px;">메모·하이라이트·히스토리 등은 이 기기의 브라우저 안에만 저장됩니다. 브라우저 데이터를 지우거나 기기를 바꾸면 사라지니, 가끔 백업 파일로 내보내두세요.</div>
-        <button class="struct-btn" id="settings-export-btn" style="width:100%; margin-bottom:10px;">📤 백업 파일로 내보내기</button>
-        <label class="struct-btn" id="settings-import-btn" style="width:100%; display:block; text-align:center; box-sizing:border-box; cursor:pointer;">
-          📥 백업 파일에서 가져오기
-          <input type="file" id="settings-import-input" accept="application/json" style="display:none;">
-        </label>
+        <div id="settings-backup-loggedin-note" class="struct-hint" style="margin-bottom:14px; display:none;">로그인 상태에서는 하이라이트·메모·학습노트가 계정에 자동으로 저장되므로 백업 파일이 따로 필요 없습니다. (글자 크기 같은 이 기기만의 설정은 백업 대상이 아닙니다)</div>
+        <div id="settings-backup-section">
+          <div class="struct-hint" style="margin-bottom:14px;">메모·하이라이트·히스토리 등은 이 기기의 브라우저 안에만 저장됩니다. 브라우저 데이터를 지우거나 기기를 바꾸면 사라지니, 가끔 백업 파일로 내보내두세요.</div>
+          <button class="struct-btn" id="settings-export-btn" style="width:100%; margin-bottom:10px;">📤 백업 파일로 내보내기</button>
+          <label class="struct-btn" id="settings-import-btn" style="width:100%; display:block; text-align:center; box-sizing:border-box; cursor:pointer;">
+            📥 백업 파일에서 가져오기
+            <input type="file" id="settings-import-input" accept="application/json" style="display:none;">
+          </label>
+        </div>
         <div id="settings-status" style="margin-top:10px; font-size:12px; color:var(--ink-soft);"></div>
       </div>
     </div>
@@ -6056,7 +6059,16 @@ bookModal.addEventListener('click', (e) => { if (e.target === bookModal) closeBo
 
 // 설정은 메뉴 탭 안이 아니라 성경 목록처럼 독립된 플로팅 모달로 연다 (메뉴 탭은 2줄로 유지)
 const settingsModal = document.getElementById('settings-modal');
-function openSettingsModal() { settingsModal.classList.add('open'); }
+// 로그인 상태면 하이라이트/메모/학습노트가 서버에 자동 저장되니 로컬 백업 파일이 필요 없다 —
+// 그 경우 백업 내보내기/가져오기 버튼을 숨기고 안내만 보여준다.
+function applySettingsBackupVisibility() {
+  const section = document.getElementById('settings-backup-section');
+  const note = document.getElementById('settings-backup-loggedin-note');
+  if (!section || !note) return;
+  section.style.display = isLoggedIn() ? 'none' : '';
+  note.style.display = isLoggedIn() ? '' : 'none';
+}
+function openSettingsModal() { applySettingsBackupVisibility(); settingsModal.classList.add('open'); }
 function closeSettingsModal() { settingsModal.classList.remove('open'); }
 document.getElementById('settings-gear-btn').addEventListener('click', openSettingsModal);
 document.getElementById('settings-modal-close').addEventListener('click', closeSettingsModal);
@@ -6215,6 +6227,7 @@ if (sb) {
         renderStudyFlow(currentOpen.dataset.n); // 학습 카드가 열려 있으면 즉시 다시 그림
       }
     }
+    if (settingsModal.classList.contains('open')) applySettingsBackupVisibility();
   });
 }
 
