@@ -71,11 +71,20 @@ document.addEventListener('DOMContentLoaded', function () {
   .nav-tabs { display:flex; gap:8px; margin-bottom:16px; }
   .nav-tab { font-size:14px; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink-soft); cursor:pointer; }
   .nav-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .user-row { display:flex; gap:10px; align-items:center; padding:10px 8px; border-bottom:1px solid var(--line); }
-  .user-email { flex:1; font-size:14px; }
+  .user-row-wrap { border-bottom:1px solid var(--line); }
+  .user-row { display:flex; gap:10px; align-items:center; padding:10px 8px; flex-wrap:wrap; }
+  .user-email { flex:1 1 auto; font-size:14px; min-width:160px; }
+  .user-joined { font-size:11px; color:var(--ink-soft); flex:0 0 auto; }
   .role-tag { font-size:11px; padding:2px 8px; border-radius:999px; background:#f0eee7; color:var(--ink-soft); }
   .role-tag.role-admin { background:#e5efe6; color:#3a6b45; }
   .role-tag.role-owner { background:#f3e6d8; color:var(--accent); }
+  .sub-tag { font-size:11px; padding:2px 8px; border-radius:999px; background:#f0eee7; color:var(--ink-soft); }
+  .sub-tag.sub-active { background:#e5efe6; color:#3a6b45; }
+  .sub-tag.sub-expired { background:#f3e6d8; color:#8a6d3b; }
+  .sub-tag.sub-cancelled { background:#f5e6e6; color:#b0552f; }
+  .sub-edit-form { padding:4px 8px 16px; }
+  .sub-edit-form .row label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--ink-soft); }
+  .sub-only-filter-row { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); margin-bottom:10px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -143,10 +152,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <div class="card" id="user-mgmt-view" style="display:none;">
       <div class="row">
-        <input type="email" id="user-search-input" placeholder="이메일로 검색" style="flex:1; font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px;">
+        <input type="email" id="user-search-input" placeholder="이메일로 검색 (비워두고 검색하면 전체 목록)" style="flex:1; font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px;">
         <button class="btn" id="user-search-btn">검색</button>
       </div>
-      <div id="user-search-results" class="sub">이메일을 입력해 검색해주세요.</div>
+      <label class="sub-only-filter-row">
+        <input type="checkbox" id="sub-only-filter"> 구독중만 보기
+      </label>
+      <div id="user-search-results" class="sub">이메일을 입력하거나, 비워둔 채로 검색하면 전체 목록이 나옵니다.</div>
     </div>
   </div>
 </div>
@@ -406,42 +418,109 @@ document.getElementById('cancel-btn').addEventListener('click', closeEditForm);
 document.getElementById('admin-logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); checkAccess(); });
 
 // ============================================================
-// 사용자 관리 (owner 전용) — 이메일로 검색해서 role을 user/admin 사이에서 바꾼다.
-// 검색은 auth.users를 봐야 해서 RPC(admin_search_users)를 쓰고, role 변경은 profiles를
-// 직접 upsert하되 실제 허용 여부는 전적으로 RLS(owner만, user/admin만 지정 가능)가 결정한다.
+// 사용자 관리 (owner 전용) — 이메일로 검색(비우면 전체 목록, 최대 200명)해서 role과
+// 구독 상태를 관리한다. 검색은 auth.users를 봐야 해서 RPC(admin_search_users)를 쓰고,
+// role/구독 변경은 profiles를 직접 update하되 실제 허용 여부는 전적으로 RLS(owner만)가
+// 결정한다. "구독중만 보기"는 이미 불러온 목록을 화면에서만 걸러내는 것이라 재검색은 안 한다.
 // ============================================================
+let lastSearchedUsers = [];
+
+function subStatusLabel(status) {
+  return { none: '없음', active: '구독중', expired: '만료', cancelled: '해지' }[status] || status;
+}
+function formatShortDate(iso) {
+  return iso ? iso.slice(0, 10) : '-';
+}
+
 async function searchUsers() {
   const q = document.getElementById('user-search-input').value.trim();
   const resultsEl = document.getElementById('user-search-results');
-  if (!q) { resultsEl.textContent = '이메일을 입력해 검색해주세요.'; return; }
   resultsEl.textContent = '검색 중...';
   const { data, error } = await sb.rpc('admin_search_users', { search_email: q });
-  if (error) { resultsEl.textContent = '검색 실패: ' + error.message; return; }
-  if (!data || data.length === 0) { resultsEl.textContent = '일치하는 사용자가 없습니다.'; return; }
+  if (error) { resultsEl.textContent = '검색 실패: ' + error.message; lastSearchedUsers = []; return; }
+  lastSearchedUsers = data || [];
+  renderUserResults();
+}
+
+function renderUserResults() {
+  const resultsEl = document.getElementById('user-search-results');
+  const subOnly = document.getElementById('sub-only-filter').checked;
+  const list = subOnly ? lastSearchedUsers.filter((r) => r.out_subscription_status === 'active') : lastSearchedUsers;
+  if (list.length === 0) {
+    resultsEl.textContent = subOnly ? '구독중인 사용자가 없습니다.' : '일치하는 사용자가 없습니다.';
+    return;
+  }
 
   resultsEl.innerHTML = '';
-  data.forEach((row0) => {
-    const u = { id: row0.out_id, email: row0.out_email, role: row0.out_role }; // RPC 리턴 컬럼명(out_*) 그대로 노출하지 않고 여기서만 정리
-    const row = document.createElement('div');
-    row.className = 'user-row';
+  list.forEach((row0) => {
+    // RPC 리턴 컬럼명(out_*) 그대로 노출하지 않고 여기서만 정리
+    const u = {
+      id: row0.out_id, email: row0.out_email, role: row0.out_role, createdAt: row0.out_created_at,
+      subStatus: row0.out_subscription_status || 'none',
+      subStarted: row0.out_subscription_started_at,
+      subExpires: row0.out_subscription_expires_at,
+      subNote: row0.out_subscription_note || '',
+    };
     const roleLabel = u.role === 'owner' ? '소유자' : (u.role === 'admin' ? '관리자' : '일반');
-    let actionsHtml = '';
+    let roleActionsHtml = '';
     if (u.role === 'owner') {
-      actionsHtml = '<span class="sub">(소유자는 이 화면에서 변경할 수 없습니다)</span>';
+      roleActionsHtml = '<span class="sub">(소유자는 이 화면에서 변경할 수 없습니다)</span>';
     } else if (u.role === 'admin') {
-      actionsHtml = `<button class="btn secondary" data-uid="${u.id}" data-role="user">일반으로 변경</button>`;
+      roleActionsHtml = `<button class="btn secondary" data-uid="${u.id}" data-role="user">일반으로 변경</button>`;
     } else {
-      actionsHtml = `<button class="btn secondary" data-uid="${u.id}" data-role="admin">관리자로 승격</button>`;
+      roleActionsHtml = `<button class="btn secondary" data-uid="${u.id}" data-role="admin">관리자로 승격</button>`;
     }
-    row.innerHTML = `
-      <span class="user-email">${escapeHtml(u.email)}</span>
-      <span class="role-tag role-${u.role}">${roleLabel}</span>
-      ${actionsHtml}
+
+    const wrap = document.createElement('div');
+    wrap.className = 'user-row-wrap';
+    wrap.innerHTML = `
+      <div class="user-row">
+        <span class="user-email">${escapeHtml(u.email)}</span>
+        <span class="user-joined">${formatShortDate(u.createdAt)} 가입</span>
+        <span class="role-tag role-${u.role}">${roleLabel}</span>
+        <span class="sub-tag sub-${u.subStatus}">${subStatusLabel(u.subStatus)}</span>
+        ${roleActionsHtml}
+        <button class="btn secondary sub-toggle-btn" data-uid="${u.id}">구독 관리</button>
+      </div>
+      <div class="sub-edit-form" id="sub-edit-${u.id}" style="display:none;">
+        <div class="row">
+          <label>상태
+            <select class="sub-status-select">
+              <option value="none">없음</option>
+              <option value="active">구독중</option>
+              <option value="expired">만료</option>
+              <option value="cancelled">해지</option>
+            </select>
+          </label>
+          <label>시작일 <input type="date" class="sub-started-input"></label>
+          <label>만료일 <input type="date" class="sub-expires-input"></label>
+        </div>
+        <div class="form-field">
+          <label>메모</label>
+          <input type="text" class="sub-note-input" placeholder="예: 베타 무료">
+        </div>
+        <button class="btn sub-save-btn" data-uid="${u.id}">저장</button>
+        <div class="status-msg sub-save-status"></div>
+      </div>
     `;
-    resultsEl.appendChild(row);
+    wrap.querySelector('.sub-status-select').value = u.subStatus;
+    wrap.querySelector('.sub-started-input').value = u.subStarted ? u.subStarted.slice(0, 10) : '';
+    wrap.querySelector('.sub-expires-input').value = u.subExpires ? u.subExpires.slice(0, 10) : '';
+    wrap.querySelector('.sub-note-input').value = u.subNote;
+    resultsEl.appendChild(wrap);
   });
-  resultsEl.querySelectorAll('button[data-uid]').forEach((btn) => {
+
+  resultsEl.querySelectorAll('button[data-uid][data-role]').forEach((btn) => {
     btn.addEventListener('click', () => changeUserRole(btn.dataset.uid, btn.dataset.role));
+  });
+  resultsEl.querySelectorAll('.sub-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const form = document.getElementById('sub-edit-' + btn.dataset.uid);
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+  });
+  resultsEl.querySelectorAll('.sub-save-btn').forEach((btn) => {
+    btn.addEventListener('click', () => saveSubscription(btn.dataset.uid));
   });
 }
 
@@ -460,8 +539,43 @@ async function changeUserRole(uid, newRole) {
   await searchUsers(); // 목록을 새로 불러와서 바뀐 상태를 바로 보여줌
 }
 
+async function saveSubscription(uid) {
+  const form = document.getElementById('sub-edit-' + uid);
+  const statusEl = form.querySelector('.sub-save-status');
+  const status = form.querySelector('.sub-status-select').value;
+  const startedVal = form.querySelector('.sub-started-input').value;
+  const expiresVal = form.querySelector('.sub-expires-input').value;
+  const note = form.querySelector('.sub-note-input').value.trim();
+  statusEl.textContent = '저장 중...';
+  statusEl.className = 'status-msg';
+  const patch = {
+    subscription_status: status,
+    subscription_started_at: startedVal ? new Date(startedVal + 'T00:00:00Z').toISOString() : null,
+    subscription_expires_at: expiresVal ? new Date(expiresVal + 'T00:00:00Z').toISOString() : null,
+    subscription_note: note || null,
+  };
+  // changeUserRole과 같은 이유로 .select()를 붙여서 0행 변경(=RLS에 막힘)을 놓치지 않는다.
+  const { data, error } = await sb.from('profiles').update(patch).eq('id', uid).select();
+  if (error) { statusEl.textContent = '저장 실패: ' + error.message; statusEl.className = 'status-msg error'; return; }
+  if (!data || data.length === 0) { statusEl.textContent = '변경되지 않았습니다 (권한이 없어 막혔을 수 있습니다).'; statusEl.className = 'status-msg error'; return; }
+  const idx = lastSearchedUsers.findIndex((r) => r.out_id === uid);
+  if (idx !== -1) {
+    lastSearchedUsers[idx] = {
+      ...lastSearchedUsers[idx],
+      out_subscription_status: patch.subscription_status,
+      out_subscription_started_at: patch.subscription_started_at,
+      out_subscription_expires_at: patch.subscription_expires_at,
+      out_subscription_note: patch.subscription_note,
+    };
+  }
+  statusEl.textContent = '저장 완료.';
+  statusEl.className = 'status-msg ok';
+  renderUserResults();
+}
+
 document.getElementById('user-search-btn').addEventListener('click', searchUsers);
 document.getElementById('user-search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchUsers(); });
+document.getElementById('sub-only-filter').addEventListener('change', renderUserResults);
 
 checkAccess();
 </script>

@@ -168,9 +168,17 @@ create policy "본인 삭제" on study_notes for delete using (auth.uid() = user
 --    대시보드에서 본인 계정만 별도로 직접 실행한다.
 -- ============================================================
 
+-- subscription_* 4개 컬럼은 월 정액 결제를 붙이기 전 단계로, "구독 상태를 보고 관리만"
+-- 할 수 있게 미리 만들어둔 것이다. 실제 PG사 연동 전이라 지금은 admin.html의 사용자
+-- 관리 화면에서 owner가 수동으로만 값을 바꾸고, 하이라이트/노트 같은 실제 기능과는
+-- 아직 연결하지 않는다 — 나중에 결제를 붙일 때 "만료면 기능 제한" 로직을 여기 붙인다.
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  role text not null default 'user' check (role in ('user', 'admin', 'owner'))
+  role text not null default 'user' check (role in ('user', 'admin', 'owner')),
+  subscription_status text not null default 'none' check (subscription_status in ('none', 'active', 'expired', 'cancelled')),
+  subscription_started_at timestamptz,
+  subscription_expires_at timestamptz,
+  subscription_note text
 );
 alter table profiles enable row level security;
 
@@ -205,11 +213,13 @@ create policy "본인 조회 또는 owner는 전체 조회" on profiles for sele
 using (auth.uid() = id or is_owner());
 -- insert 정책 없음 — 신규 유저의 profiles 행은 admin_search_users()가 필요할 때 만들어준다.
 
--- owner만 다른 사용자의 role을 바꿀 수 있다. 대상 행이 지금 owner면 애초에 손 못 대고
--- (using), 바꾼 결과값도 user/admin만 허용된다(with check) — 이 경로로는 절대 owner를
--- 만들거나 owner를 건드릴 수 없다. admin/user는 is_owner()가 false이므로 자기 role이든
--- 남의 role이든 어떤 변경 시도도 RLS가 그냥 막는다.
-create policy "owner가 user/admin 사이에서 role 변경" on profiles for update
+-- owner만 다른 사용자의 role/구독 정보를 바꿀 수 있다. 대상 행이 지금 owner면 애초에
+-- 손 못 대고(using), 바꾼 결과값도 role은 user/admin만 허용된다(with check) — 이
+-- 경로로는 절대 owner를 만들거나 owner를 건드릴 수 없다. RLS는 행 단위라 컬럼을
+-- 가려낼 수는 없지만, subscription_* 컬럼만 바꾸는 UPDATE는 role 값이 그대로
+-- user/admin 중 하나로 유지되므로 이 정책 하나로 이미 커버된다. admin/user는
+-- is_owner()가 false이므로 role이든 구독 정보든 어떤 변경 시도도 RLS가 그냥 막는다.
+create policy "owner가 다른 사용자의 role/구독 정보 관리" on profiles for update
 using (is_owner() and role <> 'owner')
 with check (is_owner() and role in ('user', 'admin'));
 
@@ -217,14 +227,25 @@ create policy "관리자 추가" on notes for insert with check (is_admin_or_own
 create policy "관리자 수정" on notes for update using (is_admin_or_owner());
 create policy "관리자 삭제" on notes for delete using (is_admin_or_owner());
 
--- 이메일로 사용자를 검색하는 용도. auth.users는 PostgREST로 직접 조회할 수 없어서
--- security definer 함수로 우회하고, 함수 안에서 호출자가 owner인지 다시 확인한다.
--- 검색 대상에 profiles 행이 아직 없으면(신규 가입자) 여기서 기본값 'user'로 만들어준다.
--- 주의: 리턴 컬럼 이름이 profiles 컬럼명(id/role)과 겹치면 별칭을 붙여도
+-- 이메일로 사용자를 검색하는 용도(검색어를 비우면 전체 목록, 최대 200명).
+-- auth.users는 PostgREST로 직접 조회할 수 없어서 security definer 함수로 우회하고,
+-- 함수 안에서 호출자가 owner인지 다시 확인한다. 검색 대상에 profiles 행이 아직
+-- 없으면(신규 가입자) 여기서 기본값 'user'로 만들어준다. 가입일(auth.users.created_at)과
+-- 구독 정보도 함께 돌려줘서 admin.html 사용자 관리 화면에 한 번에 보여준다.
+-- 주의: 리턴 컬럼 이름이 profiles 컬럼명(id/role 등)과 겹치면 별칭을 붙여도
 -- "on conflict (id)"처럼 SQL 문법상 표현식이 아닌 자리에서까지 PL/pgSQL이 OUT 파라미터로
 -- 오인해서 "column reference is ambiguous"가 난다 — 아예 겹치지 않는 이름(out_ 접두사)을 쓴다.
 create or replace function admin_search_users(search_email text)
-returns table (out_id uuid, out_email text, out_role text)
+returns table (
+  out_id uuid,
+  out_email text,
+  out_role text,
+  out_created_at timestamptz,
+  out_subscription_status text,
+  out_subscription_started_at timestamptz,
+  out_subscription_expires_at timestamptz,
+  out_subscription_note text
+)
 language plpgsql
 security definer
 set search_path = public
@@ -241,12 +262,13 @@ begin
   on conflict (id) do nothing;
 
   return query
-    select u.id, u.email::text, p.role
+    select u.id, u.email::text, p.role, u.created_at,
+           p.subscription_status, p.subscription_started_at, p.subscription_expires_at, p.subscription_note
     from auth.users u
     join profiles p on p.id = u.id
     where u.email ilike '%' || search_email || '%'
     order by u.email
-    limit 20;
+    limit 200;
 end;
 $$;
 grant execute on function admin_search_users(text) to authenticated;
