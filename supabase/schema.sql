@@ -92,17 +92,20 @@ create policy "공개 읽기" on book_extras for select using (true);
 --    각자 자기 것만 읽고 쓸 수 있도록 RLS로 강제한다.
 -- ============================================================
 
+-- 실제 로컬 구현(hlw_/hls_ localStorage 키)을 그대로 옮긴 구조로 정정함:
+-- 절 하나를 통째로 "verse/word/sentence + range"로 나누는 게 아니라, 절 하나당 행 하나에
+-- "어절 인덱스 → 색" 맵을 그대로 저장한다. is_full_verse는 절 전체를 한 번에 칠했는지
+-- 표시(로컬의 hls_ 대응) — 지울 때 한 절을 통째로 지울지, 어절 하나만 지울지 구분하는 용도.
 create table highlights (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   book_id text not null references books(id),
   chapter int not null,
   verse int not null,
-  highlight_type text not null check (highlight_type in ('verse', 'word', 'sentence')),
-  range_start int,                      -- word/sentence 하이라이트일 때 절 텍스트 안에서의 시작 위치
-  range_end int,
-  color text,
-  created_at timestamptz not null default now()
+  word_colors jsonb not null default '{}'::jsonb,  -- {"0":"yellow","3":"green"} — 로컬 hlw_ 맵과 동일 구조
+  is_full_verse boolean not null default false,
+  updated_at timestamptz not null default now(),
+  unique (user_id, book_id, chapter, verse)
 );
 
 create table memos (
