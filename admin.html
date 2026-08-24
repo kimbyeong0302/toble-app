@@ -4,6 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>토블 관리자 — 학자노트 편집</title>
+<script>
+// 임시 디버그 계측 — "제목/설명만 뜨고 그 아래 아무 것도 안 뜨는" 빈 화면 재현용.
+// 스크립트가 어디서든 조용히 죽으면(리소스 로드 실패 포함) 그 에러를 화면에 그대로 보여준다.
+// 원인 확인 후 제거하거나 ?debug=1로만 보이게 바꿀 예정 — 지금은 항상 켜둔다.
+window.__tobleErrorLog = [];
+function tobleShowDebugError(label, detail) {
+  window.__tobleErrorLog.push('[' + label + '] ' + detail);
+  var box = document.getElementById('debug-error-box');
+  if (box) { box.style.display = 'block'; box.textContent = window.__tobleErrorLog.join('\n\n'); }
+}
+window.addEventListener('error', function (e) {
+  if (e.target && e.target !== window && e.target.tagName) {
+    tobleShowDebugError('리소스 로드 실패', (e.target.src || e.target.href || e.target.tagName) + '');
+    return;
+  }
+  tobleShowDebugError('JS 에러', (e.message || '') + ' @ ' + (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + (e.error && e.error.stack ? '\n' + e.error.stack : ''));
+}, true);
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e.reason;
+  tobleShowDebugError('처리 안 된 Promise 거부', (r && r.message) ? r.message + (r.stack ? '\n' + r.stack : '') : String(r));
+});
+document.addEventListener('DOMContentLoaded', function () {
+  // body가 생기기 전(head 파싱 중)에 이미 잡힌 에러가 있으면, 이제 실제로 박스에 그려준다.
+  if (window.__tobleErrorLog.length) {
+    var box = document.getElementById('debug-error-box');
+    if (box) { box.style.display = 'block'; box.textContent = window.__tobleErrorLog.join('\n\n'); }
+  }
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha256-7ABBdtEBrsd67vJmqhyUQRKH/iA5xl6l9scvXhSzhH0=" crossorigin="anonymous" onerror="window.__sbLoadFailed = true;"></script>
 <style>
   :root { --bg:#faf9f6; --card:#fff; --ink:#1c2733; --ink-soft:#5b6774; --line:#e4e0d8; --accent:#8a6d3b; }
@@ -52,6 +81,8 @@
   <a href="index.html" class="back-link">← 메인 화면으로 돌아가기</a>
   <h1>토블 관리자 — 학자노트 편집</h1>
   <div class="sub">notes 테이블을 직접 편집합니다. 관리자 계정으로 로그인해야 접근할 수 있습니다.</div>
+
+  <div id="debug-error-box" style="display:none; background:#fee; color:#900; padding:12px; margin-bottom:16px; border:1px solid #c00; border-radius:8px; font-family:monospace; font-size:12px; white-space:pre-wrap; word-break:break-all;"></div>
 
   <div id="gate" class="gate">확인 중...</div>
 
