@@ -203,10 +203,11 @@ create policy "관리자 삭제" on notes for delete using (
 -- 이메일로 사용자를 검색하는 용도. auth.users는 PostgREST로 직접 조회할 수 없어서
 -- security definer 함수로 우회하고, 함수 안에서 호출자가 owner인지 다시 확인한다.
 -- 검색 대상에 profiles 행이 아직 없으면(신규 가입자) 여기서 기본값 'user'로 만들어준다.
--- 주의: 리턴 컬럼 이름(id/email/role)이 profiles 컬럼명과 겹쳐서, 함수 안에서 profiles를
--- 별칭 없이 그냥 쓰면 "column reference is ambiguous" 에러가 난다 — 항상 별칭을 붙일 것.
+-- 주의: 리턴 컬럼 이름이 profiles 컬럼명(id/role)과 겹치면 별칭을 붙여도
+-- "on conflict (id)"처럼 SQL 문법상 표현식이 아닌 자리에서까지 PL/pgSQL이 OUT 파라미터로
+-- 오인해서 "column reference is ambiguous"가 난다 — 아예 겹치지 않는 이름(out_ 접두사)을 쓴다.
 create or replace function admin_search_users(search_email text)
-returns table (id uuid, email text, role text)
+returns table (out_id uuid, out_email text, out_role text)
 language plpgsql
 security definer
 set search_path = public

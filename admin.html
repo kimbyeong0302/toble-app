@@ -345,7 +345,8 @@ async function searchUsers() {
   if (!data || data.length === 0) { resultsEl.textContent = '일치하는 사용자가 없습니다.'; return; }
 
   resultsEl.innerHTML = '';
-  data.forEach((u) => {
+  data.forEach((row0) => {
+    const u = { id: row0.out_id, email: row0.out_email, role: row0.out_role }; // RPC 리턴 컬럼명(out_*) 그대로 노출하지 않고 여기서만 정리
     const row = document.createElement('div');
     row.className = 'user-row';
     const roleLabel = u.role === 'owner' ? '소유자' : (u.role === 'admin' ? '관리자' : '일반');
