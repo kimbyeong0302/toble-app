@@ -476,6 +476,13 @@
   .dict-hit:hover { background: var(--accent-soft); }
   .dict-hit .dh-ref { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 3px; }
 
+  /* ---- 학습 탭: 절 선택 전 안내 화면에 지금까지 기록한 절 목록 ---- */
+  .study-record-item {
+    background: var(--note-bg); border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 8px; cursor: pointer; font-size: 13px; transition: background .15s;
+  }
+  .study-record-item:hover { background: var(--accent-soft); }
+
   /* ---- 히스토리 탭: 최근 눌러본 절 최대 10개 ---- */
   .history-card {
     background: var(--note-bg); border-radius: 10px; padding: 10px 12px;
@@ -5397,7 +5404,7 @@ const DEFAULT_PANEL = `
     <p><span class="mark2">✦</span> 표시가 있는 절을 누르면 관찰 → 해석 → 적용 순서로 스스로 채워가는 학습 카드가 열립니다. 각 단계를 마쳐야 다음 단계와 학자 노트가 열립니다.</p>
     <p style="margin-top:10px;">본문 전체의 흐름을 스스로 나눠보고 싶다면 왼쪽 위 <strong>"구조"</strong> 탭에서 나만의 개요를 만들어볼 수 있습니다.</p>
   </div>`;
-noteView.innerHTML = DEFAULT_PANEL;
+renderDefaultPanel();
 
 // ============================================================
 // 학습노트(관찰/해석/적용 + 진행 단계)를 Supabase study_notes 테이블에서 읽고 쓴다 —
@@ -5493,11 +5500,78 @@ function scanLocalStudy() {
 }
 
 // ============================================================
+// 학습 탭을 열었는데 아직 절을 선택 안 했을 때, 지금까지 관찰/해석/적용 중 하나라도
+// 적은 절 목록을 기본 안내 문구 아래에 보여준다. 로그인 여부에 따라 로컬/서버 중
+// 맞는 데이터를 쓰는 건 study_notes의 다른 함수들과 같은 방식 — 로컬은 scanLocalStudy()가
+// 이미 모든 책을 다 스캔해주고, 로그인 상태는 책별로 나뉜 supabaseStudyCache 대신
+// 전체 책을 한 번에 조회한다(캐시는 현재 책만 담고 있어서 목록에는 안 맞음).
+// renderStudyFlow()가 그 사이 호출되면(다른 절을 열었으면) 목록 fetch가 뒤늦게 도착해도
+// 화면을 덮어쓰지 않도록 매번 세대(seq) 번호를 찍어 확인한다.
+// ============================================================
+let studyPanelRenderSeq = 0;
+
+function renderDefaultPanel() {
+  const mySeq = ++studyPanelRenderSeq;
+  noteView.innerHTML = DEFAULT_PANEL;
+  const applyList = (items) => {
+    if (mySeq !== studyPanelRenderSeq) return; // 그 사이 다른 절이 열렸으면 무시
+    renderStudyRecordList(items);
+  };
+  if (isLoggedIn()) {
+    if (!sb) return;
+    sb.from('study_notes').select('book_id, verse_key, obs, interp, app').then(({ data, error }) => {
+      if (error || !data) return;
+      applyList(data.filter(r => (r.obs || '').trim() || (r.interp || '').trim() || (r.app || '').trim()));
+    });
+  } else {
+    applyList(scanLocalStudy());
+  }
+}
+
+function renderStudyRecordList(items) {
+  if (!items || items.length === 0) return; // 기록이 하나도 없으면 기본 안내 문구만 남긴다
+  const bookOrder = Object.keys(BOOK_LABELS);
+  const sorted = items.slice().sort((a, b) => {
+    const bo = bookOrder.indexOf(a.book_id) - bookOrder.indexOf(b.book_id);
+    if (bo !== 0) return bo;
+    const pa = compositeParts(a.verse_key)[0];
+    const pb = compositeParts(b.verse_key)[0];
+    return (Number(pa.c) - Number(pb.c)) || (Number(pa.v) - Number(pb.v));
+  });
+  let html = '<div class="study-record-list">';
+  html += '<div class="settings-section-title" style="margin-top:18px;">지금까지 기록한 절</div>';
+  sorted.forEach((it) => {
+    html += `<div class="study-record-item" data-book="${it.book_id}" data-key="${it.verse_key}">${escapeHtmlDict(compositeRefLabel(it.verse_key, it.book_id))}</div>`;
+  });
+  html += '</div>';
+  noteView.insertAdjacentHTML('beforeend', html);
+  noteView.querySelectorAll('.study-record-item').forEach((el) => {
+    el.addEventListener('click', () => jumpToVerseFromStudyList(el.dataset.key, el.dataset.book));
+  });
+}
+
+function jumpToVerseFromStudyList(key, bookId) {
+  if (bookId && bookId !== currentBook) setBook(bookId);
+  const parts = compositeParts(key);
+  showPage(Number(parts[0].c));
+  setTimeout(() => {
+    const bookContent = document.querySelector('.book-content[data-book="' + currentBook + '"]');
+    if (!bookContent) return;
+    const verseEls = parts.map((p) => bookContent.querySelector('.verse[data-n="' + p.c + '-' + p.v + '"]')).filter(Boolean);
+    if (!verseEls.length) return;
+    openStudyFlowForVerses(verseEls, key);
+    verseEls[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (isMobile()) setSheetOpen(true);
+  }, 160);
+}
+
+// ============================================================
 // 학습 흐름 렌더링
 // ============================================================
 function stepFields() { return ['obs', 'interp', 'app']; }
 
 function renderStudyFlow(n) {
+  studyPanelRenderSeq++; // 목록 화면(renderDefaultPanel)에서 걸어둔 비동기 fetch가 뒤늦게 와도 이 화면을 덮어쓰지 않도록
   fetchSupabaseStudyForBook(currentBook);
   const maxStep = parseInt(getStudyField(n, 'step', '1'), 10);
   const vals = {
@@ -5611,8 +5685,8 @@ function buildCompositeKey(keys) {
 function compositeParts(key) {
   return key.split('+').map(k => { const [c, v] = k.split('-'); return { c, v }; });
 }
-function compositeRefLabel(key) {
-  const bookLabel = BOOK_LABELS[currentBook] || '룻기';
+function compositeRefLabel(key, bookId) {
+  const bookLabel = BOOK_LABELS[bookId || currentBook] || '룻기';
   const parts = compositeParts(key);
   if (parts.length === 1) return `${bookLabel} ${parts[0].c}:${parts[0].v}`;
   const sameChap = parts.every(p => p.c === parts[0].c);
@@ -5756,7 +5830,7 @@ versesEl.querySelectorAll('.verse').forEach(v => {
     // 이미 강조돼있는(눌려있는) 절을 다시 누르면 그냥 닫는다 — 학습/읽기 모드 공통
     if (currentOpen === v) {
       v.classList.remove('open'); currentOpen = null;
-      noteView.innerHTML = DEFAULT_PANEL;
+      renderDefaultPanel();
       return;
     }
     // 읽기 모드와 학습 모드는 절을 눌렀을 때 하는 일이 서로 완전히 다르므로 아예 분리한다.
@@ -5981,7 +6055,7 @@ function setBook(bookId) {
 
   // 학습 노트/하이라이트 도구/트랙 UI를 초기 상태로
   if (currentOpen) { currentOpen.classList.remove('open'); currentOpen = null; }
-  noteView.innerHTML = DEFAULT_PANEL;
+  renderDefaultPanel();
   if (typeof setHlTool === 'function') setHlTool('off');
   const trackCard = document.getElementById('track-academic');
   if (trackCard) trackCard.closest('.card').style.display = (bookId === 'ruth') ? '' : 'none';
@@ -6432,6 +6506,7 @@ if (sb) {
     currentUser = data.session ? data.session.user : null;
     updateAuthHeaderButton();
     fetchCurrentUserRole();
+    if (!currentOpen && typeof renderDefaultPanel === 'function') renderDefaultPanel(); // 로그인 여부가 확정된 뒤 기록 목록을 맞는 데이터로 다시 그림
     if (authLinkErrorMessage) {
       alert(authLinkErrorMessage);
       authLinkErrorMessage = null;
@@ -6482,6 +6557,8 @@ if (sb) {
       }
       if (currentOpen && typeof renderStudyFlow === 'function') {
         renderStudyFlow(currentOpen.dataset.n); // 학습 카드가 열려 있으면 즉시 다시 그림
+      } else if (typeof renderDefaultPanel === 'function') {
+        renderDefaultPanel(); // 안내 화면이면 로그인/로그아웃에 맞는 기록 목록으로 다시 그림
       }
     }
     if (settingsModal.classList.contains('open')) applySettingsBackupVisibility();
@@ -7227,7 +7304,7 @@ function jumpToVerseFromDict(key, bookId) {
     if (el.classList.contains('has-note')) {
       renderStudyFlow(key);
     } else {
-      noteView.innerHTML = DEFAULT_PANEL;
+      renderDefaultPanel();
     }
     switchView('note');
     if (isMobile()) setSheetOpen(true);
