@@ -47,7 +47,9 @@ create table notes (
   title text,
   body text not null,
   grammar_note text,                    -- 원어/문법 설명 (지금 데이터의 g 필드 — 있는 노트에만 존재)
-  refs text                             -- "마태복음 16:21, 20:19" 같은 원문 참조 문자열 (지금 렌더링 방식 그대로 유지)
+  refs text,                            -- "마태복음 16:21, 20:19" 같은 원문 참조 문자열 (지금 렌더링 방식 그대로 유지)
+  src text,                             -- 출처 — 관리자 화면에서 편집. 마이그레이션 당시 데이터에는 없던 필드
+  unique (book_id, chapter, verse_start, verse_end)  -- 관리자 화면에서 절 하나당 노트 upsert가 가능하도록
 );
 create index notes_lookup on notes (book_id, chapter, verse_start, verse_end);
 
@@ -158,3 +160,26 @@ create policy "본인 조회" on study_notes for select using (auth.uid() = user
 create policy "본인 추가" on study_notes for insert with check (auth.uid() = user_id);
 create policy "본인 수정" on study_notes for update using (auth.uid() = user_id);
 create policy "본인 삭제" on study_notes for delete using (auth.uid() = user_id);
+
+-- ============================================================
+-- 3. 관리자 — admin.html에서 학자노트(notes)를 직접 편집할 수 있게 해준다.
+--    profiles.is_admin이 true인 사용자만 notes에 쓸 수 있고, 그 외엔 지금처럼 읽기 전용.
+-- ============================================================
+
+create table profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  is_admin boolean not null default false
+);
+alter table profiles enable row level security;
+create policy "본인 조회" on profiles for select using (auth.uid() = id);
+-- insert/update 정책 없음 → is_admin은 대시보드(SQL Editor)에서만 지정 가능, 본인이 스스로 못 바꿈.
+
+create policy "관리자 추가" on notes for insert with check (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);
+create policy "관리자 수정" on notes for update using (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);
+create policy "관리자 삭제" on notes for delete using (
+  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+);

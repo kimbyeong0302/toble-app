@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>토블 관리자 — 학자노트 편집</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js" integrity="sha256-7ABBdtEBrsd67vJmqhyUQRKH/iA5xl6l9scvXhSzhH0=" crossorigin="anonymous"></script>
+<style>
+  :root { --bg:#faf9f6; --card:#fff; --ink:#1c2733; --ink-soft:#5b6774; --line:#e4e0d8; --accent:#8a6d3b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Noto Sans KR', system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .gate { text-align: center; padding: 60px 20px; color: var(--ink-soft); }
+  .gate a { color: var(--accent); }
+  select, input[type="number"] { font-size: 15px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom: 8px; }
+  .verse-row { display:flex; gap:10px; align-items:flex-start; padding:10px 8px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .verse-row:hover { background: #f3f1ea; }
+  .verse-row.active { background: #efe8d8; }
+  .verse-num { flex: 0 0 34px; font-weight:700; color:var(--accent); }
+  .verse-text { flex:1; font-size:14px; line-height:1.5; }
+  .verse-badge { flex: 0 0 auto; font-size:11px; padding:2px 8px; border-radius:999px; }
+  .badge-has { background:#e5efe6; color:#3a6b45; }
+  .badge-none { background:#f0eee7; color:var(--ink-soft); }
+  .form-field { margin-bottom: 12px; }
+  .form-field label { display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; }
+  .form-field input, .form-field textarea { width:100%; font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-family:inherit; background:var(--bg); color:var(--ink); }
+  .form-field textarea { min-height: 70px; resize: vertical; }
+  .btn { font-size:14px; padding:9px 16px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+  .btn.secondary { background: transparent; color: var(--accent); }
+  .status-msg { font-size:12px; color:var(--ink-soft); margin-top:8px; min-height: 16px; }
+  .status-msg.error { color: #b0552f; }
+  .status-msg.ok { color: #3a6b45; }
+  #admin-app { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>토블 관리자 — 학자노트 편집</h1>
+  <div class="sub">notes 테이블을 직접 편집합니다. 관리자 계정으로 로그인해야 접근할 수 있습니다.</div>
+
+  <div id="gate" class="gate">확인 중...</div>
+
+  <div id="admin-app">
+    <div class="card">
+      <div class="row">
+        <label>책 <select id="book-select"></select></label>
+        <label>장 <select id="chapter-select"></select></label>
+        <span id="signed-in-as" class="sub" style="margin-left:auto;"></span>
+      </div>
+    </div>
+
+    <div class="card" id="verse-list-card">
+      <div id="verse-list"></div>
+    </div>
+
+    <div class="card" id="edit-card" style="display:none;">
+      <div class="sub" id="edit-ref"></div>
+      <div class="form-field">
+        <label>제목</label>
+        <input type="text" id="f-title">
+      </div>
+      <div class="form-field">
+        <label>본문</label>
+        <textarea id="f-body"></textarea>
+      </div>
+      <div class="form-field">
+        <label>문법노트</label>
+        <textarea id="f-grammar"></textarea>
+      </div>
+      <div class="form-field">
+        <label>참고구절 (예: 마태복음 16:21, 20:19)</label>
+        <input type="text" id="f-refs">
+      </div>
+      <div class="form-field">
+        <label>출처</label>
+        <input type="text" id="f-src">
+      </div>
+      <button class="btn" id="save-btn">저장</button>
+      <button class="btn secondary" id="cancel-btn">닫기</button>
+      <div class="status-msg" id="save-status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://tepsuxyfyrkylyhsngwo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlcHN1eHlmeXJreWx5aHNuZ3dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MTk3ODgsImV4cCI6MjEwMzA5NTc4OH0.tRCXepurFgWt_hSVuSnzhCFxzcj8qJdGwm6QGGIt96Q';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let books = [];
+let currentBookId = null;
+let currentChapter = 1;
+let notesByVerse = {}; // verse(int) -> note row
+
+function showGate(html) {
+  document.getElementById('gate').innerHTML = html;
+  document.getElementById('gate').style.display = '';
+  document.getElementById('admin-app').style.display = 'none';
+}
+
+async function checkAccess() {
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session ? session.user : null;
+  if (!currentUser) {
+    showGate('로그인이 필요합니다. <a href="./index.html">메인 앱에서 로그인</a>한 뒤 이 페이지를 다시 열어주세요.');
+    return;
+  }
+  const { data, error } = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
+  const isAdmin = !!(data && data.is_admin);
+  if (error || !isAdmin) {
+    showGate('관리자만 접근 가능합니다.');
+    return;
+  }
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('admin-app').style.display = '';
+  document.getElementById('signed-in-as').textContent = currentUser.email + ' (관리자)';
+  await loadBooks();
+}
+
+async function loadBooks() {
+  const { data, error } = await sb.from('books').select('*').eq('available', true).order('order_num');
+  if (error || !data || data.length === 0) {
+    showGate('책 목록을 불러오지 못했습니다: ' + (error ? error.message : '데이터 없음'));
+    return;
+  }
+  books = data;
+  const sel = document.getElementById('book-select');
+  sel.innerHTML = books.map((b) => `<option value="${b.id}">${b.name_ko}</option>`).join('');
+  sel.addEventListener('change', () => { currentBookId = sel.value; populateChapters(); loadChapter(); });
+  currentBookId = books[0].id;
+  populateChapters();
+  loadChapter();
+}
+
+function populateChapters() {
+  const book = books.find((b) => b.id === currentBookId);
+  const sel = document.getElementById('chapter-select');
+  const total = book ? book.chapter_count : 1;
+  const opts = [];
+  for (let c = 1; c <= total; c++) opts.push(`<option value="${c}">${c}장</option>`);
+  sel.innerHTML = opts.join('');
+  sel.onchange = () => { currentChapter = parseInt(sel.value, 10); loadChapter(); };
+  currentChapter = 1;
+  sel.value = '1';
+}
+
+async function loadChapter() {
+  const listEl = document.getElementById('verse-list');
+  listEl.innerHTML = '불러오는 중...';
+  closeEditForm();
+
+  const [{ data: verses, error: vErr }, { data: notes, error: nErr }] = await Promise.all([
+    sb.from('verses').select('verse,text').eq('book_id', currentBookId).eq('translation_id', 'krv').eq('chapter', currentChapter).order('verse'),
+    sb.from('notes').select('*').eq('book_id', currentBookId).eq('chapter', currentChapter),
+  ]);
+  if (vErr || nErr) {
+    listEl.innerHTML = '불러오기 실패: ' + ((vErr || nErr).message);
+    return;
+  }
+
+  notesByVerse = {};
+  (notes || []).forEach((n) => { notesByVerse[n.verse_start] = n; });
+
+  if (!verses || verses.length === 0) {
+    listEl.innerHTML = '<div class="sub">이 장에는 본문이 없습니다.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  verses.forEach((v) => {
+    const note = notesByVerse[v.verse];
+    const row = document.createElement('div');
+    row.className = 'verse-row';
+    row.dataset.verse = v.verse;
+    row.innerHTML = `
+      <div class="verse-num">${v.verse}</div>
+      <div class="verse-text">${note ? '<strong>' + escapeHtml(note.title || '(제목 없음)') + '</strong><br>' : ''}${escapeHtml(v.text)}</div>
+      <div class="verse-badge ${note ? 'badge-has' : 'badge-none'}">${note ? '노트 있음' : '노트 없음'}</div>
+    `;
+    row.addEventListener('click', () => openEditForm(v.verse, note));
+    listEl.appendChild(row);
+  });
+}
+
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function openEditForm(verse, note) {
+  document.querySelectorAll('.verse-row').forEach((r) => r.classList.toggle('active', Number(r.dataset.verse) === verse));
+  const book = books.find((b) => b.id === currentBookId);
+  document.getElementById('edit-ref').textContent = (book ? book.name_ko : currentBookId) + ' ' + currentChapter + ':' + verse + (note ? ' (기존 노트 수정)' : ' (새 노트 추가)');
+  document.getElementById('f-title').value = note ? (note.title || '') : '';
+  document.getElementById('f-body').value = note ? (note.body || '') : '';
+  document.getElementById('f-grammar').value = note ? (note.grammar_note || '') : '';
+  document.getElementById('f-refs').value = note ? (note.refs || '') : '';
+  document.getElementById('f-src').value = note ? (note.src || '') : '';
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('save-status').className = 'status-msg';
+  document.getElementById('edit-card').style.display = '';
+  document.getElementById('edit-card').dataset.verse = verse;
+  document.getElementById('edit-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeEditForm() {
+  document.getElementById('edit-card').style.display = 'none';
+  document.querySelectorAll('.verse-row').forEach((r) => r.classList.remove('active'));
+}
+
+async function saveNote() {
+  const verse = parseInt(document.getElementById('edit-card').dataset.verse, 10);
+  const body = document.getElementById('f-body').value.trim();
+  const statusEl = document.getElementById('save-status');
+  if (!body) { statusEl.textContent = '본문은 비워둘 수 없습니다.'; statusEl.className = 'status-msg error'; return; }
+
+  const saveBtn = document.getElementById('save-btn');
+  saveBtn.disabled = true;
+  statusEl.textContent = '저장 중...';
+  statusEl.className = 'status-msg';
+
+  const row = {
+    book_id: currentBookId,
+    chapter: currentChapter,
+    verse_start: verse,
+    verse_end: verse,
+    title: document.getElementById('f-title').value.trim() || null,
+    body,
+    grammar_note: document.getElementById('f-grammar').value.trim() || null,
+    refs: document.getElementById('f-refs').value.trim() || null,
+    src: document.getElementById('f-src').value.trim() || null,
+  };
+
+  const { error } = await sb.from('notes').upsert(row, { onConflict: 'book_id,chapter,verse_start,verse_end' });
+  saveBtn.disabled = false;
+  if (error) {
+    statusEl.textContent = '저장 실패: ' + error.message;
+    statusEl.className = 'status-msg error';
+    return;
+  }
+  statusEl.textContent = '저장 완료.';
+  statusEl.className = 'status-msg ok';
+  await loadChapter();
+  openEditForm(verse, notesByVerse[verse]);
+}
+
+document.getElementById('save-btn').addEventListener('click', saveNote);
+document.getElementById('cancel-btn').addEventListener('click', closeEditForm);
+
+checkAccess();
+</script>
+</body>
+</html>
