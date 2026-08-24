@@ -3968,6 +3968,7 @@ const sb = (typeof supabase !== 'undefined')
 // 로그인 상태 — 이 페이지 안에서 가장 먼저(초기 하이라이트 적용 루프보다도 앞서) 선언해야 한다.
 // 실제 로그인/로그아웃 처리 코드는 훨씬 아래 "로그인" 섹션에 있고, 여기서는 값만 미리 선언해둔다.
 let currentUser = null;
+let currentUserRole = 'user'; // profiles.role — admin.html 진입 버튼을 보여줄지 판단하는 용도
 function isLoggedIn() { return !!currentUser; }
 
 // 회원가입 확인 이메일의 링크를 눌러 돌아왔을 때, "확인됐다"는 걸 화면에 명확히 보여주기
@@ -6271,11 +6272,16 @@ function renderAuthModal() {
         <div id="import-status" style="margin-top:8px; font-size:12px; color:var(--ink-soft);"></div>
       `;
     }
+    const adminSection = (currentUserRole === 'admin' || currentUserRole === 'owner') ? `
+      <div class="settings-section-title" style="margin-top:18px;">관리자</div>
+      <a href="admin.html" class="struct-btn secondary" id="admin-panel-link" style="width:100%; box-sizing:border-box; display:block; text-align:center; text-decoration:none;">관리자 화면 열기</a>
+    ` : '';
     body.innerHTML = `
       ${confirmBanner}
       <div class="settings-section-title">계정</div>
       <div class="struct-hint" style="margin-bottom:14px;">${escapeHtmlDict(currentUser.email || '')} 계정으로 로그인되어 있습니다.</div>
       <button class="struct-btn" id="auth-signout-btn" style="width:100%; margin-bottom:8px;">로그아웃</button>
+      ${adminSection}
       <div class="settings-section-title" style="margin-top:18px;">개인정보 수정</div>
       <button class="struct-btn secondary" id="change-password-btn" style="width:100%;">비밀번호 변경</button>
       <div id="change-password-status" style="margin-top:8px; font-size:12px; color:var(--ink-soft);"></div>
@@ -6404,6 +6410,16 @@ function updateAuthHeaderButton() {
   }
 }
 
+// admin.html로 넘어가는 버튼을 계정 모달에 보여줄지 판단하기 위해 role만 가져온다.
+// admin.html 자체의 권한 검사(및 owner 전용 "사용자 관리" 노출)는 admin.html이 직접 하므로
+// 여기서는 버튼 노출 여부만 결정하면 된다.
+async function fetchCurrentUserRole() {
+  if (!sb || !currentUser) { currentUserRole = 'user'; return; }
+  const { data } = await sb.from('profiles').select('role').eq('id', currentUser.id).maybeSingle();
+  currentUserRole = (data && data.role) || 'user';
+  if (authModal.classList.contains('open')) renderAuthModal();
+}
+
 const authModal = document.getElementById('auth-modal');
 function openAuthModal() { renderAuthModal(); authModal.classList.add('open'); }
 function closeAuthModal() { authModal.classList.remove('open'); justConfirmedEmail = false; passwordRecoveryMode = false; }
@@ -6415,6 +6431,7 @@ if (sb) {
   sb.auth.getSession().then(({ data }) => {
     currentUser = data.session ? data.session.user : null;
     updateAuthHeaderButton();
+    fetchCurrentUserRole();
     if (authLinkErrorMessage) {
       alert(authLinkErrorMessage);
       authLinkErrorMessage = null;
@@ -6430,6 +6447,7 @@ if (sb) {
   sb.auth.onAuthStateChange((event, session) => {
     currentUser = session ? session.user : null;
     updateAuthHeaderButton();
+    fetchCurrentUserRole();
     if (event === 'PASSWORD_RECOVERY') {
       // 비밀번호 재설정 링크를 눌러 들어온 상태 — 계정 모달을 새 비밀번호 입력 화면으로 연다.
       passwordRecoveryMode = true;
