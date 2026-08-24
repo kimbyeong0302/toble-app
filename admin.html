@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>토블 관리자 — 학자노트 편집</title>
 <script>
-// 임시 디버그 계측 — "제목/설명만 뜨고 그 아래 아무 것도 안 뜨는" 빈 화면 재현용.
-// 스크립트가 어디서든 조용히 죽으면(리소스 로드 실패 포함) 그 에러를 화면에 그대로 보여준다.
-// 원인 확인 후 제거하거나 ?debug=1로만 보이게 바꿀 예정 — 지금은 항상 켜둔다.
+// 디버그 계측 — 스크립트가 어디서든 조용히 죽으면(리소스 로드 실패 포함) 그 에러를
+// 화면에 그대로 보여준다. admin.html 주소 끝에 ?debug=1을 붙였을 때만 화면에 뜨고,
+// 평소에는 완전히 안 보인다(등록 자체는 항상 해두되 표시만 게이트한다).
+window.__tobleDebug = new URLSearchParams(location.search).has('debug');
 window.__tobleErrorLog = [];
 function tobleShowDebugError(label, detail) {
   window.__tobleErrorLog.push('[' + label + '] ' + detail);
+  if (!window.__tobleDebug) return;
   var box = document.getElementById('debug-error-box');
   if (box) { box.style.display = 'block'; box.textContent = window.__tobleErrorLog.join('\n\n'); }
 }
@@ -27,7 +29,7 @@ window.addEventListener('unhandledrejection', function (e) {
 });
 document.addEventListener('DOMContentLoaded', function () {
   // body가 생기기 전(head 파싱 중)에 이미 잡힌 에러가 있으면, 이제 실제로 박스에 그려준다.
-  if (window.__tobleErrorLog.length) {
+  if (window.__tobleDebug && window.__tobleErrorLog.length) {
     var box = document.getElementById('debug-error-box');
     if (box) { box.style.display = 'block'; box.textContent = window.__tobleErrorLog.join('\n\n'); }
   }
@@ -251,7 +253,10 @@ async function checkAccess() {
     document.getElementById('nav-tabs').style.display = currentRole === 'owner' ? '' : 'none';
     showNotesView();
     document.getElementById('gate').style.display = 'none';
-    document.getElementById('admin-app').style.display = '';
+    // #admin-app의 기본 CSS가 display:none이라, 인라인 스타일을 그냥 비우면(clear) 다시
+    // 스타일시트 기본값(none)으로 되돌아가 버려서 절대 안 보였다 — 실제 원인이 이거였다.
+    // "" 대신 명시적으로 'block'을 지정해야 진짜로 보인다.
+    document.getElementById('admin-app').style.display = 'block';
   } catch (e) {
     showFatalError((e && e.message) ? e.message : '알 수 없는 오류가 발생했습니다.');
   }
