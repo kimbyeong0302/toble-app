@@ -4798,26 +4798,49 @@ function flashHighlightError(msg) {
   else alert(msg);
 }
 
-// partial: { word_colors } 그리고/또는 { is_full_verse } — 준 필드만 서버에 반영(부분 upsert)
+// 절 하나를 칠하는 동작은 보통 saveWordHighlights + setSentenceHighlight/clearSentenceHighlight
+// 두 번 연달아 같은 절(n)에 호출된다(단어색 먼저, 문장 표시 나중). 이걸 매번 별도 요청으로
+// 보내면, 둘 다 실패했을 때 되돌리는 순서가 엇갈려 잘못된 상태로 되돌아갈 수 있다 — 그래서
+// 같은 절에 대한 연속 호출은 마이크로태스크 하나로 모아서(coalesce) 최종 상태 하나만 한 번에
+// 반영하고, 실패 시에도 이번 배치가 시작되기 "전" 상태 하나로만 정확히 되돌린다.
+const highlightBatchPending = new Set();   // "bookId|n" — 이번 tick에 이미 flush 예약됐는지
+const highlightBatchPrevState = {};        // "bookId|n" -> 이번 배치 시작 전 원래 상태(되돌릴 값)
+
+// partial: { word_colors } 그리고/또는 { is_full_verse } — 준 필드만 캐시/서버에 반영
 function updateHighlightCacheAndPersist(n, partial) {
   const bookId = currentBook;
   const cache = (supabaseHighlightCache[bookId] = supabaseHighlightCache[bookId] || {});
+  const cacheKey = bookId + '|' + n;
   const prev = cache[n] ? { word_colors: { ...cache[n].word_colors }, is_full_verse: cache[n].is_full_verse } : { word_colors: {}, is_full_verse: false };
-  const next = { ...prev, ...partial };
-  cache[n] = next; // 낙관적 업데이트 — 응답 기다리지 않고 바로 반영
 
+  if (!highlightBatchPending.has(cacheKey)) {
+    highlightBatchPrevState[cacheKey] = prev; // 이 배치의 "진짜 원래 상태"는 첫 호출 때만 기록
+    highlightBatchPending.add(cacheKey);
+    Promise.resolve().then(() => flushHighlightBatch(bookId, n, cacheKey));
+  }
+
+  cache[n] = { ...prev, ...partial }; // 낙관적 업데이트 — 매 호출마다 바로 반영
+}
+
+function flushHighlightBatch(bookId, n, cacheKey) {
+  highlightBatchPending.delete(cacheKey);
+  const prev = highlightBatchPrevState[cacheKey];
+  delete highlightBatchPrevState[cacheKey];
+
+  const cache = supabaseHighlightCache[bookId] || {};
+  const finalState = cache[n] || { word_colors: {}, is_full_verse: false };
   const [chapter, verse] = n.split('-').map(Number);
-  const isEmpty = !next.word_colors || Object.keys(next.word_colors).length === 0;
+  const isEmpty = !finalState.word_colors || Object.keys(finalState.word_colors).length === 0;
   const request = isEmpty
     ? sb.from('highlights').delete().eq('book_id', bookId).eq('chapter', chapter).eq('verse', verse)
     : sb.from('highlights').upsert(
-        { user_id: currentUser.id, book_id: bookId, chapter, verse, ...partial, updated_at: new Date().toISOString() },
+        { user_id: currentUser.id, book_id: bookId, chapter, verse, word_colors: finalState.word_colors, is_full_verse: finalState.is_full_verse, updated_at: new Date().toISOString() },
         { onConflict: 'user_id,book_id,chapter,verse' }
       );
 
   request.then(({ error }) => {
     if (!error) return;
-    cache[n] = prev; // 실패 — 원래 상태로 되돌림
+    supabaseHighlightCache[bookId][n] = prev; // 실패 — 이번 배치 시작 전 상태로 정확히 되돌림
     const verseEl = versesEl.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + n + '"]');
     if (verseEl) applyWordHighlightsForVerse(verseEl);
     flashHighlightError('오프라인이라 저장이 안 됩니다');
