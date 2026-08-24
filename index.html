@@ -5803,8 +5803,31 @@ settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal)
 // 인물 렌더링 (책이 바뀌면 다시 그림)
 // ============================================================
 const peopleEl = document.getElementById('view-people');
+// ============================================================
+// 인물 탭을 Supabase people 테이블에서 읽어온다. 책 단위로 한 번만 가져와 캐시해두고,
+// 실패하거나(오프라인 등) sb가 없으면 기존 로컬 PEOPLE_*/BOOK_PEOPLE 데이터를 그대로 쓴다.
+// 배경/구조/사전 탭 코드는 건드리지 않는다.
+// ============================================================
+const supabasePeopleCache = {}; // bookId -> [{n, role, v, b}]
+const supabasePeopleFetching = new Set();
+
+function fetchSupabasePeopleForBook(bookId) {
+  if (!sb || supabasePeopleCache[bookId] || supabasePeopleFetching.has(bookId)) return;
+  supabasePeopleFetching.add(bookId);
+  sb.from('people')
+    .select('name, role, verse_ref, body')
+    .eq('book_id', bookId)
+    .then(({ data, error }) => {
+      supabasePeopleFetching.delete(bookId);
+      if (error || !data || data.length === 0) return; // 실패 시 기존 로컬 인물 데이터 유지
+      supabasePeopleCache[bookId] = data.map(row => ({ n: row.name, role: row.role, v: row.verse_ref, b: row.body }));
+      if (bookId === currentBook) renderPeople(); // 이미 그려진 뒤에 도착했으면 다시 그려서 최신화
+    });
+}
+
 function renderPeople() {
-  const list = BOOK_PEOPLE[currentBook] || PEOPLE_RUTH;
+  fetchSupabasePeopleForBook(currentBook);
+  const list = supabasePeopleCache[currentBook] || BOOK_PEOPLE[currentBook] || PEOPLE_RUTH;
   peopleEl.innerHTML = '';
   list.forEach(p => {
     const d = document.createElement('div');
