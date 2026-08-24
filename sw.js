@@ -1,6 +1,6 @@
 // 토블 서비스 워커 — 오프라인에서도 앱이 열리도록 핵심 파일을 캐시합니다.
 // 버전을 올리면(예: v2, v3) 이전 캐시를 지우고 새 파일로 교체됩니다.
-const CACHE_NAME = 'toble-cache-v67';
+const CACHE_NAME = 'toble-cache-v68';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -30,6 +30,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return; // 외부 리소스는 서비스워커가 손대지 않음
+  if (url.pathname.endsWith('/admin.html')) return; // 관리자 페이지는 항상 최신 버전을 네트워크에서 받아온다
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
