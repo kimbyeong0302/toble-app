@@ -240,10 +240,10 @@ async function saveNote() {
     statusEl.className = 'status-msg error';
     return;
   }
-  statusEl.textContent = '저장 완료.';
-  statusEl.className = 'status-msg ok';
-  await loadChapter();
-  openEditForm(verse, notesByVerse[verse]);
+  await loadChapter(); // 목록을 새로 그리며 closeEditForm()이 먼저 호출됨
+  openEditForm(verse, notesByVerse[verse]); // openEditForm이 상태 메시지를 지우므로, 그 다음에 메시지를 넣는다
+  document.getElementById('save-status').textContent = '저장 완료.';
+  document.getElementById('save-status').className = 'status-msg ok';
 }
 
 document.getElementById('save-btn').addEventListener('click', saveNote);
