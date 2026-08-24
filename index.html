@@ -4786,6 +4786,33 @@ const supabaseHighlightFetching = new Set();
 function hlwKey(n) { return 'hlw_' + currentBook + '_' + n; }
 function hlsKey(n) { return 'hls_' + currentBook + '_' + n; }
 
+// 이 기기의 localStorage에 남아있는 하이라이트(모든 책)를 전부 스캔한다 —
+// 계정으로 한 번에 가져오는 기능(handleImportLocalData)에서 사용.
+function scanLocalHighlights() {
+  const items = {}; // "book|key" -> {book_id, verse_key, word_colors, is_full_verse}
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    let m;
+    if ((m = k.match(/^hlw_(.+)_(\d+-\d+)$/))) {
+      const [, book, key] = m;
+      let map = {};
+      try { map = JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { /* 무시 */ }
+      if (Object.keys(map).length === 0) continue;
+      const id = book + '|' + key;
+      items[id] = items[id] || { book_id: book, verse_key: key, word_colors: {}, is_full_verse: false };
+      items[id].word_colors = map;
+    } else if ((m = k.match(/^hls_(.+)_(\d+-\d+)$/))) {
+      const [, book, key] = m;
+      if (!localStorage.getItem(k)) continue;
+      const id = book + '|' + key;
+      items[id] = items[id] || { book_id: book, verse_key: key, word_colors: {}, is_full_verse: false };
+      items[id].is_full_verse = true;
+    }
+  }
+  return Object.values(items).filter((it) => Object.keys(it.word_colors).length > 0);
+}
+
 function reapplyAllHighlightsForCurrentBook() {
   document.querySelectorAll('.book-content[data-book="' + currentBook + '"] .verse[data-n]')
     .forEach(v => applyWordHighlightsForVerse(v));
@@ -5392,23 +5419,23 @@ function removeStudyFields(n) {
   ['obs', 'interp', 'app', 'step'].forEach(f => lsRemove('study_' + currentBook + '_' + n + '_' + f));
 }
 
-// 로그인 + 로그인 전 로컬 학습 기록이 남아있을 때만 학습 카드 맨 위에 안내 한 줄을 붙인다.
-// (실제 가져오기 기능은 아직 없음 — 감지만 해서 표시해둔다)
-function hasLocalStudyDataToImport() {
+// 이 기기의 localStorage에 남아있는 학습노트(관찰/해석/적용/단계)를 전부 스캔한다 —
+// 계정으로 한 번에 가져오는 기능(handleImportLocalData)에서 사용.
+function scanLocalStudy() {
+  const groups = {}; // "book|key" -> {book_id, verse_key, obs, interp, app, step}
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (!k || k.indexOf('study_') !== 0 || k.endsWith('_step')) continue;
-    if ((localStorage.getItem(k) || '').trim()) return true;
+    if (!k || k.indexOf('study_') !== 0) continue;
+    const m = k.match(/^study_(.+)_(\d+-\d+(?:\+\d+-\d+)*)_(obs|interp|app|step)$/);
+    if (!m) continue;
+    const [, book, key, field] = m;
+    const id = book + '|' + key;
+    groups[id] = groups[id] || { book_id: book, verse_key: key, obs: '', interp: '', app: '', step: 1 };
+    const val = localStorage.getItem(k) || '';
+    if (field === 'step') groups[id].step = parseInt(val, 10) || 1;
+    else groups[id][field] = val;
   }
-  return false;
-}
-function applyStudyImportHint() {
-  if (!isLoggedIn() || !hasLocalStudyDataToImport()) return;
-  const hint = document.createElement('div');
-  hint.className = 'study-import-hint struct-hint';
-  hint.style.cssText = 'margin-bottom:12px; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:8px;';
-  hint.textContent = '📦 이 기기에 로그인 전 저장된 학습 기록이 있습니다. (계정으로 가져오는 기능은 아직 준비 중입니다)';
-  noteView.prepend(hint);
+  return Object.values(groups).filter(g => g.obs.trim() || g.interp.trim() || g.app.trim());
 }
 
 // ============================================================
@@ -5457,7 +5484,6 @@ function renderStudyFlow(n) {
   html += `<div class="progress-dots">${[1,2,3,4].map(i => `<span class="${i <= maxStep ? 'on' : ''}">●</span>`).join('')}</div>`;
 
   noteView.innerHTML = html;
-  applyStudyImportHint();
 
   noteView.querySelectorAll('.step-input').forEach(ta => {
     ta.addEventListener('input', () => {
@@ -6088,6 +6114,71 @@ function setAuthStatus(msg, isError) {
   if (el) { el.textContent = msg; el.style.color = isError ? '#b0552f' : 'var(--ink-soft)'; }
 }
 
+// ============================================================
+// 하이라이트+메모+학습노트를 한 번에 계정으로 가져오기 — 로그인은 했는데 이 기기에
+// 로그인 전 로컬 데이터가 남아있을 때만 계정 모달에 안내+버튼으로 보여준다.
+// 가져온 뒤에도 로컬 데이터는 지우지 않는다 — 문제 생기면 로그아웃해서 로컬로 확인 가능하게.
+// 이미 서버에 있는 (책,키)는 다른 기기 데이터를 덮어쓰지 않도록 건너뛴다.
+// ============================================================
+function importDismissKey() { return 'import_dismissed_' + (currentUser ? currentUser.id : ''); }
+function isImportDismissed() { return lsGet(importDismissKey(), '') === '1'; }
+function markImportDismissed() { lsSet(importDismissKey(), '1'); }
+function hasAnyLocalDataToImport() {
+  return scanLocalHighlights().length > 0 || scanLocalMemos().length > 0 || scanLocalStudy().length > 0;
+}
+
+async function handleImportLocalData() {
+  const btn = document.getElementById('import-local-data-btn');
+  const statusEl = document.getElementById('import-status');
+  if (btn) btn.disabled = true;
+  if (statusEl) statusEl.textContent = '가져오는 중...';
+  try {
+    const highlights = scanLocalHighlights();
+    const memos = scanLocalMemos();
+    const study = scanLocalStudy();
+
+    const [hlRes, memoRes, studyRes] = await Promise.all([
+      sb.from('highlights').select('book_id,chapter,verse'),
+      sb.from('memos').select('book_id,verse_key'),
+      sb.from('study_notes').select('book_id,verse_key'),
+    ]);
+    if (hlRes.error) throw new Error(hlRes.error.message);
+    if (memoRes.error) throw new Error(memoRes.error.message);
+    if (studyRes.error) throw new Error(studyRes.error.message);
+
+    const existingHlSet = new Set((hlRes.data || []).map((r) => r.book_id + '|' + r.chapter + '-' + r.verse));
+    const existingMemoSet = new Set((memoRes.data || []).map((r) => r.book_id + '|' + r.verse_key));
+    const existingStudySet = new Set((studyRes.data || []).map((r) => r.book_id + '|' + r.verse_key));
+
+    const hlRows = highlights
+      .filter((h) => !existingHlSet.has(h.book_id + '|' + h.verse_key))
+      .map((h) => {
+        const [chapter, verse] = h.verse_key.split('-').map(Number);
+        return { user_id: currentUser.id, book_id: h.book_id, chapter, verse, word_colors: h.word_colors, is_full_verse: h.is_full_verse };
+      });
+    const memoRows = memos
+      .filter((m) => !existingMemoSet.has(m.book_id + '|' + m.verse_key))
+      .map((m) => ({ user_id: currentUser.id, book_id: m.book_id, verse_key: m.verse_key, content: m.content }));
+    const studyRows = study
+      .filter((s) => !existingStudySet.has(s.book_id + '|' + s.verse_key))
+      .map((s) => ({ user_id: currentUser.id, book_id: s.book_id, verse_key: s.verse_key, obs: s.obs, interp: s.interp, app: s.app, step: s.step }));
+
+    if (hlRows.length) { const { error } = await sb.from('highlights').insert(hlRows); if (error) throw new Error(error.message); }
+    if (memoRows.length) { const { error } = await sb.from('memos').insert(memoRows); if (error) throw new Error(error.message); }
+    if (studyRows.length) { const { error } = await sb.from('study_notes').insert(studyRows); if (error) throw new Error(error.message); }
+
+    markImportDismissed();
+    if (statusEl) {
+      statusEl.textContent = `가져오기 완료 — 하이라이트 ${hlRows.length}개, 메모 ${memoRows.length}개, 학습노트 ${studyRows.length}개`
+        + `(이미 계정에 있던 항목은 건너뜀). 화면을 다시 불러옵니다...`;
+    }
+    setTimeout(() => location.reload(), 1200);
+  } catch (err) {
+    if (statusEl) statusEl.textContent = '가져오기 실패: ' + err.message + ' — 인터넷 연결을 확인하고 다시 시도해주세요.';
+    if (btn) btn.disabled = false;
+  }
+}
+
 function renderAuthModal() {
   const body = document.getElementById('auth-modal-body');
   if (!body) return;
@@ -6102,13 +6193,31 @@ function renderAuthModal() {
     const confirmBanner = justConfirmedEmail
       ? '<div class="struct-hint" style="margin-bottom:12px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; color:var(--accent); font-weight:600;">✅ 이메일 확인이 완료되었습니다! 로그인되었습니다.</div>'
       : '';
+    let importSection = '';
+    if (!isImportDismissed() && hasAnyLocalDataToImport()) {
+      const hlCount = scanLocalHighlights().length;
+      const memoCount = scanLocalMemos().length;
+      const studyCount = scanLocalStudy().length;
+      importSection = `
+        <div class="settings-section-title" style="margin-top:18px;">이 기기에 저장된 데이터</div>
+        <div class="struct-hint" style="margin-bottom:10px;">기존 데이터를 계정으로 가져올까요? 하이라이트 ${hlCount}개, 메모 ${memoCount}개, 학습노트 ${studyCount}개</div>
+        <button class="struct-btn" id="import-local-data-btn" style="width:100%; margin-bottom:8px;">가져오기</button>
+        <button class="struct-btn secondary" id="dismiss-import-btn" style="width:100%;">나중에</button>
+        <div id="import-status" style="margin-top:8px; font-size:12px; color:var(--ink-soft);"></div>
+      `;
+    }
     body.innerHTML = `
       ${confirmBanner}
       <div class="settings-section-title">계정</div>
       <div class="struct-hint" style="margin-bottom:14px;">${escapeHtmlDict(currentUser.email || '')} 계정으로 로그인되어 있습니다.</div>
       <button class="struct-btn" id="auth-signout-btn" style="width:100%;">로그아웃</button>
+      ${importSection}
     `;
     document.getElementById('auth-signout-btn').addEventListener('click', handleSignOut);
+    const importBtn = document.getElementById('import-local-data-btn');
+    if (importBtn) importBtn.addEventListener('click', handleImportLocalData);
+    const dismissBtn = document.getElementById('dismiss-import-btn');
+    if (dismissBtn) dismissBtn.addEventListener('click', () => { markImportDismissed(); renderAuthModal(); });
     return;
   }
   const isSignup = authFormMode === 'signup';
@@ -6151,6 +6260,8 @@ async function handleSignIn(email, password) {
   setAuthStatus('처리 중...');
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) { setAuthStatus(error.message, true); return; }
+  // 가져올 로컬 데이터가 있으면 모달을 닫지 않고 바로 안내를 보여준다.
+  if (!isImportDismissed() && hasAnyLocalDataToImport()) { renderAuthModal(); return; }
   closeAuthModal();
 }
 
@@ -7035,19 +7146,22 @@ function saveMemos(m) {
   lsSet('memos_' + currentBook, JSON.stringify(m));
 }
 
-// 로그인한 사용자에게 "이 기기에 로그인 전 저장된 메모가 있다"는 것만 알려주는 표시.
-// 실제로 가져오는 기능은 아직 없음 — 나중에 하이라이트+메모+학습노트를 한 번에 가져오는
-// 기능을 만들 때 재사용하기 위한 감지 로직만 미리 준비해둔다.
-function hasLocalMemoDataToImport() {
+// 이 기기의 localStorage에 남아있는 메모를 전부 스캔한다 —
+// 계정으로 한 번에 가져오는 기능(handleImportLocalData)에서 사용.
+function scanLocalMemos() {
+  const items = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (!k || k.indexOf('memos_') !== 0) continue;
-    try {
-      const m = JSON.parse(localStorage.getItem(k) || '{}');
-      if (Object.values(m).some(v => (v || '').trim())) return true;
-    } catch (e) { /* 무시 */ }
+    const book = k.slice('memos_'.length);
+    let map = {};
+    try { map = JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { /* 무시 */ }
+    Object.keys(map).forEach((key) => {
+      const content = map[key];
+      if ((content || '').trim()) items.push({ book_id: book, verse_key: key, content });
+    });
   }
-  return false;
+  return items;
 }
 
 function memoRefLabel(key) {
@@ -7172,7 +7286,6 @@ function renderMemoBrowseList(wrap, memos) {
 
 function renderMemoTab() {
   renderMemoTabBody();
-  applyMemoImportHint();
 }
 
 function renderMemoTabBody() {
@@ -7194,21 +7307,6 @@ function renderMemoTabBody() {
     return;
   }
   renderMemoBrowseList(wrap, memos);
-}
-
-// 로그인 + 로그인 전 로컬 메모가 남아있을 때만, 메모 탭 맨 위에 안내 한 줄을 붙인다.
-// (실제 가져오기 기능은 아직 없음 — 감지만 해서 눈에 띄게 남겨두는 용도)
-function applyMemoImportHint() {
-  const wrap = document.getElementById('view-memo');
-  if (!wrap) return;
-  const existing = wrap.querySelector('.memo-import-hint');
-  if (existing) existing.remove();
-  if (!isLoggedIn() || !hasLocalMemoDataToImport()) return;
-  const hint = document.createElement('div');
-  hint.className = 'memo-import-hint struct-hint';
-  hint.style.cssText = 'margin-bottom:12px; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:8px;';
-  hint.textContent = '📦 이 기기에 로그인 전 저장된 메모가 있습니다. (계정으로 가져오는 기능은 아직 준비 중입니다)';
-  wrap.prepend(hint);
 }
 
 function openMemoForVerse(key) {
