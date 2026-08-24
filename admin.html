@@ -35,6 +35,14 @@
   .status-msg.error { color: #b0552f; }
   .status-msg.ok { color: #3a6b45; }
   #admin-app { display: none; }
+  .nav-tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .nav-tab { font-size:14px; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink-soft); cursor:pointer; }
+  .nav-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .user-row { display:flex; gap:10px; align-items:center; padding:10px 8px; border-bottom:1px solid var(--line); }
+  .user-email { flex:1; font-size:14px; }
+  .role-tag { font-size:11px; padding:2px 8px; border-radius:999px; background:#f0eee7; color:var(--ink-soft); }
+  .role-tag.role-admin { background:#e5efe6; color:#3a6b45; }
+  .role-tag.role-owner { background:#f3e6d8; color:var(--accent); }
 </style>
 </head>
 <body>
@@ -47,18 +55,29 @@
   <div id="admin-app">
     <div class="card">
       <div class="row">
-        <label>책 <select id="book-select"></select></label>
-        <label>장 <select id="chapter-select"></select></label>
-        <span id="signed-in-as" class="sub" style="margin-left:auto;"></span>
+        <span id="signed-in-as" class="sub" style="margin-right:auto;"></span>
         <button class="btn secondary" id="admin-logout-btn">로그아웃</button>
       </div>
     </div>
 
-    <div class="card" id="verse-list-card">
-      <div id="verse-list"></div>
+    <div class="nav-tabs" id="nav-tabs" style="display:none;">
+      <button class="nav-tab active" id="nav-notes-btn">학자노트 편집</button>
+      <button class="nav-tab" id="nav-users-btn">사용자 관리</button>
     </div>
 
-    <div class="card" id="edit-card" style="display:none;">
+    <div id="notes-view">
+      <div class="card">
+        <div class="row">
+          <label>책 <select id="book-select"></select></label>
+          <label>장 <select id="chapter-select"></select></label>
+        </div>
+      </div>
+
+      <div class="card" id="verse-list-card">
+        <div id="verse-list"></div>
+      </div>
+
+      <div class="card" id="edit-card" style="display:none;">
       <div class="sub" id="edit-ref"></div>
       <div class="form-field">
         <label>제목</label>
@@ -83,6 +102,15 @@
       <button class="btn" id="save-btn">저장</button>
       <button class="btn secondary" id="cancel-btn">닫기</button>
       <div class="status-msg" id="save-status"></div>
+      </div>
+    </div>
+
+    <div class="card" id="user-mgmt-view" style="display:none;">
+      <div class="row">
+        <input type="email" id="user-search-input" placeholder="이메일로 검색" style="flex:1; font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px;">
+        <button class="btn" id="user-search-btn">검색</button>
+      </div>
+      <div id="user-search-results" class="sub">이메일을 입력해 검색해주세요.</div>
     </div>
   </div>
 </div>
@@ -93,6 +121,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
+let currentRole = 'user';
 let books = [];
 let currentBookId = null;
 let currentChapter = 1;
@@ -140,19 +169,38 @@ async function checkAccess() {
     showLoginForm();
     return;
   }
-  const { data, error } = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
-  const isAdmin = !!(data && data.is_admin);
-  if (error || !isAdmin) {
+  const { data, error } = await sb.from('profiles').select('role').eq('id', currentUser.id).maybeSingle();
+  currentRole = (data && data.role) || 'user';
+  if (error || (currentRole !== 'admin' && currentRole !== 'owner')) {
     showGate('관리자 권한이 없습니다. <a href="#" id="admin-signout-link">다른 계정으로 로그인</a>');
     const link = document.getElementById('admin-signout-link');
     if (link) link.addEventListener('click', async (e) => { e.preventDefault(); await sb.auth.signOut(); checkAccess(); });
     return;
   }
+  // 관리 화면이 이미 다 채워진 채로 한 번에 나타나도록, book/장/절 목록을 먼저 불러온 다음에
+  // 화면을 보여준다(중간에 빈 화면이 잠깐 보이지 않도록).
+  await loadBooks();
+  document.getElementById('signed-in-as').textContent = currentUser.email + ' (' + (currentRole === 'owner' ? '소유자' : '관리자') + ')';
+  document.getElementById('nav-tabs').style.display = currentRole === 'owner' ? '' : 'none';
+  showNotesView();
   document.getElementById('gate').style.display = 'none';
   document.getElementById('admin-app').style.display = '';
-  document.getElementById('signed-in-as').textContent = currentUser.email + ' (관리자)';
-  await loadBooks();
 }
+
+function showNotesView() {
+  document.getElementById('nav-notes-btn').classList.add('active');
+  document.getElementById('nav-users-btn').classList.remove('active');
+  document.getElementById('notes-view').style.display = '';
+  document.getElementById('user-mgmt-view').style.display = 'none';
+}
+function showUserMgmtView() {
+  document.getElementById('nav-notes-btn').classList.remove('active');
+  document.getElementById('nav-users-btn').classList.add('active');
+  document.getElementById('notes-view').style.display = 'none';
+  document.getElementById('user-mgmt-view').style.display = '';
+}
+document.getElementById('nav-notes-btn').addEventListener('click', showNotesView);
+document.getElementById('nav-users-btn').addEventListener('click', showUserMgmtView);
 
 async function loadBooks() {
   const { data, error } = await sb.from('books').select('*').eq('available', true).order('order_num');
@@ -166,7 +214,7 @@ async function loadBooks() {
   sel.addEventListener('change', () => { currentBookId = sel.value; populateChapters(); loadChapter(); });
   currentBookId = books[0].id;
   populateChapters();
-  loadChapter();
+  await loadChapter();
 }
 
 function populateChapters() {
@@ -281,6 +329,63 @@ async function saveNote() {
 document.getElementById('save-btn').addEventListener('click', saveNote);
 document.getElementById('cancel-btn').addEventListener('click', closeEditForm);
 document.getElementById('admin-logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); checkAccess(); });
+
+// ============================================================
+// 사용자 관리 (owner 전용) — 이메일로 검색해서 role을 user/admin 사이에서 바꾼다.
+// 검색은 auth.users를 봐야 해서 RPC(admin_search_users)를 쓰고, role 변경은 profiles를
+// 직접 upsert하되 실제 허용 여부는 전적으로 RLS(owner만, user/admin만 지정 가능)가 결정한다.
+// ============================================================
+async function searchUsers() {
+  const q = document.getElementById('user-search-input').value.trim();
+  const resultsEl = document.getElementById('user-search-results');
+  if (!q) { resultsEl.textContent = '이메일을 입력해 검색해주세요.'; return; }
+  resultsEl.textContent = '검색 중...';
+  const { data, error } = await sb.rpc('admin_search_users', { search_email: q });
+  if (error) { resultsEl.textContent = '검색 실패: ' + error.message; return; }
+  if (!data || data.length === 0) { resultsEl.textContent = '일치하는 사용자가 없습니다.'; return; }
+
+  resultsEl.innerHTML = '';
+  data.forEach((u) => {
+    const row = document.createElement('div');
+    row.className = 'user-row';
+    const roleLabel = u.role === 'owner' ? '소유자' : (u.role === 'admin' ? '관리자' : '일반');
+    let actionsHtml = '';
+    if (u.role === 'owner') {
+      actionsHtml = '<span class="sub">(소유자는 이 화면에서 변경할 수 없습니다)</span>';
+    } else if (u.role === 'admin') {
+      actionsHtml = `<button class="btn secondary" data-uid="${u.id}" data-role="user">일반으로 변경</button>`;
+    } else {
+      actionsHtml = `<button class="btn secondary" data-uid="${u.id}" data-role="admin">관리자로 승격</button>`;
+    }
+    row.innerHTML = `
+      <span class="user-email">${escapeHtml(u.email)}</span>
+      <span class="role-tag role-${u.role}">${roleLabel}</span>
+      ${actionsHtml}
+    `;
+    resultsEl.appendChild(row);
+  });
+  resultsEl.querySelectorAll('button[data-uid]').forEach((btn) => {
+    btn.addEventListener('click', () => changeUserRole(btn.dataset.uid, btn.dataset.role));
+  });
+}
+
+async function changeUserRole(uid, newRole) {
+  // .select()를 붙여서 실제로 바뀐 행을 돌려받는다 — RLS가 막으면 에러 없이 그냥 0행이 되므로,
+  // error만 보면 "막혔는데 성공한 것처럼" 보일 수 있어서 행 개수까지 확인한다.
+  const { data, error } = await sb.from('profiles').update({ role: newRole }).eq('id', uid).select();
+  if (error) {
+    alert('role 변경 실패: ' + error.message);
+    return;
+  }
+  if (!data || data.length === 0) {
+    alert('role이 변경되지 않았습니다 (권한이 없어 막혔을 수 있습니다).');
+    return;
+  }
+  await searchUsers(); // 목록을 새로 불러와서 바뀐 상태를 바로 보여줌
+}
+
+document.getElementById('user-search-btn').addEventListener('click', searchUsers);
+document.getElementById('user-search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchUsers(); });
 
 checkAccess();
 </script>

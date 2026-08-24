@@ -163,23 +163,72 @@ create policy "본인 삭제" on study_notes for delete using (auth.uid() = user
 
 -- ============================================================
 -- 3. 관리자 — admin.html에서 학자노트(notes)를 직접 편집할 수 있게 해준다.
---    profiles.is_admin이 true인 사용자만 notes에 쓸 수 있고, 그 외엔 지금처럼 읽기 전용.
+--    role은 3단계: 'user'(기본) < 'admin'(노트 편집) < 'owner'(admin이 하는 모든 것 +
+--    다른 사용자의 role을 user<->admin으로 변경). owner 지정은 여기 SQL로 하지 않고
+--    대시보드에서 본인 계정만 별도로 직접 실행한다.
 -- ============================================================
 
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  is_admin boolean not null default false
+  role text not null default 'user' check (role in ('user', 'admin', 'owner'))
 );
 alter table profiles enable row level security;
 create policy "본인 조회" on profiles for select using (auth.uid() = id);
--- insert/update 정책 없음 → is_admin은 대시보드(SQL Editor)에서만 지정 가능, 본인이 스스로 못 바꿈.
+-- insert 정책 없음 — 신규 유저의 profiles 행은 admin_search_users()가 필요할 때 만들어준다.
+
+-- owner만 다른 사용자의 role을 바꿀 수 있다. 대상 행이 지금 owner면 애초에 손 못 대고
+-- (using), 바꾼 결과값도 user/admin만 허용된다(with check) — 이 경로로는 절대 owner를
+-- 만들거나 owner를 건드릴 수 없다. admin/user는 이 정책에 아예 해당 안 되므로(exists가
+-- false) 자기 role이든 남의 role이든 어떤 변경 시도도 RLS가 그냥 막는다.
+create policy "owner가 user/admin 사이에서 role 변경" on profiles for update
+using (
+  exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'owner')
+  and role <> 'owner'
+)
+with check (
+  exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'owner')
+  and role in ('user', 'admin')
+);
 
 create policy "관리자 추가" on notes for insert with check (
-  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+  exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'owner'))
 );
 create policy "관리자 수정" on notes for update using (
-  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+  exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'owner'))
 );
 create policy "관리자 삭제" on notes for delete using (
-  exists (select 1 from profiles where id = auth.uid() and is_admin = true)
+  exists (select 1 from profiles where id = auth.uid() and role in ('admin', 'owner'))
 );
+
+-- 이메일로 사용자를 검색하는 용도. auth.users는 PostgREST로 직접 조회할 수 없어서
+-- security definer 함수로 우회하고, 함수 안에서 호출자가 owner인지 다시 확인한다.
+-- 검색 대상에 profiles 행이 아직 없으면(신규 가입자) 여기서 기본값 'user'로 만들어준다.
+-- 주의: 리턴 컬럼 이름(id/email/role)이 profiles 컬럼명과 겹쳐서, 함수 안에서 profiles를
+-- 별칭 없이 그냥 쓰면 "column reference is ambiguous" 에러가 난다 — 항상 별칭을 붙일 것.
+create or replace function admin_search_users(search_email text)
+returns table (id uuid, email text, role text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from profiles pr where pr.id = auth.uid() and pr.role = 'owner') then
+    raise exception 'owner 권한이 필요합니다';
+  end if;
+
+  insert into profiles (id, role)
+  select u.id, 'user' from auth.users u
+  where u.email ilike '%' || search_email || '%'
+    and not exists (select 1 from profiles p2 where p2.id = u.id)
+  on conflict (id) do nothing;
+
+  return query
+    select u.id, u.email::text, p.role
+    from auth.users u
+    join profiles p on p.id = u.id
+    where u.email ilike '%' || search_email || '%'
+    order by u.email
+    limit 20;
+end;
+$$;
+grant execute on function admin_search_users(text) to authenticated;
