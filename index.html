@@ -3950,6 +3950,11 @@ let justConfirmedEmail = false;
   }
 })();
 
+// 비밀번호 재설정 메일의 링크를 눌러 돌아왔을 때 true가 된다 — Supabase가
+// onAuthStateChange에 'PASSWORD_RECOVERY' 이벤트로 알려주므로 별도 URL 마커는 필요 없다.
+// 이 값이 true인 동안은 계정 모달이 평소 로그인/계정 화면 대신 "새 비밀번호 설정" 폼을 보여준다.
+let passwordRecoveryMode = false;
+
 // ============================================================
 // 서비스워커 등록 — 이게 있어야 sw.js의 캐시 전략이 실제로 동작해서 오프라인에서도 앱이 열린다.
 // 초기 렌더링을 지연시키지 않도록 load 이벤트 이후에 등록한다.
@@ -6186,6 +6191,18 @@ function renderAuthModal() {
     body.innerHTML = '<div class="struct-hint">로그인 기능을 쓰려면 인터넷 연결이 필요합니다.</div>';
     return;
   }
+  if (passwordRecoveryMode) {
+    body.innerHTML = `
+      <div class="settings-section-title">새 비밀번호 설정</div>
+      <div class="struct-hint" style="margin-bottom:14px;">비밀번호 재설정 링크로 들어오셨습니다. 새로 쓸 비밀번호를 입력해주세요.</div>
+      <input type="password" id="new-password-1" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--line); border-radius:8px; font-size:15px;">
+      <input type="password" id="new-password-2" placeholder="새 비밀번호 확인" autocomplete="new-password" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:12px; border:1px solid var(--line); border-radius:8px; font-size:15px;">
+      <button class="struct-btn" id="set-new-password-btn" style="width:100%;">비밀번호 바꾸기</button>
+      <div id="new-password-status" style="margin-top:10px; font-size:12px; color:var(--ink-soft);"></div>
+    `;
+    document.getElementById('set-new-password-btn').addEventListener('click', handleSetNewPassword);
+    return;
+  }
   if (currentUser) {
     // 로그인 직후엔 onAuthStateChange가 초기 세션을 한 번 더 통지하면서 모달이 열려 있는 동안
     // renderAuthModal()이 여러 번 다시 불릴 수 있다 — 여기서 바로 초기화하면 그 재렌더링 때
@@ -6210,10 +6227,22 @@ function renderAuthModal() {
       ${confirmBanner}
       <div class="settings-section-title">계정</div>
       <div class="struct-hint" style="margin-bottom:14px;">${escapeHtmlDict(currentUser.email || '')} 계정으로 로그인되어 있습니다.</div>
-      <button class="struct-btn" id="auth-signout-btn" style="width:100%;">로그아웃</button>
+      <button class="struct-btn" id="auth-signout-btn" style="width:100%; margin-bottom:8px;">로그아웃</button>
+      <div class="settings-section-title" style="margin-top:18px;">개인정보 수정</div>
+      <button class="struct-btn secondary" id="change-password-btn" style="width:100%;">비밀번호 변경</button>
+      <div id="change-password-status" style="margin-top:8px; font-size:12px; color:var(--ink-soft);"></div>
       ${importSection}
     `;
     document.getElementById('auth-signout-btn').addEventListener('click', handleSignOut);
+    document.getElementById('change-password-btn').addEventListener('click', async () => {
+      const statusEl = document.getElementById('change-password-status');
+      const btn = document.getElementById('change-password-btn');
+      btn.disabled = true;
+      statusEl.textContent = '처리 중...';
+      statusEl.className = '';
+      await requestPasswordReset(currentUser.email, statusEl);
+      btn.disabled = false;
+    });
     const importBtn = document.getElementById('import-local-data-btn');
     if (importBtn) importBtn.addEventListener('click', handleImportLocalData);
     const dismissBtn = document.getElementById('dismiss-import-btn');
@@ -6228,7 +6257,8 @@ function renderAuthModal() {
     </div>
     <div class="settings-section-title">${isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</div>
     <input type="email" id="auth-email" placeholder="이메일" autocomplete="username" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:8px; border:1px solid var(--line); border-radius:8px; font-size:15px;">
-    <input type="password" id="auth-password" placeholder="비밀번호 (6자 이상)" autocomplete="${isSignup ? 'new-password' : 'current-password'}" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:12px; border:1px solid var(--line); border-radius:8px; font-size:15px;">
+    <input type="password" id="auth-password" placeholder="비밀번호 (6자 이상)" autocomplete="${isSignup ? 'new-password' : 'current-password'}" style="width:100%; box-sizing:border-box; padding:10px 12px; margin-bottom:${isSignup ? '12px' : '4px'}; border:1px solid var(--line); border-radius:8px; font-size:15px;">
+    ${isSignup ? '' : '<div style="text-align:right; margin-bottom:12px;"><a href="#" id="forgot-password-link" style="font-size:12px; color:var(--ink-soft);">비밀번호를 잊으셨나요?</a></div>'}
     <button class="struct-btn" id="auth-submit-btn" style="width:100%;">${isSignup ? '회원가입' : '로그인'}</button>
     <div id="auth-status" style="margin-top:10px; font-size:12px; color:var(--ink-soft);"></div>
   `;
@@ -6238,6 +6268,16 @@ function renderAuthModal() {
     const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
     if (isSignup) handleSignUp(email, password); else handleSignIn(email, password);
+  });
+  const forgotLink = document.getElementById('forgot-password-link');
+  if (forgotLink) forgotLink.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value.trim();
+    const statusEl = document.getElementById('auth-status');
+    if (!email) { statusEl.textContent = '먼저 이메일을 입력해주세요.'; statusEl.className = ''; return; }
+    statusEl.textContent = '처리 중...';
+    statusEl.className = '';
+    await requestPasswordReset(email, statusEl);
   });
 }
 
@@ -6270,6 +6310,38 @@ async function handleSignOut() {
   closeAuthModal();
 }
 
+// 로그인 폼의 "비밀번호를 잊으셨나요?"와, 로그인한 뒤의 "비밀번호 변경" 버튼이 공유하는 함수 —
+// 둘 다 결국 같은 이메일로 재설정 링크를 보내는 동작이라 하나로 합쳤다.
+async function requestPasswordReset(email, statusEl) {
+  const redirectTo = location.origin + location.pathname;
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) { statusEl.textContent = error.message; statusEl.className = 'error'; return; }
+  statusEl.textContent = '비밀번호 재설정 이메일을 보냈습니다. 이메일함을 확인해주세요. (링크는 1시간 뒤 만료됩니다)';
+  statusEl.className = '';
+}
+
+async function handleSetNewPassword() {
+  const p1 = document.getElementById('new-password-1').value;
+  const p2 = document.getElementById('new-password-2').value;
+  const statusEl = document.getElementById('new-password-status');
+  if (!p1 || p1.length < 6) { statusEl.textContent = '비밀번호는 6자 이상이어야 합니다.'; statusEl.style.color = '#b0552f'; return; }
+  if (p1 !== p2) { statusEl.textContent = '두 비밀번호가 서로 다릅니다.'; statusEl.style.color = '#b0552f'; return; }
+  const btn = document.getElementById('set-new-password-btn');
+  btn.disabled = true;
+  statusEl.textContent = '변경 중...';
+  statusEl.style.color = '';
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false;
+  if (error) { statusEl.textContent = error.message; statusEl.style.color = '#b0552f'; return; }
+  // 비밀번호를 바꿨으니, 다른 기기/브라우저에 남아있을 수 있는 예전 세션은 전부 무효화한다 —
+  // 방금 바꾼 이 세션(scope: 'local')은 그대로 로그인 상태로 유지된다.
+  await sb.auth.signOut({ scope: 'others' });
+  passwordRecoveryMode = false;
+  statusEl.textContent = '비밀번호가 변경되었습니다. 다른 기기에 로그인돼 있던 세션은 모두 로그아웃됩니다.';
+  statusEl.style.color = '#3a6b45';
+  setTimeout(() => { renderAuthModal(); }, 1500);
+}
+
 function updateAuthHeaderButton() {
   const btn = document.getElementById('auth-header-btn');
   if (!btn) return;
@@ -6286,7 +6358,7 @@ function updateAuthHeaderButton() {
 
 const authModal = document.getElementById('auth-modal');
 function openAuthModal() { renderAuthModal(); authModal.classList.add('open'); }
-function closeAuthModal() { authModal.classList.remove('open'); justConfirmedEmail = false; }
+function closeAuthModal() { authModal.classList.remove('open'); justConfirmedEmail = false; passwordRecoveryMode = false; }
 document.getElementById('auth-header-btn').addEventListener('click', openAuthModal);
 document.getElementById('auth-modal-close').addEventListener('click', closeAuthModal);
 authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuthModal(); });
@@ -6307,6 +6379,11 @@ if (sb) {
   sb.auth.onAuthStateChange((event, session) => {
     currentUser = session ? session.user : null;
     updateAuthHeaderButton();
+    if (event === 'PASSWORD_RECOVERY') {
+      // 비밀번호 재설정 링크를 눌러 들어온 상태 — 계정 모달을 새 비밀번호 입력 화면으로 연다.
+      passwordRecoveryMode = true;
+      openAuthModal();
+    }
     if (authModal.classList.contains('open')) renderAuthModal();
     // 로그인/로그아웃/계정 전환 시 하이라이트 캐시를 비우고 다시 그린다 —
     // 다른 계정으로 바뀌었는데 이전 계정의 캐시가 남아있으면 안 되기 때문.
