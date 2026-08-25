@@ -28,6 +28,10 @@
     --bg: #faf9f6; --card: #ffffff; --ink: #1c2733; --ink-soft: #5b6774;
     --accent: #13304f; --accent-soft: #e3e8ee; --line: #e2e6ea; --note-bg: #eef1f5;
     --verse-font-size: 18px;
+    /* env()는 CSS에서만 읽히고 JS에서 직접 조회할 방법이 없어서, 커스텀 프로퍼티에
+       한 번 담아둔다 — 시트 3단계(완전접힘) 위치 계산이 이 값을 getComputedStyle로 읽어서
+       손잡이가 iPhone 하단 홈 인디케이터와 안 겹치게 살짝 띄운다. */
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   }
   /* 읽기 모드 — 눈에 편안한 연두색 테마. 학습 모드(브라운)와 시각적으로 구분된다 */
   body.reading-mode {
@@ -5383,6 +5387,10 @@ function sheetIsCollapsible() { return isMobile() && !sheetIsLandscape(); }
 // 손잡이+장 이름+탭만 보임), 3=완전접힘(손잡이만 겨우 보임, 새로 추가). 초기값 2는
 // 시트에 .open 클래스가 없는 정적 HTML 기본 상태(=기존 "닫힘")와 맞춘 것이다.
 let sheetTier = 2;
+// 손잡이 탭이 2단계에서 어느 쪽으로 갈지 정하려면 "마지막으로 2단계에 어느 방향에서
+// 들어왔는지"를 기억해야 한다 — 1→2로 오면 'down'(다음 탭은 3으로), 3→2로 오면 'up'
+// (다음 탭은 1로). setSheetTier에서 이동 방향을 관찰해 매번 갱신한다.
+let sheetLastDirection = 'down';
 
 function sheetTier2OffsetPx() { return window.innerHeight * 0.6; }
 function sheetTier3OffsetPx() {
@@ -5390,7 +5398,9 @@ function sheetTier3OffsetPx() {
   // 손잡이 높이는 폰트 크기 설정 등에 따라 달라질 수 있어 고정값 대신 실측한다.
   const handleH = sheetHandle.getBoundingClientRect().height || 32;
   const totalH = sidepanel.getBoundingClientRect().height;
-  return Math.max(0, totalH - handleH);
+  // 아이폰 하단 홈 인디케이터(제스처 바)와 손잡이가 겹치지 않도록, 안전영역만큼 덜 내린다.
+  const safeBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-bottom')) || 0;
+  return Math.max(0, totalH - handleH - safeBottom);
 }
 function sheetOffsetForTier(tier) {
   if (tier === 1) return 0;
@@ -5401,6 +5411,8 @@ function applySheetTransformForTier(tier) {
   sidepanel.style.transform = tier === 1 ? '' : ('translateY(' + sheetOffsetForTier(tier) + 'px)');
 }
 function setSheetTier(tier) {
+  if (tier > sheetTier) sheetLastDirection = 'down';
+  else if (tier < sheetTier) sheetLastDirection = 'up';
   sheetTier = tier;
   applySheetTransformForTier(tier);
   sidepanel.classList.toggle('open', tier === 1);
@@ -5466,8 +5478,13 @@ if (sheetHandle) {
   sheetHandle.addEventListener('click', () => {
     if (sheetDragOccurred) { sheetDragOccurred = false; return; }
     if (!sheetIsCollapsible()) return;
-    // 탭할 때마다 한 칸씩 이동: 1(펼침)→3(완전접힘)→2(접힘)→1... 왕복 대신 고정 방향으로 순환한다.
-    const nextTier = sheetTier === 1 ? 3 : sheetTier - 1;
+    // 탭할 때마다 반드시 인접한 단계로만 한 칸 이동한다(1↔3 직행 금지). 1·3단계에서는
+    // 갈 곳이 2단계뿐이라 고민할 게 없고, 2단계에서는 방금 어느 방향에서 들어왔는지에
+    // 따라 계속 같은 방향으로 나아간다(1→2였으면 다음은 3, 3→2였으면 다음은 1).
+    let nextTier;
+    if (sheetTier === 1) nextTier = 2;
+    else if (sheetTier === 3) nextTier = 2;
+    else nextTier = sheetLastDirection === 'down' ? 3 : 1;
     setSheetTier(nextTier);
   });
 
