@@ -296,6 +296,10 @@
   .refs strong { color: var(--accent); }
   .grammar { margin-top: 12px; padding: 10px 12px; background: var(--card); border-radius: 8px; border-left: 3px solid var(--accent); font-size: 12.5px; color: var(--ink); }
   .grammar .g-label { font-size: 11px; font-weight: 700; letter-spacing: .5px; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
+  .note-src { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--ink-soft); line-height: 1.6; }
+  .src-tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; margin-right: 6px; vertical-align: middle; }
+  .src-tag.src-confirmed { background: #e5efe6; color: #3a6b45; }
+  .src-tag.src-partial { background: #f7e9d6; color: #a6690f; }
   .default-guide { font-size: 13.5px; color: var(--ink-soft); }
   .default-guide .mark2 { color: var(--accent); font-weight: 700; }
   .outline { margin-top: 14px; }
@@ -4420,7 +4424,7 @@ function fetchSupabaseNotesForBook(bookId) {
   if (!sb || supabaseNoteCache[bookId] || supabaseNoteFetching.has(bookId)) return;
   supabaseNoteFetching.add(bookId);
   sb.from('notes')
-    .select('chapter, verse_start, title, body, grammar_note, refs')
+    .select('chapter, verse_start, title, body, grammar_note, refs, src')
     .eq('book_id', bookId)
     .then(({ data, error }) => {
       supabaseNoteFetching.delete(bookId);
@@ -4432,6 +4436,7 @@ function fetchSupabaseNotesForBook(bookId) {
           b: row.body,
           r: row.refs || undefined,
           g: row.grammar_note || undefined,
+          s: row.src || undefined,
         };
       });
       supabaseNoteCache[bookId] = map;
@@ -5607,6 +5612,7 @@ function renderStudyFlow(n) {
     ${tn ? `<h3 style="margin-top:6px;">${tn.t}</h3><div class="note-body"><p>${tn.b}</p></div>
       ${tn.g ? `<div class="grammar"><div class="g-label">문법 포인트</div>${tn.g}</div>` : ''}
       ${tn.r ? `<div class="refs"><strong>함께 읽기</strong> · ${renderRefsHtml(tn.r, currentBook)}</div>` : ''}
+      ${tn.s ? `<div class="note-src">${tn.s}</div>` : ''}
       <p class="compare-hint">스스로 적은 내용과 비교해보세요 — 다르다고 틀린 게 아닙니다. 학자들이 무엇에 주목했는지 확인하고, 필요하면 위 칸을 다시 고쳐 써보세요.</p>`
       : `<p style="font-size:13px; color:var(--ink-soft);">${isMulti ? '이 구간에는' : '이 절에는'} 별도로 정리된 학자 노트가 없습니다. 스스로 관찰·해석·적용한 내용이 그대로 ${isMulti ? '이 구간' : '이 절'}에 대한 당신의 연구 결과입니다.</p>`}
   </div>`;
