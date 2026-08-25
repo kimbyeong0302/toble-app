@@ -5797,6 +5797,9 @@ function openStudyFlowForVerses(verseEls, key) {
   }
   renderStudyFlow(key);
   switchView('note');
+  // 절을 눌러 학습 카드를 열 때는 시트가 몇 단계에 있었든(2단계든 3단계든) 항상 1단계로
+  // 완전히 펼쳐서 보여준다 — 3단계(손잡이만 보임)에서 절을 눌렀는데 카드가 안 보이면 안 되므로.
+  if (sheetIsCollapsible()) setSheetOpen(true);
 }
 
 function isMemoTabActive() {
