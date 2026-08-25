@@ -4418,16 +4418,18 @@ const TEACHER_NOTES_MATTHEW = {
 // 인물/배경/구조/사전 탭 코드는 건드리지 않는다.
 // ============================================================
 const supabaseNoteCache = {};      // bookId -> { "장-절": {t,b,r,g} }
-const supabaseNoteFetching = new Set();
+const supabaseNoteFetchPromises = {}; // bookId -> 이미 시작됐거나 끝난 조회의 Promise (동적 페이지 생성이 기다릴 수 있게)
 
+// 반환값을 기다리지 않고 그냥 호출만 해도(기존 방식) 되고, buildDynamicPage처럼
+// has-note 표시가 준비된 뒤에 그려야 하는 곳에서는 await해도 되도록 항상 Promise를 돌려준다.
 function fetchSupabaseNotesForBook(bookId) {
-  if (!sb || supabaseNoteCache[bookId] || supabaseNoteFetching.has(bookId)) return;
-  supabaseNoteFetching.add(bookId);
-  sb.from('notes')
+  if (!sb) return Promise.resolve();
+  if (supabaseNoteCache[bookId]) return Promise.resolve();
+  if (supabaseNoteFetchPromises[bookId]) return supabaseNoteFetchPromises[bookId];
+  const promise = sb.from('notes')
     .select('chapter, verse_start, title, body, grammar_note, refs, src')
     .eq('book_id', bookId)
     .then(({ data, error }) => {
-      supabaseNoteFetching.delete(bookId);
       if (error || !data || data.length === 0) return; // 실패 시 기존 로컬 노트 그대로 사용
       const map = {};
       data.forEach(row => {
@@ -4441,6 +4443,8 @@ function fetchSupabaseNotesForBook(bookId) {
       });
       supabaseNoteCache[bookId] = map;
     });
+  supabaseNoteFetchPromises[bookId] = promise;
+  return promise;
 }
 
 function getNoteForBook(bookId, key) {
@@ -5038,12 +5042,88 @@ function applyWordHighlightsForVerse(verseEl) {
   });
 }
 
-// 페이지의 모든 절에 어절 분리 + 저장된 하이라이트 복원을 한 번에 적용
-document.querySelectorAll('.verse[data-n]').forEach(v => {
+// 절 하나에 필요한 모든 초기화(어절 분리, 하이라이트 복원, 형광펜 지우기 버튼,
+// 탭/롱프레스 상호작용)를 한 번에 묶어둔다 — 정적 HTML로 미리 그려진 절과, Supabase
+// 데이터만으로 즉석에서 만들어지는 절(buildDynamicPage) 둘 다 이 함수 하나만 거치면
+// 동일하게 동작한다. 새 책/장을 추가할 때마다 이 초기화를 깜빡해서 절이 반응 안 하는
+// 문제가 반복되지 않도록, 절 DOM을 만드는 자리는 이제 여기 한 곳뿐이어야 한다.
+function initVerseElement(v) {
   const vt = v.querySelector('.vtext');
   if (vt) wrapWordsInVerse(vt);
   applyWordHighlightsForVerse(v);
-});
+
+  const clearBtn = v.querySelector('.clear-hl');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const verseEl = clearBtn.closest('.verse');
+      const key = verseEl.dataset.n;
+      const map = loadWordHighlights(key);
+      if (!Object.keys(map).length) return;
+      if (!confirm('이 절의 형광펜 표시를 모두 지울까요?')) return;
+      saveWordHighlights(key, {});
+      clearSentenceHighlight(key);
+      applyWordHighlightsForVerse(verseEl);
+    });
+  }
+
+  const n = v.dataset.n;
+  let pressTimer = null;
+  let longPressFired = false;
+  let downX = 0, downY = 0;
+
+  v.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.clear-hl')) return;
+    if (hlTool !== 'off') return;
+    downX = e.clientX; downY = e.clientY;
+    longPressFired = false;
+    pressTimer = setTimeout(() => {
+      longPressFired = true;
+      toggleVerseSelection(v);
+    }, 450);
+  });
+  v.addEventListener('pointermove', (e) => {
+    if (!pressTimer) return;
+    if (Math.abs(e.clientX - downX) > 14 || Math.abs(e.clientY - downY) > 14) {
+      clearTimeout(pressTimer); pressTimer = null;
+    }
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(evt => {
+    v.addEventListener(evt, () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
+  });
+
+  v.addEventListener('click', (e) => {
+    if (e.target.closest('.clear-hl')) return;
+    if (contentSwipeOccurred) { contentSwipeOccurred = false; return; }
+    if (longPressFired) { longPressFired = false; return; }
+
+    if (inSelectionMode()) {
+      toggleVerseSelection(v);
+      return;
+    }
+
+    lastTappedVerseKey = n;
+
+    if (isMemoTabActive()) {
+      openMemoForVerse(n);
+      return;
+    }
+
+    // 이미 강조돼있는(눌려있는) 절을 다시 누르면 그냥 닫는다 — 학습/읽기 모드 공통
+    if (currentOpen === v) {
+      v.classList.remove('open'); currentOpen = null;
+      renderDefaultPanel();
+      return;
+    }
+    // 읽기 모드와 학습 모드는 절을 눌렀을 때 하는 일이 서로 완전히 다르므로 아예 분리한다.
+    // (읽기 모드가 학습 흐름 코드 안에 얹혀 있으면 계속 헷갈리는 문제가 생겨서 각자 독립된 함수로 뺐다)
+    if (typeof appMode !== 'undefined' && appMode === 'reading') {
+      handleReadingModeVerseTap(v, n);
+    } else {
+      openStudyFlowForVerses([v], n);
+    }
+  });
+}
 
 // ---- 도구 막대 (끄기 / 색 4가지 / 지우개) ----
 let hlTool = 'off';
@@ -5179,20 +5259,6 @@ versesEl.addEventListener('click', (e) => {
   applyWordHighlightsForVerse(verseEl);
 }, true);
 
-// 절 앞 "⌫" — 그 절의 하이라이트를 전부 지움
-document.querySelectorAll('.verse .clear-hl').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const verseEl = btn.closest('.verse');
-    const key = verseEl.dataset.n;
-    const map = loadWordHighlights(key);
-    if (!Object.keys(map).length) return;
-    if (!confirm('이 절의 형광펜 표시를 모두 지울까요?')) return;
-    saveWordHighlights(key, {});
-    clearSentenceHighlight(key);
-    applyWordHighlightsForVerse(verseEl);
-  });
-});
 
 // ============================================================
 // 사이드 탭 전환
@@ -5556,10 +5622,10 @@ function renderStudyRecordList(items) {
   });
 }
 
-function jumpToVerseFromStudyList(key, bookId) {
+async function jumpToVerseFromStudyList(key, bookId) {
   if (bookId && bookId !== currentBook) setBook(bookId);
   const parts = compositeParts(key);
-  showPage(Number(parts[0].c));
+  await showPage(Number(parts[0].c)); // 동적으로 새로 만들어지는 장일 수 있어 Supabase 조회가 끝날 때까지 기다린다
   setTimeout(() => {
     const bookContent = document.querySelector('.book-content[data-book="' + currentBook + '"]');
     if (!bookContent) return;
@@ -5797,64 +5863,7 @@ document.getElementById('vsb-cancel').addEventListener('click', clearSelection);
 // 스와이프로 다음/이전 장 넘기기 뒤에 오는 트레일링 click이 절을 여는 걸 막기 위한 플래그
 let contentSwipeOccurred = false;
 
-versesEl.querySelectorAll('.verse').forEach(v => {
-  const n = v.dataset.n;
-  let pressTimer = null;
-  let longPressFired = false;
-  let downX = 0, downY = 0;
-
-  v.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.clear-hl')) return;
-    if (hlTool !== 'off') return;
-    downX = e.clientX; downY = e.clientY;
-    longPressFired = false;
-    pressTimer = setTimeout(() => {
-      longPressFired = true;
-      toggleVerseSelection(v);
-    }, 450);
-  });
-  v.addEventListener('pointermove', (e) => {
-    if (!pressTimer) return;
-    if (Math.abs(e.clientX - downX) > 14 || Math.abs(e.clientY - downY) > 14) {
-      clearTimeout(pressTimer); pressTimer = null;
-    }
-  });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(evt => {
-    v.addEventListener(evt, () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
-  });
-
-  v.addEventListener('click', (e) => {
-    if (e.target.closest('.clear-hl')) return;
-    if (contentSwipeOccurred) { contentSwipeOccurred = false; return; }
-    if (longPressFired) { longPressFired = false; return; }
-
-    if (inSelectionMode()) {
-      toggleVerseSelection(v);
-      return;
-    }
-
-    lastTappedVerseKey = n;
-
-    if (isMemoTabActive()) {
-      openMemoForVerse(n);
-      return;
-    }
-
-    // 이미 강조돼있는(눌려있는) 절을 다시 누르면 그냥 닫는다 — 학습/읽기 모드 공통
-    if (currentOpen === v) {
-      v.classList.remove('open'); currentOpen = null;
-      renderDefaultPanel();
-      return;
-    }
-    // 읽기 모드와 학습 모드는 절을 눌렀을 때 하는 일이 서로 완전히 다르므로 아예 분리한다.
-    // (읽기 모드가 학습 흐름 코드 안에 얹혀 있으면 계속 헷갈리는 문제가 생겨서 각자 독립된 함수로 뺐다)
-    if (typeof appMode !== 'undefined' && appMode === 'reading') {
-      handleReadingModeVerseTap(v, n);
-    } else {
-      openStudyFlowForVerses([v], n);
-    }
-  });
-});
+versesEl.querySelectorAll('.verse').forEach(v => initVerseElement(v));
 
 // 읽기 모드 전용 — 절을 누르면 학습 흐름을 여는 대신 그 절을 강조 표시하고 히스토리에 남긴다.
 // (학자 노트는 이미 본문 절 아래에 각주로 따로 떠 있어서 별도로 열 게 없다)
@@ -5912,22 +5921,28 @@ function getPageCount() { return BOOK_CHAPTER_COUNTS[currentBook] || 1; }
 // ============================================================
 const supabaseVerseCache = {}; // `${bookId}-${chapter}` -> { [verse]: text }
 
+async function fetchVersesForChapter(bookId, chapter) {
+  const cacheKey = bookId + '-' + chapter;
+  if (supabaseVerseCache[cacheKey]) return supabaseVerseCache[cacheKey];
+  if (!sb) return null;
+  const { data, error } = await sb
+    .from('verses')
+    .select('verse, text')
+    .eq('book_id', bookId)
+    .eq('translation_id', 'krv')
+    .eq('chapter', chapter)
+    .order('verse');
+  if (error || !data || data.length === 0) return null;
+  const verseMap = {};
+  data.forEach(row => { verseMap[row.verse] = row.text; });
+  supabaseVerseCache[cacheKey] = verseMap;
+  return verseMap;
+}
+
 async function applySupabaseVersesToPage(bookId, chapter, pageEl) {
   if (!sb || !pageEl) return;
-  const cacheKey = bookId + '-' + chapter;
-  let verseMap = supabaseVerseCache[cacheKey];
-  if (!verseMap) {
-    const { data, error } = await sb
-      .from('verses')
-      .select('verse, text')
-      .eq('book_id', bookId)
-      .eq('translation_id', 'krv')
-      .eq('chapter', chapter);
-    if (error || !data || data.length === 0) return; // 실패 시 기존 정적 본문 그대로 둠
-    verseMap = {};
-    data.forEach(row => { verseMap[row.verse] = row.text; });
-    supabaseVerseCache[cacheKey] = verseMap;
-  }
+  const verseMap = await fetchVersesForChapter(bookId, chapter);
+  if (!verseMap) return; // 실패 시 기존 정적 본문 그대로 둠
   // pageEl이 그 사이 다른 장으로 바뀌었어도(비동기 응답 지연) 숨겨진 채로 텍스트만 갱신되니 무해하다.
   pageEl.querySelectorAll('.verse[data-n]').forEach(v => {
     const [c, verseNo] = v.dataset.n.split('-').map(Number);
@@ -5939,11 +5954,66 @@ async function applySupabaseVersesToPage(bookId, chapter, pageEl) {
   });
 }
 
-function showPage(n) {
+// 정적 HTML에 미리 그려진 페이지가 없는 장(새로 추가된 책/장)을 Supabase 데이터만으로
+// 즉석에서 만들어 보여준다. 절 텍스트는 verses 테이블에서, 소제목(.sect)은
+// CHAPTER_EXAMPLES_BY_BOOK(verses 테이블엔 소제목 컬럼이 없어서 클라이언트 데이터를 그대로
+// 씀)에서, 학습 카드에 "✦" 표시를 줄 노트 유무는 notes 테이블에서 가져온다 — 이 중 하나가
+// 비어 있어도(예: 그 장 소제목이 아직 없음) 그 부분만 생략하고 나머지는 정상적으로 만든다.
+// 이렇게 만들어진 절은 initVerseElement()를 거치므로 정적 절과 완전히 동일하게 동작한다.
+async function buildDynamicPage(bookId, chapter) {
+  const verseMap = await fetchVersesForChapter(bookId, chapter);
+  if (!verseMap) return null; // Supabase에도 없으면 정말로 아직 준비 안 된 장
+
+  await fetchSupabaseNotesForBook(bookId);
+  const noteMap = supabaseNoteCache[bookId] || {};
+
+  const sections = (CHAPTER_EXAMPLES_BY_BOOK[bookId] && CHAPTER_EXAMPLES_BY_BOOK[bookId][chapter]) || [];
+  const sectionStarts = {}; // 시작 절 번호 -> "제목 · 구간" 라벨
+  sections.forEach((s) => {
+    const m = /:(\d+)/.exec(s.r || '');
+    if (m) sectionStarts[Number(m[1])] = s.t + ' · ' + s.r;
+  });
+
+  const page = document.createElement('div');
+  page.className = 'page';
+  page.dataset.page = String(chapter);
+  page.hidden = true;
+
+  Object.keys(verseMap).map(Number).sort((a, b) => a - b).forEach((verseNo) => {
+    if (sectionStarts[verseNo]) {
+      const sectEl = document.createElement('div');
+      sectEl.className = 'sect';
+      sectEl.textContent = sectionStarts[verseNo];
+      page.appendChild(sectEl);
+    }
+    const key = chapter + '-' + verseNo;
+    const v = document.createElement('div');
+    v.className = 'verse' + (noteMap[key] ? ' has-note' : '');
+    v.dataset.n = key;
+    const numSpan = document.createElement('span');
+    numSpan.className = 'num';
+    numSpan.textContent = String(verseNo);
+    const vtextSpan = document.createElement('span');
+    vtextSpan.className = 'vtext';
+    vtextSpan.textContent = verseMap[verseNo];
+    const clearSpan = document.createElement('span');
+    clearSpan.className = 'clear-hl';
+    clearSpan.title = '이 절 형광펜 지우기';
+    clearSpan.textContent = '⌫';
+    v.append(numSpan, vtextSpan, clearSpan);
+    page.appendChild(v);
+    initVerseElement(v);
+  });
+
+  return page;
+}
+
+async function showPage(n) {
   const total = getPageCount();
   n = Math.max(1, Math.min(total, n));
   const prevPage = currentPage;
   currentPage = n;
+  const bookIdAtCall = currentBook; // 아래 await 도중 책/장이 또 바뀌면 그 결과는 버리기 위한 스냅샷
   // 학습 카드가 열려 있는 채로 다른 장으로 넘어가면, 그 절은 이제 화면에 없는 장에
   // 숨겨진 채로 남아 다시 탭해서 닫을 방법이 없어진다 — 장이 바뀌면 그 절이 지금 장에
   // 없는 한 카드를 닫고 기본 화면(기록 목록)으로 되돌린다.
@@ -5964,6 +6034,20 @@ function showPage(n) {
     p.hidden = !match;
     if (match) { found = true; shownPageEl = p; }
   });
+  if (!found) {
+    // 정적 HTML에 이 장이 없다 — Supabase에 데이터가 있으면 즉석에서 페이지를 만들어본다
+    // (새로 추가된 책/장이 앞으로도 이 경로 하나로 항상 자동으로 뜨게 하려는 것).
+    const dynamicPage = await buildDynamicPage(currentBook, n);
+    if (dynamicPage && currentBook === bookIdAtCall && currentPage === n) {
+      bookContent.querySelectorAll('.page').forEach(p => { p.hidden = true; }); // 그 사이 눌렸을 다른 페이지 정리
+      const placeholderEl = bookContent.querySelector('.page-placeholder');
+      if (placeholderEl) bookContent.insertBefore(dynamicPage, placeholderEl);
+      else bookContent.appendChild(dynamicPage);
+      dynamicPage.hidden = false;
+      found = true;
+      shownPageEl = dynamicPage;
+    }
+  }
   if (found && shownPageEl) applySupabaseVersesToPage(currentBook, n, shownPageEl);
   // 장이 바뀐 걸 눈으로 확인할 수 있게 살짝 슬라이드+페이드 애니메이션을 매번 다시 재생한다
   if (found && shownPageEl && n !== prevPage) {
@@ -7310,10 +7394,10 @@ function renderDictResultsForActiveBook() {
   });
 }
 
-function jumpToVerseFromDict(key, bookId) {
+async function jumpToVerseFromDict(key, bookId) {
   if (bookId && bookId !== currentBook) setBook(bookId);
   const chap = Number(key.split('-')[0]);
-  showPage(chap);
+  await showPage(chap); // 동적으로 새로 만들어지는 장일 수 있어 Supabase 조회가 끝날 때까지 기다린다
   setTimeout(() => {
     const bookContent = document.querySelector('.book-content[data-book="' + currentBook + '"]');
     const el = bookContent ? bookContent.querySelector('.verse[data-n="' + key + '"]') : null;
@@ -7642,9 +7726,9 @@ function historyVerseText(bookId, key) {
   return el ? el.textContent : '';
 }
 
-function jumpToHistoryVerse(bookId, key) {
+async function jumpToHistoryVerse(bookId, key) {
   if (bookId !== currentBook) setBook(bookId);
-  showPage(Number(key.split('-')[0]));
+  await showPage(Number(key.split('-')[0])); // 동적으로 새로 만들어지는 장일 수 있어 Supabase 조회가 끝날 때까지 기다린다
   setTimeout(() => {
     const el = versesEl.querySelector('.book-content[data-book="' + bookId + '"] .verse[data-n="' + key + '"]');
     if (!el) return;
