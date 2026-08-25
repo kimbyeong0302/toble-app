@@ -4450,6 +4450,13 @@ function fetchSupabaseNotesForBook(bookId) {
         };
       });
       supabaseNoteCache[bookId] = map;
+      // 학습 카드가 이미 열려 있는 상태에서 이 조회가 뒤늦게 끝나면, 그 카드를 최신 값으로
+      // 다시 그려준다 — 로컬 폴백 데이터가 없는 책(예: 요한복음)에서 카드를 조회가 끝나기
+      // 전에 열었을 때를 대비한 것. (동적 페이지 자체는 buildDynamicPage가 이 조회를 먼저
+      // 기다린 뒤에 절을 만들기 때문에 보통은 필요 없지만, 안전망으로 남겨둔다)
+      if (bookId === currentBook && typeof currentOpen !== 'undefined' && currentOpen && typeof renderStudyFlow === 'function') {
+        renderStudyFlow(currentOpen.dataset.n);
+      }
     });
   supabaseNoteFetchPromises[bookId] = promise;
   return promise;
@@ -6066,6 +6073,11 @@ async function showPage(n) {
       dynamicPage.hidden = false;
       found = true;
       shownPageEl = dynamicPage;
+      // 읽기 모드의 본문 각주(renderInlineNotes)는 페이지 로드 시점에 딱 한 번만 도는
+      // 스캔이라, 이 시점 이후에 새로 생기는 절(지금 이 동적 페이지)은 그 스캔에 잡히지
+      // 않는다 — 새로 만들어진 절에도 각주를 붙이도록 여기서 다시 불러준다. notes 캐시는
+      // buildDynamicPage()가 이미 await로 채워둔 뒤라 바로 써도 된다.
+      if (typeof renderInlineNotes === 'function') renderInlineNotes();
     }
   }
   if (found && shownPageEl) applySupabaseVersesToPage(currentBook, n, shownPageEl);
