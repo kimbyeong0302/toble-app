@@ -3953,8 +3953,8 @@
 
   <footer>
     본문: 개역한글판 (저작권 만료 번역본)<br>
-    하이라이트와 관찰·해석·적용 메모는 이 브라우저의 로컬 저장소(localStorage)에만 저장됩니다 — 다른 기기·다른 브라우저와 동기화되지 않고, 브라우저 데이터를 지우면 함께 사라집니다.<br>
-    토블 : 성경을 톺아보다 — 학습 모드 프로토타입 v0.1 (룻기)
+    <span id="footer-storage-note">하이라이트와 관찰·해석·적용 메모는 이 브라우저의 로컬 저장소(localStorage)에만 저장됩니다 — 다른 기기·다른 브라우저와 동기화되지 않고, 브라우저 데이터를 지우면 함께 사라집니다.</span><br>
+    토블 : 성경을 톺아보다 — 룻기·마가복음·마태복음·누가복음·요한복음(일부) 수록
   </footer>
 
 </div>
@@ -6362,6 +6362,15 @@ function applySettingsBackupVisibility() {
   section.style.display = isLoggedIn() ? 'none' : '';
   note.style.display = isLoggedIn() ? '' : 'none';
 }
+
+// 화면 맨 아래 안내 문구도 로그인 여부에 따라 저장 위치 설명을 바꾼다.
+function applyFooterStorageNote() {
+  const el = document.getElementById('footer-storage-note');
+  if (!el) return;
+  el.textContent = isLoggedIn()
+    ? '하이라이트와 관찰·해석·적용 메모는 계정에 저장되어 다른 기기에서도 이어서 보실 수 있습니다.'
+    : '하이라이트와 관찰·해석·적용 메모는 이 브라우저의 로컬 저장소(localStorage)에만 저장됩니다 — 다른 기기·다른 브라우저와 동기화되지 않고, 브라우저 데이터를 지우면 함께 사라집니다.';
+}
 function openSettingsModal() { applySettingsBackupVisibility(); settingsModal.classList.add('open'); }
 function closeSettingsModal() { settingsModal.classList.remove('open'); }
 document.getElementById('settings-gear-btn').addEventListener('click', openSettingsModal);
@@ -6646,6 +6655,7 @@ if (sb) {
     currentUser = data.session ? data.session.user : null;
     updateAuthHeaderButton();
     fetchCurrentUserRole();
+    applyFooterStorageNote();
     if (!currentOpen && typeof renderDefaultPanel === 'function') renderDefaultPanel(); // 로그인 여부가 확정된 뒤 기록 목록을 맞는 데이터로 다시 그림
     if (authLinkErrorMessage) {
       alert(authLinkErrorMessage);
@@ -6663,6 +6673,7 @@ if (sb) {
     currentUser = session ? session.user : null;
     updateAuthHeaderButton();
     fetchCurrentUserRole();
+    applyFooterStorageNote();
     if (event === 'PASSWORD_RECOVERY') {
       // 비밀번호 재설정 링크를 눌러 들어온 상태 — 계정 모달을 새 비밀번호 입력 화면으로 연다.
       passwordRecoveryMode = true;
