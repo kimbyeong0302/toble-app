@@ -3696,6 +3696,14 @@
       </div>
       </div>
 
+      <div class="book-content" data-book="john" style="display:none">
+      <div class="page-placeholder" hidden>
+        <div class="ph-icon">📖</div>
+        <div class="ph-msg"><span class="ph-chapter">이 장</span>은 아직 준비되지 않았습니다.</div>
+        <div class="ph-sub">계속해서 추가하고 있습니다. 다음에 다시 확인해주세요.</div>
+      </div>
+      </div>
+
 
       <div class="page-nav">
         <button id="page-prev" disabled>← 이전 장</button>
@@ -4459,7 +4467,11 @@ function getNoteForBook(bookId, key) {
   if (bookId === 'mark') return TEACHER_NOTES_MARK[key];
   if (bookId === 'luke') return TEACHER_NOTES_LUKE[key];
   if (bookId === 'matthew') return TEACHER_NOTES_MATTHEW[key];
-  return TEACHER_NOTES_RUTH[key];
+  if (bookId === 'ruth') return TEACHER_NOTES_RUTH[key];
+  // 로컬 폴백 데이터가 아예 없는 책(Supabase 전용으로 시작한 책)은 여기서 undefined를
+  // 돌려줘야 한다 — 예전엔 이 자리가 항상 룻기 데이터로 떨어져서, 캐시가 아직 안 찬
+  // 순간에 다른 책인데 키만 우연히 겹치면 엉뚱한 룻기 노트가 잠깐 보일 수 있었다.
+  return undefined;
 }
 function getNote(key) { return getNoteForBook(currentBook, key); }
 
@@ -4598,7 +4610,7 @@ const PEOPLE_MATTHEW = [
   { n: "막달라 마리아", role: "십자가와 부활의 첫 증인", v: "27:56, 27:61, 28:1–10", b: "십자가 곁에 머물렀던 여인들 중 한 명으로, 부활하신 예수를 가장 먼저 만나고 제자들에게 소식을 전하는 역할을 맡습니다." }
 ];
 
-const BOOK_LABELS = { ruth: '룻기', mark: '마가복음', luke: '누가복음', matthew: '마태복음' };
+const BOOK_LABELS = { ruth: '룻기', mark: '마가복음', luke: '누가복음', matthew: '마태복음', john: '요한복음' };
 const BOOK_NOTES = { ruth: TEACHER_NOTES_RUTH, mark: TEACHER_NOTES_MARK, luke: TEACHER_NOTES_LUKE, matthew: TEACHER_NOTES_MATTHEW };
 const BOOK_PEOPLE = { ruth: PEOPLE_RUTH, mark: PEOPLE_MARK, luke: PEOPLE_LUKE, matthew: PEOPLE_MATTHEW };
 
@@ -5909,7 +5921,7 @@ let exampleShown = false;
 // ============================================================
 // 구간(장) 페이지네이션 — 한 번에 한 구간만 보여주고 탭/다음 버튼으로 이동
 // ============================================================
-const BOOK_CHAPTER_COUNTS = { ruth: 4, mark: 16, luke: 24, matthew: 28 };
+const BOOK_CHAPTER_COUNTS = { ruth: 4, mark: 16, luke: 24, matthew: 28, john: 21 };
 let currentPage = 1;
 
 function getPageCount() { return BOOK_CHAPTER_COUNTS[currentBook] || 1; }
@@ -6225,7 +6237,7 @@ const BOOKS = [
   { name: '마태복음', abbr: '마', eng: 'Matthew', chapters: 28, category: '복음서', available: true, id: 'matthew' },
   { name: '마가복음', abbr: '막', eng: 'Mark', chapters: 16, category: '복음서', available: true, id: 'mark' },
   { name: '누가복음', abbr: '눅', eng: 'Luke', chapters: 24, category: '복음서', available: true, id: 'luke' },
-  { name: '요한복음', abbr: '요', eng: 'John', chapters: 21, category: '복음서', available: false },
+  { name: '요한복음', abbr: '요', eng: 'John', chapters: 21, category: '복음서', available: true, id: 'john' },
   { name: '사도행전', abbr: '행', eng: 'Acts', chapters: 28, category: '역사서 (신약)', available: false },
   { name: '로마서', abbr: '롬', eng: 'Romans', chapters: 16, category: '바울서신', available: false },
   { name: '고린도전서', abbr: '고전', eng: '1 Corinthians', chapters: 16, category: '바울서신', available: false },
@@ -6844,6 +6856,13 @@ const CHAPTER_EXAMPLES_BY_BOOK = {
     26: [ { t: "예수를 죽이려는 모의", r: "26:1–5" }, { t: "베다니에서 향유 부음", r: "26:6–13" }, { t: "가룟 유다의 배신", r: "26:14–16" }, { t: "마지막 만찬", r: "26:17–30" }, { t: "베드로의 부인을 예고하심", r: "26:31–35" }, { t: "겟세마네의 기도", r: "26:36–46" }, { t: "체포되심", r: "26:47–56" }, { t: "산헤드린 앞에 서심", r: "26:57–68" }, { t: "베드로의 부인", r: "26:69–75" } ],
     27: [ { t: "빌라도에게 넘겨지심", r: "27:1–2" }, { t: "유다의 죽음", r: "27:3–10" }, { t: "빌라도의 심문", r: "27:11–26" }, { t: "군인들의 희롱", r: "27:27–31" }, { t: "십자가에 못박히심", r: "27:32–44" }, { t: "예수의 죽으심", r: "27:45–56" }, { t: "장사되심", r: "27:57–61" }, { t: "경비병을 세움", r: "27:62–66" } ],
     28: [ { t: "부활하심", r: "28:1–10" }, { t: "경비병들의 보고", r: "28:11–15" }, { t: "지상명령", r: "28:16–20" } ]
+  },
+  john: {
+    1: [ { t: "말씀이 육신이 되심(로고스 서시)", r: "1:1–18" }, { t: "세례 요한의 증언", r: "1:19–28" }, { t: "하나님의 어린 양", r: "1:29–34" }, { t: "첫 제자들을 부르심", r: "1:35–51" } ],
+    2: [ { t: "가나의 혼인잔치", r: "2:1–12" }, { t: "성전을 청결케 하심", r: "2:13–22" }, { t: "예수를 신뢰하지 않으심", r: "2:23–25" } ],
+    3: [ { t: "니고데모와의 대화", r: "3:1–15" }, { t: "하나님이 세상을 사랑하사", r: "3:16–21" }, { t: "요한의 마지막 증언", r: "3:22–30" }, { t: "하늘로서 오시는 이", r: "3:31–36" } ],
+    4: [ { t: "사마리아 여인과의 대화", r: "4:1–26" }, { t: "추수할 것이 많도다", r: "4:27–38" }, { t: "사마리아인들의 믿음", r: "4:39–42" }, { t: "왕의 신하의 아들을 고치심", r: "4:43–54" } ],
+    5: [ { t: "베데스다 못의 병자를 고치심", r: "5:1–15" }, { t: "아버지와 아들의 관계", r: "5:16–30" }, { t: "예수를 증거하는 것들", r: "5:31–47" } ]
   }
 };
 
