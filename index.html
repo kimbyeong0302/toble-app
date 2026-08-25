@@ -5375,13 +5375,40 @@ const isMobile = () => window.matchMedia('(max-width: 1400px)').matches;
 // 여닫는 높이는 고정값이며(60%/메뉴명만 보이는 높이) 제스처로 임의 조절하지 않는다.
 // ============================================================
 const sideBody = sidepanel.querySelector('.side-body');
+const sheetHandle = document.getElementById('sheet-handle');
 function sheetIsLandscape() { return isMobile() && window.matchMedia('(orientation: landscape)').matches; }
 function sheetIsCollapsible() { return isMobile() && !sheetIsLandscape(); }
 
-function setSheetOpen(open) {
-  sidepanel.classList.toggle('open', open);
-  document.body.classList.toggle('sheet-open', open);
+// 시트는 이제 열림/닫힘 둘이 아니라 3단계다 — 1=펼침(전체 다 보임), 2=접힘(기존 60vh,
+// 손잡이+장 이름+탭만 보임), 3=완전접힘(손잡이만 겨우 보임, 새로 추가). 초기값 2는
+// 시트에 .open 클래스가 없는 정적 HTML 기본 상태(=기존 "닫힘")와 맞춘 것이다.
+let sheetTier = 2;
+
+function sheetTier2OffsetPx() { return window.innerHeight * 0.6; }
+function sheetTier3OffsetPx() {
+  // 손잡이 자체는 항상 남기고, 그 아래(장 이름·탭·본문)를 전부 화면 밖으로 내린다 —
+  // 손잡이 높이는 폰트 크기 설정 등에 따라 달라질 수 있어 고정값 대신 실측한다.
+  const handleH = sheetHandle.getBoundingClientRect().height || 32;
+  const totalH = sidepanel.getBoundingClientRect().height;
+  return Math.max(0, totalH - handleH);
 }
+function sheetOffsetForTier(tier) {
+  if (tier === 1) return 0;
+  if (tier === 3) return sheetTier3OffsetPx();
+  return sheetTier2OffsetPx();
+}
+function applySheetTransformForTier(tier) {
+  sidepanel.style.transform = tier === 1 ? '' : ('translateY(' + sheetOffsetForTier(tier) + 'px)');
+}
+function setSheetTier(tier) {
+  sheetTier = tier;
+  applySheetTransformForTier(tier);
+  sidepanel.classList.toggle('open', tier === 1);
+  document.body.classList.toggle('sheet-open', tier === 1);
+}
+// 탭 메뉴 클릭·절 탭 등 기존 호출부는 그대로 두어도 되게, true/false로 부르면
+// 1단계/2단계로만 매핑해주는 얇은 호환 래퍼로 남긴다(3단계는 손잡이 조작에서만 쓴다).
+function setSheetOpen(open) { setSheetTier(open ? 1 : 2); }
 function switchView(name) {
   const wasMemo = document.getElementById('view-memo').classList.contains('active');
   if (wasMemo && name !== 'memo' && typeof pruneEmptyMemos === 'function') pruneEmptyMemos(); // 메모 탭을 벗어나면 빈 메모는 정리
@@ -5432,24 +5459,23 @@ document.querySelectorAll('.side-tabs button').forEach(btn => {
     } else { switchView(name); }
   });
 });
-const sheetHandle = document.getElementById('sheet-handle');
 if (sheetHandle) {
   // 살짝 움직인 것뿐이면 탭으로 보고 click에서 처리하되, 실제로 드래그가 일어났으면
   // 뒤이어 오는 click이 방금 정한 상태를 다시 뒤집지 않도록 sheetDragOccurred로 막는다.
   let sheetDragOccurred = false;
   sheetHandle.addEventListener('click', () => {
     if (sheetDragOccurred) { sheetDragOccurred = false; return; }
-    if (sheetIsCollapsible()) setSheetOpen(!sidepanel.classList.contains('open'));
+    if (!sheetIsCollapsible()) return;
+    // 탭할 때마다 한 칸씩 이동: 1(펼침)→3(완전접힘)→2(접힘)→1... 왕복 대신 고정 방향으로 순환한다.
+    const nextTier = sheetTier === 1 ? 3 : sheetTier - 1;
+    setSheetTier(nextTier);
   });
 
-  // 손가락으로 위/아래로 스와이프해서 시트를 여닫는 제스처.
-  // 열림/닫힘 목표 지점은 60vh/0으로 고정 — 위치를 임의로 조정해서 저장하진 않는다.
+  // 손가락으로 위/아래로 스와이프해서 시트를 3단계 중 하나로 스냅시키는 제스처.
   let sheetDragging = false;
   let sheetDragStartY = 0;
   let sheetDragStartOffset = 0;
   let sheetDragStartTime = 0;
-
-  function sheetClosedOffsetPx() { return window.innerHeight * 0.6; }
 
   sheetHandle.addEventListener('pointerdown', (e) => {
     if (!sheetIsCollapsible()) return;
@@ -5457,15 +5483,15 @@ if (sheetHandle) {
     sheetDragOccurred = false;
     sheetDragStartY = e.clientY;
     sheetDragStartTime = Date.now();
-    sheetDragStartOffset = sidepanel.classList.contains('open') ? 0 : sheetClosedOffsetPx();
+    sheetDragStartOffset = sheetOffsetForTier(sheetTier);
     sidepanel.style.transition = 'none';
     if (sheetHandle.setPointerCapture) sheetHandle.setPointerCapture(e.pointerId);
   });
   sheetHandle.addEventListener('pointermove', (e) => {
     if (!sheetDragging) return;
     const deltaY = e.clientY - sheetDragStartY;
-    const closedPx = sheetClosedOffsetPx();
-    const offset = Math.max(0, Math.min(closedPx, sheetDragStartOffset + deltaY));
+    const maxOffset = sheetTier3OffsetPx(); // 이제 가장 많이 내려가는 지점은 완전접힘(3단계)
+    const offset = Math.max(0, Math.min(maxOffset, sheetDragStartOffset + deltaY));
     sidepanel.style.transform = 'translateY(' + offset + 'px)';
   });
   function endSheetDrag(e) {
@@ -5475,18 +5501,28 @@ if (sheetHandle) {
     const deltaTime = Math.max(1, Date.now() - sheetDragStartTime);
     const velocity = deltaY / deltaTime; // px/ms, 음수 = 위로(여는 방향)
     sidepanel.style.transition = '';
-    sidepanel.style.transform = '';
 
-    if (Math.abs(deltaY) <= 10) return; // 탭 수준의 움직임이면 click에서 토글하게 둔다
+    if (Math.abs(deltaY) <= 10) {
+      // 탭 수준의 움직임이면 지금 단계 그대로 되돌리고(click 핸들러가 실제 토글을 처리), 드래그로 치지 않는다.
+      applySheetTransformForTier(sheetTier);
+      return;
+    }
 
     sheetDragOccurred = true;
-    const closedPx = sheetClosedOffsetPx();
-    const releaseOffset = Math.max(0, Math.min(closedPx, sheetDragStartOffset + deltaY));
-    let goingOpen;
-    if (velocity < -0.5) goingOpen = true;
-    else if (velocity > 0.5) goingOpen = false;
-    else goingOpen = releaseOffset < closedPx * 0.5;
-    setSheetOpen(goingOpen);
+    const tier2Offset = sheetTier2OffsetPx();
+    const tier3Offset = sheetTier3OffsetPx();
+    const releaseOffset = Math.max(0, Math.min(tier3Offset, sheetDragStartOffset + deltaY));
+
+    let targetTier;
+    if (velocity < -0.6) targetTier = Math.max(1, sheetTier - 1); // 위로 빠르게 튕기면 한 단계 더 펼침
+    else if (velocity > 0.6) targetTier = Math.min(3, sheetTier + 1); // 아래로 빠르게 튕기면 한 단계 더 접힘
+    else {
+      // 천천히 놓았으면 놓은 위치에서 가장 가까운 단계로 스냅
+      const distances = { 1: Math.abs(0 - releaseOffset), 2: Math.abs(tier2Offset - releaseOffset), 3: Math.abs(tier3Offset - releaseOffset) };
+      targetTier = Object.keys(distances).reduce((best, t) => distances[t] < distances[best] ? t : best, '1');
+      targetTier = Number(targetTier);
+    }
+    setSheetTier(targetTier);
   }
   sheetHandle.addEventListener('pointerup', endSheetDrag);
   sheetHandle.addEventListener('pointercancel', endSheetDrag);
