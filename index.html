@@ -283,6 +283,8 @@
   .side-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   /* 읽기 모드에서는 학습 흐름 대신 본문에 각주가 바로 보이므로, 학습 탭 자체를 메뉴에서 숨긴다 */
   body.reading-mode .side-tabs button[data-view="note"] { display: none; }
+  /* "구조"는 스스로 개요를 나눠보는 학습 모드 전용 훈련 도구라 읽기 모드에는 안 어울려서 숨긴다 */
+  body.reading-mode .side-tabs button[data-view="structure"] { display: none; }
   .side-body { overflow-y: auto; padding: 18px 20px 22px; }
   .side-view { display: none; }
   .side-view.active { display: block; }
