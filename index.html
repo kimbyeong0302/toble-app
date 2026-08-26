@@ -6838,8 +6838,17 @@ const supabaseExtrasFetching = new Set();
 function applySupabaseContextHtml(bookId) {
   const extras = supabaseExtrasCache[bookId];
   if (!extras || !extras.context_html) return;
-  const el = document.querySelector('.ctx-book[data-book="' + bookId + '"]');
-  if (!el) return;
+  let el = document.querySelector('.ctx-book[data-book="' + bookId + '"]');
+  if (!el) {
+    // 룻/마가/누가/마태만 정적 HTML에 .ctx-book이 미리 있고, 그 뒤에 추가되는 책은 없다 —
+    // buildDynamicPage()가 절 페이지를 즉석에서 만드는 것과 같은 이유로, 배경 탭도 여기서
+    // 즉석에서 컨테이너를 만들어 앞으로 책이 늘어나도 이 경로 하나로 자동으로 뜨게 한다.
+    el = document.createElement('div');
+    el.className = 'ctx-book';
+    el.dataset.book = bookId;
+    el.style.display = (bookId === currentBook) ? '' : 'none';
+    document.getElementById('view-context').appendChild(el);
+  }
   el.innerHTML = extras.context_html;
   if (bookId === 'ruth') {
     wireTrackButtons(); // innerHTML 교체로 트랙 버튼 DOM이 새로 생겼으니 리스너를 다시 붙인다
