@@ -619,14 +619,57 @@ document.getElementById('sub-only-filter').addEventListener('change', renderUser
 // order_num - 1을 그대로 이 배열의 인덱스로 쓸 수 있다.
 // ============================================================
 // index.html의 LOCATION_INFO 상수(지도 마커를 누르면 뜨는 고도·지형·기후 등 상세정보)에
-// 등록된 지명 목록 — book_extras.map_locations에는 lat/lng/name만 있고 이 상세정보는
-// 별도로 index.html에 지명 문자열을 키로 손으로 등록해야 하는 구조라, 책이 늘어나거나
-// 새 지명이 추가될 때 여기 등록을 깜빡하기 쉽다. index.html을 고칠 때 이 배열도 같이
-// 갱신해야 완성도 점검이 정확해진다(자동 동기화가 아니라 수동 대조표).
-const REGISTERED_LOCATION_NAMES = new Set([
-  '베들레헴', '모압', '나사렛', '가버나움', '예루살렘', '요단강', '갈릴리', '애굽',
-  '갈릴리 가나', '수가성(사마리아)', '베다니', '갈릴리 바다(디베랴)',
-]);
+// 등록된 지명 목록을 여기 다시 손으로 옮겨 적어두면(예전 방식) index.html만 고치고 여기
+// 갱신을 잊었을 때 완성도 점검이 조용히 틀린 결과를 낸다 — 그래서 사본을 두지 않고,
+// index.html을 직접 fetch해서 LOCATION_INFO를 그 자리에서 파싱한다(supabase/validate_book.js가
+// Node에서 하는 것과 같은 방식). admin.html과 index.html이 항상 같은 origin/경로에서
+// 서빙되므로 상대 경로 fetch면 충분하다.
+//
+// index.html에 정적으로 박힌 const 객체 리터럴을 문자열에서 그대로 뽑아 평가한다 — 문자열
+// 안 내용까지 중괄호를 세면서 짝을 맞춘다(validate_book.js의 extractConstObject와 동일).
+function extractConstObject(source, constName) {
+  const marker = 'const ' + constName + ' = {';
+  const start = source.indexOf(marker);
+  if (start === -1) return null;
+  const braceStart = start + marker.length - 1;
+  let depth = 0;
+  let inString = null;
+  let i = braceStart;
+  for (; i < source.length; i++) {
+    const ch = source[i];
+    if (inString) {
+      if (ch === '\\') { i++; continue; }
+      if (ch === inString) inString = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') { inString = ch; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) { i++; break; } }
+  }
+  const literal = source.slice(braceStart, i);
+  return new Function('return ' + literal)();
+}
+
+// index.html을 fetch해서 LOCATION_INFO의 키(등록된 지명) 집합을 돌려준다. 실패하면 null —
+// 호출부에서 null과 "등록된 지명이 0개"를 반드시 구분해서, fetch가 막혔을 뿐인데 모든
+// 지명이 미등록인 것처럼 잘못 표시하지 않게 한다.
+let locationInfoNamesCache = null;
+async function loadLocationInfoNames() {
+  try {
+    // 서비스워커가 admin.html이 아닌 요청은 전부 캐시 우선으로 가로채므로(sw.js 참고),
+    // 그냥 './index.html'로만 fetch하면 배포 후 SW 캐시가 아직 안 갱신됐을 때 오래된
+    // 사본을 볼 수 있다 — 매번 다른 쿼리스트링을 붙여 캐시에 안 걸리는 새 요청으로 만든다.
+    const resp = await fetch('./index.html?cb=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) throw new Error('index.html 응답 코드 ' + resp.status);
+    const html = await resp.text();
+    const locationInfo = extractConstObject(html, 'LOCATION_INFO');
+    if (!locationInfo) throw new Error('index.html에서 LOCATION_INFO를 찾지 못함');
+    return new Set(Object.keys(locationInfo));
+  } catch (e) {
+    console.error('LOCATION_INFO 로딩 실패:', e);
+    return null;
+  }
+}
 
 const STANDARD_VERSE_TOTALS_BY_ORDER = [
   1533, 1213, 859, 1288, 959, 658, 618, 85, 810, 695, 816, 719, 942, 822, 280,
@@ -645,7 +688,11 @@ async function loadContentCheck() {
   wrap.className = 'sub';
   wrap.textContent = '불러오는 중...';
 
-  const { data: allBooks, error: booksErr } = await sb.from('books').select('*').order('order_num');
+  const [{ data: allBooks, error: booksErr }, locationInfoNames] = await Promise.all([
+    sb.from('books').select('*').order('order_num'),
+    loadLocationInfoNames(),
+  ]);
+  locationInfoNamesCache = locationInfoNames; // 실패 시 null — renderContentCheck에서 구분해서 표시
   if (booksErr || !allBooks) {
     wrap.textContent = '책 목록을 불러오지 못했습니다: ' + (booksErr ? booksErr.message : '데이터 없음');
     return;
@@ -713,8 +760,12 @@ function renderContentCheck(rows) {
     let locInfoCell;
     if (mapCount === 0) {
       locInfoCell = ccCell('missing', '-');
+    } else if (!locationInfoNamesCache) {
+      // index.html fetch/파싱 자체가 실패한 경우 — "전부 미등록"으로 잘못 보이면 안 되니
+      // 등록 여부 판정 없이 확인 불가 상태로만 표시한다.
+      locInfoCell = ccCell('warn', '확인 불가', 'index.html 조회 실패');
     } else {
-      const unregistered = mapLocations.filter((loc) => !REGISTERED_LOCATION_NAMES.has(loc.name));
+      const unregistered = mapLocations.filter((loc) => !locationInfoNamesCache.has(loc.name));
       locInfoCell = unregistered.length === 0
         ? ccCell('ok', mapCount + '/' + mapCount + ' 등록')
         : ccCell('warn', (mapCount - unregistered.length) + '/' + mapCount + ' 등록', unregistered.map((l) => l.name).join(', ') + ' 미등록');
