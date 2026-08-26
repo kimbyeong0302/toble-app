@@ -6101,6 +6101,12 @@ async function buildDynamicPage(bookId, chapter) {
     v.append(numSpan, vtextSpan, clearSpan);
     page.appendChild(v);
     initVerseElement(v);
+    // VERSE_INDEX는 페이지 로드 시점에 그때 이미 DOM에 있던(=정적 HTML) 절만 한 번 스캔해서
+    // 만들어진다 — 룻/마가/누가/마태처럼 정적 페이지가 있는 책은 문제 없지만, 요한복음처럼
+    // 전부 이렇게 즉석으로 만들어지는 책은 그 스캔 이후에 생기니 하나도 안 잡혀서, 지도 밑
+    // "이 지명이 나오는 말씀"·사전 탭 본문검색이 이 책에서는 항상 빈 결과만 냈다. 즉석으로
+    // 절을 만드는 이 자리에서 바로 VERSE_INDEX에도 추가해서 두 기능 모두에 반영되게 한다.
+    VERSE_INDEX.push({ key: key, book: bookId, chapter: String(chapter), verse: String(verseNo), text: verseMap[verseNo] });
   });
 
   return page;
