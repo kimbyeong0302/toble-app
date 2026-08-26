@@ -388,6 +388,19 @@
     display: block; transform: rotate(45deg); color: #fff; font-weight: 700; font-size: 12.5px;
     font-family: 'Noto Sans KR', sans-serif;
   }
+  /* 바울 선교여행 경로 마커 — 기존 핀과 색만 구분되게(브라운 대신 붉은 계열) */
+  .map-journey-num { background: #c04a3c; }
+
+  /* 바울 선교여행 선택 토글바 (사도행전 지도에서만 표시) */
+  .paul-journey-bar {
+    display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .pjb-btn {
+    flex: 0 0 auto; font-size: 12.5px; padding: 6px 12px; border-radius: 16px;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+    font-family: inherit; cursor: pointer; transition: all .15s;
+  }
+  .pjb-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   /* ---- 지도 아래 지명 목록: 번호·지명·이 책에서 그 지명이 나온 말씀 ---- */
   #map-loc-list { margin-top: 16px; }
@@ -3961,6 +3974,12 @@
         <div class="side-view" id="view-people"></div>
 
         <div class="side-view" id="view-map">
+          <div class="paul-journey-bar" id="paul-journey-bar" style="display:none;" role="tablist" aria-label="바울 선교여행 선택">
+            <button type="button" class="pjb-btn active" data-journey="off">전체 지점</button>
+            <button type="button" class="pjb-btn" data-journey="1">1차</button>
+            <button type="button" class="pjb-btn" data-journey="2">2차</button>
+            <button type="button" class="pjb-btn" data-journey="3">3차</button>
+          </div>
           <div class="map-wrap" id="map-wrap">
             <div id="leaflet-map" class="leaflet-map-el"></div>
             <button type="button" id="map-zoom-btn" class="map-zoom-btn" aria-label="지도 확대 보기">⤢ 확대 보기</button>
@@ -5460,7 +5479,10 @@ function switchView(name) {
     versesEl.classList.toggle('memo-active', name === 'memo');
   }
   if (name === 'memo' && typeof renderMemoTab === 'function') renderMemoTab();
-  if (name === 'map' && typeof renderBookMap === 'function') renderBookMap(currentBook);
+  if (name === 'map' && typeof renderBookMap === 'function') {
+    renderBookMap(currentBook);
+    if (typeof updatePaulJourneyBarVisibility === 'function') updatePaulJourneyBarVisibility();
+  }
   if (name === 'history' && typeof renderHistoryTab === 'function') renderHistoryTab();
 }
 // 학습·메모 탭은 항상 "지금 대상이 되는 절"을 기준으로 동작한다 —
@@ -6291,6 +6313,7 @@ function setBook(bookId) {
   if (mapView && mapView.classList.contains('active') && typeof renderBookMap === 'function') {
     renderBookMap(bookId);
   }
+  if (typeof updatePaulJourneyBarVisibility === 'function') updatePaulJourneyBarVisibility();
 
   const book = BOOKS.find(b => b.id === bookId);
   const bnb = document.querySelector('#book-nav-btn .bnb-name');
@@ -7616,6 +7639,125 @@ function renderBookMap(bookId) {
     const bookLabel = (typeof BOOK_LABELS !== 'undefined' && BOOK_LABELS[bookId]) || '';
     captionEl.textContent = bookLabel + '에 등장하는 지명을 실제 좌표로 표시했습니다. 마커(숫자)를 누르면 성경 시대 기준 지형·기후 정보를 볼 수 있고, 지도 아래에서 관련 말씀을 확인할 수 있습니다.';
   }
+}
+
+// ============================================================
+// 바울 선교여행 경로 — 사도행전 전용 오버레이. reference-data/acts_paul_journeys.json에
+// journey_1/2/3으로 정리해둔 정거장 순서를 골라 지도 위에 폴리라인 + 순번 마커로 그린다.
+// "전체 지점" 상태에서는 기존 정적 마커 그대로, 여정을 고른 순간엔 정적 마커·목록을 지우고
+// 그 여정만 표시 → 다시 "전체 지점"으로 돌리면 renderBookMap('acts')로 복원한다.
+// ============================================================
+let paulJourneysCache = null;
+async function loadPaulJourneys() {
+  if (paulJourneysCache) return paulJourneysCache;
+  // 서비스워커가 캐시 우선으로 가로채므로 캐시버스팅 쿼리스트링을 붙여 갱신된 파일이 바로
+  // 반영되게 한다(admin.html에서 index.html을 fetch할 때와 같은 이유).
+  const resp = await fetch('./supabase/reference-data/acts_paul_journeys.json?cb=' + Date.now(), { cache: 'no-store' });
+  if (!resp.ok) throw new Error('선교여행 데이터를 불러오지 못했습니다 (' + resp.status + ')');
+  paulJourneysCache = await resp.json();
+  return paulJourneysCache;
+}
+
+let paulJourneyLayer = null;
+let activePaulJourney = 'off';
+
+function updateJourneyBarUI() {
+  const bar = document.getElementById('paul-journey-bar');
+  if (!bar) return;
+  bar.querySelectorAll('.pjb-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.journey === activePaulJourney);
+  });
+}
+
+function clearPaulJourneyLayer() {
+  if (paulJourneyLayer && leafletMapInstance) {
+    leafletMapInstance.removeLayer(paulJourneyLayer);
+  }
+  paulJourneyLayer = null;
+}
+
+async function selectPaulJourney(key) {
+  activePaulJourney = key;
+  updateJourneyBarUI();
+  // 지도가 아직 안 만들어져 있다면 renderBookMap이 만들어주니 그 안에서 우리도 호출된다.
+  if (!leafletMapInstance) { renderBookMap('acts'); return; }
+  if (key === 'off') {
+    clearPaulJourneyLayer();
+    renderBookMap('acts'); // 정적 마커 + 목록 복원
+    return;
+  }
+  let journeys;
+  try { journeys = await loadPaulJourneys(); }
+  catch (e) {
+    const captionEl = document.getElementById('leaflet-map-caption');
+    if (captionEl) captionEl.textContent = '선교여행 데이터를 불러오지 못했습니다 — 인터넷 연결을 확인해주세요.';
+    return;
+  }
+  const journey = journeys['journey_' + key];
+  if (!journey) return;
+
+  // 정적 마커/여정 마커 둘 다 초기화하고 여정만 그린다.
+  if (leafletMarkerLayer) leafletMarkerLayer.clearLayers();
+  clearPaulJourneyLayer();
+  paulJourneyLayer = L.layerGroup().addTo(leafletMapInstance);
+
+  const points = [];
+  journey.stops.forEach((stop, i) => {
+    const num = i + 1;
+    const icon = L.divIcon({
+      className: 'map-num-pin-wrap',
+      html: '<div class="map-num-pin map-journey-num"><span>' + num + '</span></div>',
+      iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -26],
+    });
+    const popupHtml = '<div class="map-popup"><strong>' + num + '. ' + escapeHtmlDict(stop.name) + '</strong>'
+      + '<div class="map-popup-note">' + escapeHtmlDict(stop.note || '') + '</div></div>';
+    L.marker([stop.lat, stop.lng], { icon }).addTo(paulJourneyLayer).bindPopup(popupHtml);
+    points.push([stop.lat, stop.lng]);
+  });
+  L.polyline(points, { color: '#c04a3c', weight: 3, opacity: 0.85, dashArray: '6,4' }).addTo(paulJourneyLayer);
+
+  setTimeout(() => {
+    leafletMapInstance.invalidateSize();
+    if (points.length > 1) leafletMapInstance.fitBounds(L.latLngBounds(points), { padding: [28, 28] });
+    else if (points.length === 1) leafletMapInstance.setView(points[0], 8);
+  }, 50);
+
+  // 지도 아래 목록도 여정 순서대로 다시 그림
+  const listEl = document.getElementById('map-loc-list');
+  if (listEl) {
+    listEl.innerHTML = journey.stops.map((s, i) => (
+      '<div class="map-loc-card">'
+      + '<div class="map-loc-head"><span class="map-loc-num">' + (i + 1) + '</span><span class="map-loc-name">' + escapeHtmlDict(s.name) + '</span></div>'
+      + '<div class="map-loc-verse"><span class="mlv-ref">' + escapeHtmlDict(s.note || '') + '</span></div>'
+      + '</div>'
+    )).join('');
+  }
+  const captionEl = document.getElementById('leaflet-map-caption');
+  if (captionEl) captionEl.textContent = journey.name + ' — 순서대로 ' + journey.stops.length + '곳. 마커·목록의 번호가 이동 순서입니다.';
+}
+
+// 지도 뷰가 열릴 때, 사도행전에서만 여정 토글바를 보이게 한다. 다른 책으로 넘어가면
+// 자동으로 "전체 지점" 상태로 되돌려 잔여 여정 레이어가 남지 않도록 정리한다.
+function updatePaulJourneyBarVisibility() {
+  const bar = document.getElementById('paul-journey-bar');
+  if (!bar) return;
+  if (currentBook === 'acts') {
+    bar.style.display = 'flex';
+    updateJourneyBarUI();
+  } else {
+    bar.style.display = 'none';
+    if (activePaulJourney !== 'off') {
+      activePaulJourney = 'off';
+      clearPaulJourneyLayer();
+    }
+  }
+}
+
+const paulJourneyBarEl = document.getElementById('paul-journey-bar');
+if (paulJourneyBarEl) {
+  paulJourneyBarEl.querySelectorAll('.pjb-btn').forEach((btn) => {
+    btn.addEventListener('click', () => selectPaulJourney(btn.dataset.journey));
+  });
 }
 
 // ============================================================
