@@ -6050,6 +6050,22 @@ async function applySupabaseVersesToPage(bookId, chapter, pageEl) {
 // 씀)에서, 학습 카드에 "✦" 표시를 줄 노트 유무는 notes 테이블에서 가져온다 — 이 중 하나가
 // 비어 있어도(예: 그 장 소제목이 아직 없음) 그 부분만 생략하고 나머지는 정상적으로 만든다.
 // 이렇게 만들어진 절은 initVerseElement()를 거치므로 정적 절과 완전히 동일하게 동작한다.
+// restoreLastPosition()이 setBook()(내부에서 showPage(1) 호출) 직후에 showPage(savedPage)를
+// 한 번 더 부르는 것처럼, 같은 장을 아주 짧은 간격으로 두 번 showPage()하는 경로가 있다.
+// 정적 페이지는 이래도 무해했지만(매번 DOM에서 찾기만 함), 동적 페이지는 첫 호출의
+// buildDynamicPage()가 끝나기 전에 두 번째 호출도 "아직 없네" 하고 또 지어버려서 페이지와
+// VERSE_INDEX 항목이 중복되는 문제가 있었다 — 같은 책+장을 짓는 동안은 그 Promise를
+// 공유해서 실제로는 한 번만 짓도록 막는다.
+const pendingDynamicPageBuilds = {};
+function buildDynamicPageOnce(bookId, chapter) {
+  const buildKey = bookId + '-' + chapter;
+  if (!pendingDynamicPageBuilds[buildKey]) {
+    pendingDynamicPageBuilds[buildKey] = buildDynamicPage(bookId, chapter).finally(() => {
+      delete pendingDynamicPageBuilds[buildKey];
+    });
+  }
+  return pendingDynamicPageBuilds[buildKey];
+}
 async function buildDynamicPage(bookId, chapter) {
   const verseMap = await fetchVersesForChapter(bookId, chapter);
   if (!verseMap) return null; // Supabase에도 없으면 정말로 아직 준비 안 된 장
@@ -6141,7 +6157,7 @@ async function showPage(n) {
   if (!found) {
     // 정적 HTML에 이 장이 없다 — Supabase에 데이터가 있으면 즉석에서 페이지를 만들어본다
     // (새로 추가된 책/장이 앞으로도 이 경로 하나로 항상 자동으로 뜨게 하려는 것).
-    const dynamicPage = await buildDynamicPage(currentBook, n);
+    const dynamicPage = await buildDynamicPageOnce(currentBook, n);
     if (dynamicPage && currentBook === bookIdAtCall && currentPage === n) {
       bookContent.querySelectorAll('.page').forEach(p => { p.hidden = true; }); // 그 사이 눌렸을 다른 페이지 정리
       const placeholderEl = bookContent.querySelector('.page-placeholder');
@@ -7384,8 +7400,14 @@ function renderBookMap(bookId) {
     L.marker([loc.lat, loc.lng], { icon: mapNumberIcon(num) }).addTo(leafletMarkerLayer).bindPopup(popupHtml);
     bounds.push([loc.lat, loc.lng]);
 
-    // 지도 아래 목록 — 번호·지명과, 이 책 본문에서 그 지명이 나오는 말씀
-    const hits = VERSE_INDEX.filter(v => v.book === bookId && v.text.includes(loc.name)).slice(0, 3);
+    // 지도 아래 목록 — 번호·지명과, 이 책 본문에서 그 지명이 나오는 말씀.
+    // 표시용 이름(loc.name)이 본문에 그대로 안 나오는 지명도 있다(성경 지명은 본문에서
+    // 여러 이름으로 불리는 경우가 흔함 — 예: "갈릴리 바다"가 "디베랴 바다"로도 나옴). 그런
+    // 경우를 위해 search_aliases(선택 필드, 배열)를 두고, name과 별칭들 중 하나라도
+    // 본문에 포함되면 매칭되게 한다. search_aliases가 없는 지명은 기존과 동일하게
+    // name 하나로만 검색되므로 다른 책들의 기존 동작에는 영향이 없다.
+    const searchTerms = [loc.name, ...(Array.isArray(loc.search_aliases) ? loc.search_aliases : [])];
+    const hits = VERSE_INDEX.filter(v => v.book === bookId && searchTerms.some((term) => v.text.includes(term))).slice(0, 3);
     listHtml += '<div class="map-loc-card">';
     listHtml += '<div class="map-loc-head"><span class="map-loc-num">' + num + '</span><span class="map-loc-name">' + escapeHtmlDict(loc.name) + '</span></div>';
     if (hits.length) {
