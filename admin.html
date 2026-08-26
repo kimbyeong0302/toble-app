@@ -85,6 +85,17 @@ document.addEventListener('DOMContentLoaded', function () {
   .sub-edit-form { padding:4px 8px 16px; }
   .sub-edit-form .row label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--ink-soft); }
   .sub-only-filter-row { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); margin-bottom:10px; cursor:pointer; }
+  .cc-refresh-row { display:flex; justify-content:flex-end; margin-bottom:12px; }
+  .cc-table-scroll { overflow-x: auto; }
+  .cc-table { width:100%; border-collapse: collapse; font-size:13px; white-space:nowrap; }
+  .cc-table th, .cc-table td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:center; }
+  .cc-table th { color:var(--ink-soft); font-weight:600; font-size:12px; }
+  .cc-table th:first-child, .cc-table td:first-child { text-align:left; white-space:normal; }
+  .cc-cell { display:inline-flex; flex-direction:column; align-items:center; gap:1px; padding:5px 10px; border-radius:8px; min-width:64px; line-height:1.35; }
+  .cc-cell.cc-ok { background:#e5efe6; color:#3a6b45; }
+  .cc-cell.cc-missing { background:#f5e6e6; color:#b0552f; }
+  .cc-cell.cc-warn { background:#f3e9d8; color:#8a6d3b; }
+  .cc-cell .cc-count { font-size:11px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -108,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="nav-tabs" id="nav-tabs" style="display:none;">
       <button class="nav-tab active" id="nav-notes-btn">학자노트 편집</button>
       <button class="nav-tab" id="nav-users-btn">사용자 관리</button>
+      <button class="nav-tab" id="nav-content-check-btn">콘텐츠 완성도 점검</button>
     </div>
 
     <div id="notes-view">
@@ -159,6 +171,13 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="checkbox" id="sub-only-filter"> 구독중만 보기
       </label>
       <div id="user-search-results" class="sub">이메일을 입력하거나, 비워둔 채로 검색하면 전체 목록이 나옵니다.</div>
+    </div>
+
+    <div class="card" id="content-check-view" style="display:none;">
+      <div class="cc-refresh-row">
+        <button class="btn secondary" id="cc-refresh-btn">새로고침</button>
+      </div>
+      <div id="cc-table-wrap" class="sub">불러오는 중...</div>
     </div>
   </div>
 </div>
@@ -277,17 +296,31 @@ async function checkAccess() {
 function showNotesView() {
   document.getElementById('nav-notes-btn').classList.add('active');
   document.getElementById('nav-users-btn').classList.remove('active');
+  document.getElementById('nav-content-check-btn').classList.remove('active');
   document.getElementById('notes-view').style.display = '';
   document.getElementById('user-mgmt-view').style.display = 'none';
+  document.getElementById('content-check-view').style.display = 'none';
 }
 function showUserMgmtView() {
   document.getElementById('nav-notes-btn').classList.remove('active');
   document.getElementById('nav-users-btn').classList.add('active');
+  document.getElementById('nav-content-check-btn').classList.remove('active');
   document.getElementById('notes-view').style.display = 'none';
   document.getElementById('user-mgmt-view').style.display = '';
+  document.getElementById('content-check-view').style.display = 'none';
+}
+function showContentCheckView() {
+  document.getElementById('nav-notes-btn').classList.remove('active');
+  document.getElementById('nav-users-btn').classList.remove('active');
+  document.getElementById('nav-content-check-btn').classList.add('active');
+  document.getElementById('notes-view').style.display = 'none';
+  document.getElementById('user-mgmt-view').style.display = 'none';
+  document.getElementById('content-check-view').style.display = '';
+  loadContentCheck();
 }
 document.getElementById('nav-notes-btn').addEventListener('click', showNotesView);
 document.getElementById('nav-users-btn').addEventListener('click', showUserMgmtView);
+document.getElementById('nav-content-check-btn').addEventListener('click', showContentCheckView);
 
 async function loadBooks() {
   const { data, error } = await sb.from('books').select('*').eq('available', true).order('order_num');
@@ -576,6 +609,128 @@ async function saveSubscription(uid) {
 document.getElementById('user-search-btn').addEventListener('click', searchUsers);
 document.getElementById('user-search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchUsers(); });
 document.getElementById('sub-only-filter').addEventListener('change', renderUserResults);
+
+// ============================================================
+// 콘텐츠 완성도 점검 (owner 전용) — books 테이블의 모든 책을 대상으로 verses/notes/
+// book_extras(context_html, map_locations)/people이 채워져 있는지 한눈에 보여준다.
+// verses 총 절수는 표준 절수(KJV 절 구분 기준 — supabase/reference-data/standard_
+// verse_counts.json에서 뽑아 books.order_num 순서에 맞춰 정적 배열로 옮겨둔 것)와
+// 대조한다. books.order_num은 1(창세기)~66(요한계시록) 순번과 정확히 일치하므로
+// order_num - 1을 그대로 이 배열의 인덱스로 쓸 수 있다.
+// ============================================================
+const STANDARD_VERSE_TOTALS_BY_ORDER = [
+  1533, 1213, 859, 1288, 959, 658, 618, 85, 810, 695, 816, 719, 942, 822, 280,
+  406, 167, 1070, 2461, 915, 222, 117, 1292, 1364, 154, 1273, 357, 197, 73, 146,
+  21, 48, 105, 47, 56, 53, 38, 211, 55, 1071, 678, 1151, 879, 1007, 433, 437,
+  257, 149, 155, 104, 95, 89, 47, 113, 83, 46, 25, 303, 108, 105, 61, 105, 13,
+  14, 25, 404,
+];
+
+function ccCell(kind, label, countLabel) {
+  return `<span class="cc-cell cc-${kind}">${label}${countLabel ? `<span class="cc-count">${countLabel}</span>` : ''}</span>`;
+}
+
+async function loadContentCheck() {
+  const wrap = document.getElementById('cc-table-wrap');
+  wrap.className = 'sub';
+  wrap.textContent = '불러오는 중...';
+
+  const { data: allBooks, error: booksErr } = await sb.from('books').select('*').order('order_num');
+  if (booksErr || !allBooks) {
+    wrap.textContent = '책 목록을 불러오지 못했습니다: ' + (booksErr ? booksErr.message : '데이터 없음');
+    return;
+  }
+
+  try {
+    const rows = await Promise.all(allBooks.map(async (b) => {
+      const [versesRes, notesRes, peopleRes, extrasRes] = await Promise.all([
+        sb.from('verses').select('*', { count: 'exact', head: true }).eq('book_id', b.id).eq('translation_id', 'krv'),
+        sb.from('notes').select('*', { count: 'exact', head: true }).eq('book_id', b.id),
+        sb.from('people').select('*', { count: 'exact', head: true }).eq('book_id', b.id),
+        sb.from('book_extras').select('context_html, map_locations').eq('book_id', b.id).maybeSingle(),
+      ]);
+      return {
+        book: b,
+        verseCount: versesRes.count || 0,
+        noteCount: notesRes.count || 0,
+        peopleCount: peopleRes.count || 0,
+        contextHtml: extrasRes.data ? extrasRes.data.context_html : null,
+        mapLocations: extrasRes.data ? extrasRes.data.map_locations : null,
+        loadError: versesRes.error || notesRes.error || peopleRes.error || extrasRes.error || null,
+      };
+    }));
+    renderContentCheck(rows);
+  } catch (e) {
+    wrap.textContent = '불러오기 실패: ' + (e && e.message ? e.message : String(e));
+  }
+}
+
+function renderContentCheck(rows) {
+  const wrap = document.getElementById('cc-table-wrap');
+  if (rows.length === 0) {
+    wrap.textContent = 'books 테이블에 책이 없습니다.';
+    return;
+  }
+
+  const bodyRows = rows.map(({ book: b, verseCount, noteCount, peopleCount, contextHtml, mapLocations, loadError }) => {
+    if (loadError) {
+      return `<tr><td>${escapeHtml(b.name_ko)}</td><td colspan="5" style="color:#b0552f;">조회 실패: ${escapeHtml(loadError.message)}</td></tr>`;
+    }
+
+    const standardTotal = (b.order_num >= 1 && b.order_num <= STANDARD_VERSE_TOTALS_BY_ORDER.length)
+      ? STANDARD_VERSE_TOTALS_BY_ORDER[b.order_num - 1]
+      : null;
+
+    let verseCell;
+    if (verseCount === 0) {
+      verseCell = ccCell('missing', '없음');
+    } else if (standardTotal == null) {
+      verseCell = ccCell('ok', verseCount + '절');
+    } else if (verseCount === standardTotal) {
+      verseCell = ccCell('ok', verseCount + '절', '표준과 일치');
+    } else {
+      verseCell = ccCell('warn', verseCount + '절', '표준 ' + standardTotal + '절');
+    }
+
+    const notesCell = noteCount > 0 ? ccCell('ok', noteCount + '개') : ccCell('missing', '없음');
+    const contextCell = (contextHtml && contextHtml.trim())
+      ? ccCell('ok', '있음')
+      : ccCell('missing', '없음');
+    const peopleCell = peopleCount > 0 ? ccCell('ok', peopleCount + '명') : ccCell('missing', '없음');
+    const mapCount = Array.isArray(mapLocations) ? mapLocations.length : 0;
+    const mapCell = mapCount > 0 ? ccCell('ok', mapCount + '곳') : ccCell('missing', '없음');
+
+    return `
+      <tr>
+        <td>${escapeHtml(b.name_ko)}${b.available ? '' : ' <span class="sub">(비공개)</span>'}</td>
+        <td>${verseCell}</td>
+        <td>${notesCell}</td>
+        <td>${contextCell}</td>
+        <td>${peopleCell}</td>
+        <td>${mapCell}</td>
+      </tr>
+    `;
+  }).join('');
+
+  wrap.className = 'cc-table-scroll';
+  wrap.innerHTML = `
+    <table class="cc-table">
+      <thead>
+        <tr>
+          <th>책</th>
+          <th>본문 (verses)</th>
+          <th>노트 (notes)</th>
+          <th>배경 (context_html)</th>
+          <th>인물 (people)</th>
+          <th>지도 (map_locations)</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  `;
+}
+
+document.getElementById('cc-refresh-btn').addEventListener('click', loadContentCheck);
 
 checkAccess();
 </script>
