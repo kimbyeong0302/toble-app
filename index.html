@@ -3723,6 +3723,22 @@
       </div>
       </div>
 
+      <div class="book-content" data-book="acts" style="display:none">
+      <div class="page-placeholder" hidden>
+        <div class="ph-icon">📖</div>
+        <div class="ph-msg"><span class="ph-chapter">이 장</span>은 아직 준비되지 않았습니다.</div>
+        <div class="ph-sub">계속해서 추가하고 있습니다. 다음에 다시 확인해주세요.</div>
+      </div>
+      </div>
+
+      <div class="book-content" data-book="romans" style="display:none">
+      <div class="page-placeholder" hidden>
+        <div class="ph-icon">📖</div>
+        <div class="ph-msg"><span class="ph-chapter">이 장</span>은 아직 준비되지 않았습니다.</div>
+        <div class="ph-sub">계속해서 추가하고 있습니다. 다음에 다시 확인해주세요.</div>
+      </div>
+      </div>
+
 
       <div class="page-nav">
         <button id="page-prev" disabled>← 이전 장</button>
@@ -4636,7 +4652,7 @@ const PEOPLE_MATTHEW = [
   { n: "막달라 마리아", role: "십자가와 부활의 첫 증인", v: "27:56, 27:61, 28:1–10", b: "십자가 곁에 머물렀던 여인들 중 한 명으로, 부활하신 예수를 가장 먼저 만나고 제자들에게 소식을 전하는 역할을 맡습니다." }
 ];
 
-const BOOK_LABELS = { ruth: '룻기', mark: '마가복음', luke: '누가복음', matthew: '마태복음', john: '요한복음' };
+const BOOK_LABELS = { ruth: '룻기', mark: '마가복음', luke: '누가복음', matthew: '마태복음', john: '요한복음', acts: '사도행전', romans: '로마서' };
 const BOOK_NOTES = { ruth: TEACHER_NOTES_RUTH, mark: TEACHER_NOTES_MARK, luke: TEACHER_NOTES_LUKE, matthew: TEACHER_NOTES_MATTHEW };
 const BOOK_PEOPLE = { ruth: PEOPLE_RUTH, mark: PEOPLE_MARK, luke: PEOPLE_LUKE, matthew: PEOPLE_MATTHEW };
 
@@ -5999,7 +6015,7 @@ let exampleShown = false;
 // ============================================================
 // 구간(장) 페이지네이션 — 한 번에 한 구간만 보여주고 탭/다음 버튼으로 이동
 // ============================================================
-const BOOK_CHAPTER_COUNTS = { ruth: 4, mark: 16, luke: 24, matthew: 28, john: 21 };
+const BOOK_CHAPTER_COUNTS = { ruth: 4, mark: 16, luke: 24, matthew: 28, john: 21, acts: 28, romans: 16 };
 let currentPage = 1;
 
 function getPageCount() { return BOOK_CHAPTER_COUNTS[currentBook] || 1; }
@@ -6351,8 +6367,8 @@ const BOOKS = [
   { name: '마가복음', abbr: '막', eng: 'Mark', chapters: 16, category: '복음서', available: true, id: 'mark' },
   { name: '누가복음', abbr: '눅', eng: 'Luke', chapters: 24, category: '복음서', available: true, id: 'luke' },
   { name: '요한복음', abbr: '요', eng: 'John', chapters: 21, category: '복음서', available: true, id: 'john' },
-  { name: '사도행전', abbr: '행', eng: 'Acts', chapters: 28, category: '역사서 (신약)', available: false },
-  { name: '로마서', abbr: '롬', eng: 'Romans', chapters: 16, category: '바울서신', available: false },
+  { name: '사도행전', abbr: '행', eng: 'Acts', chapters: 28, category: '역사서 (신약)', available: true, id: 'acts' },
+  { name: '로마서', abbr: '롬', eng: 'Romans', chapters: 16, category: '바울서신', available: true, id: 'romans' },
   { name: '고린도전서', abbr: '고전', eng: '1 Corinthians', chapters: 16, category: '바울서신', available: false },
   { name: '고린도후서', abbr: '고후', eng: '2 Corinthians', chapters: 13, category: '바울서신', available: false },
   { name: '갈라디아서', abbr: '갈', eng: 'Galatians', chapters: 6, category: '바울서신', available: false },
@@ -7030,6 +7046,24 @@ const CHAPTER_EXAMPLES_BY_BOOK = {
     26: [ { t: "아그립바 왕 앞에서의 변론", r: "26:1–32" } ],
     27: [ { t: "로마로 가는 항해와 풍랑", r: "27:1–44" } ],
     28: [ { t: "멜리데 섬에서", r: "28:1–10" }, { t: "로마에 도착함", r: "28:11–31" } ]
+  },
+  romans: {
+    1: [ { t: "인사와 서론", r: "1:1–17" }, { t: "이방인의 죄", r: "1:18–32" } ],
+    2: [ { t: "유대인도 심판 아래 있음", r: "2:1–29" } ],
+    3: [ { t: "모든 사람이 죄 아래 있음", r: "3:1–20" }, { t: "믿음으로 말미암는 의", r: "3:21–31" } ],
+    4: [ { t: "아브라함의 믿음", r: "4:1–25" } ],
+    5: [ { t: "믿음으로 얻는 화평", r: "5:1–11" }, { t: "아담과 그리스도", r: "5:12–21" } ],
+    6: [ { t: "죄에 대하여 죽고 그리스도 안에서 삶", r: "6:1–14" }, { t: "의의 종", r: "6:15–23" } ],
+    7: [ { t: "율법에서 벗어남", r: "7:1–6" }, { t: "율법과 죄", r: "7:7–13" }, { t: "내면의 갈등", r: "7:14–25" } ],
+    8: [ { t: "성령 안의 생명", r: "8:1–17" }, { t: "장래의 영광", r: "8:18–30" }, { t: "그리스도의 사랑에서 끊을 수 없음", r: "8:31–39" } ],
+    9: [ { t: "이스라엘을 향한 바울의 근심", r: "9:1–5" }, { t: "하나님의 선택", r: "9:6–29" }, { t: "이스라엘의 실패", r: "9:30–33" } ],
+    10: [ { t: "믿음으로 말미암는 구원", r: "10:1–13" }, { t: "복음을 전파해야 함", r: "10:14–21" } ],
+    11: [ { t: "남은 자", r: "11:1–10" }, { t: "이방인의 접붙임", r: "11:11–24" }, { t: "이스라엘의 구원과 송영", r: "11:25–36" } ],
+    12: [ { t: "산 제사와 성도의 삶", r: "12:1–8" }, { t: "사랑의 실천", r: "12:9–21" } ],
+    13: [ { t: "권세에 복종하라", r: "13:1–7" }, { t: "사랑은 율법의 완성", r: "13:8–14" } ],
+    14: [ { t: "연약한 형제를 비판하지 말라", r: "14:1–23" } ],
+    15: [ { t: "이웃을 기쁘게 하라", r: "15:1–13" }, { t: "바울의 사역 계획", r: "15:14–33" } ],
+    16: [ { t: "문안 인사", r: "16:1–16" }, { t: "마지막 권면과 송영", r: "16:17–27" } ]
   }
 };
 
@@ -7470,6 +7504,22 @@ const LOCATION_INFO = {
     climate: '지중해성 기후 — 여름은 덥고 건조, 겨울은 온화하고 비가 잦음',
     season: '지중해 세계 전체를 아우르던 로마 제국의 수도였다',
     note: '바울이 가이사에게 상소한 끝에 결국 이르게 된 곳으로, 자비량으로 셋집에 머물며 담대히 하나님 나라를 전한 2년간의 가택연금으로 사도행전은 끝을 맺습니다(행 28:16–31).'
+  },
+  // 로마서의 지도 항목은 표시용 이름을 "고린도(기록 장소)"로 두고 있어 LOCATION_INFO 조회 키도
+  // 그 이름으로 맞춘다 — 사도행전의 "고린도" 항목과 동일한 지리 정보에 편지 기록 맥락만 얹었다.
+  '고린도(기록 장소)': {
+    elevation: '해발 약 90m (아크로코린토스 언덕은 약 575m)',
+    terrain: '그리스 본토와 펠로폰네소스 반도를 잇는 좁은 지협 — 양쪽에 항구를 두어 동서 교역의 요지',
+    climate: '지중해성 기후 — 여름은 덥고 건조, 겨울은 온화하고 비가 옴',
+    season: '두 개의 항구 덕에 상업이 번성한 국제도시로, 향락과 부도덕으로도 유명했다',
+    note: '바울이 3차 선교여행 중 이곳에 약 3개월 머무는 동안(행 20:2–3) 로마서를 기록한 것으로 전통적으로 봅니다. 로마서 16장의 문안 인사와 가이오(고전 1:14) 언급이 그 근거로 자주 인용됩니다.'
+  },
+  '겐그레아': {
+    elevation: '해발 0m 안팎 (사로닉 만 연안의 해수면 항구)',
+    terrain: '고린도 지협 동쪽 사로닉 만 서편의 자연 항만 — 고린도에서 남동쪽으로 약 8km 떨어진 외항',
+    climate: '지중해성 기후 — 여름은 덥고 건조, 겨울은 온화하고 비가 잦음',
+    season: '고린도의 두 항구(서쪽 레카이온·동쪽 겐그레아) 중 에게해·소아시아·시리아·이집트 무역을 담당한 동쪽 관문 항구였다',
+    note: '로마서 16:1의 여집사 뵈뵈가 섬긴 교회가 있던 곳으로, 그가 이 편지를 로마로 전달한 것으로 널리 여겨집니다.'
   }
 };
 
