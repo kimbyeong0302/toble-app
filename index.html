@@ -6160,7 +6160,7 @@ async function buildDynamicPage(bookId, chapter) {
     // 전부 이렇게 즉석으로 만들어지는 책은 그 스캔 이후에 생기니 하나도 안 잡혀서, 지도 밑
     // "이 지명이 나오는 말씀"·사전 탭 본문검색이 이 책에서는 항상 빈 결과만 냈다. 즉석으로
     // 절을 만드는 이 자리에서 바로 VERSE_INDEX에도 추가해서 두 기능 모두에 반영되게 한다.
-    VERSE_INDEX.push({ key: key, book: bookId, chapter: String(chapter), verse: String(verseNo), text: verseMap[verseNo] });
+    pushToVerseIndex({ key: key, book: bookId, chapter: String(chapter), verse: String(verseNo), text: verseMap[verseNo] });
   });
 
   return page;
@@ -7285,6 +7285,17 @@ applyAllOverlaysForCurrentBook();
 
 // 사전 검색 — 본문과 학자 노트를 대상으로 한 미니 단어 검색
 // ============================================================
+// 같은 절이 두 번 인덱싱되는 걸 막기 위한 키 집합(`${bookId}|${chapter}-${verse}`).
+// 정적 HTML 최초 스캔·동적 페이지 즉석 빌드·책 전체 일괄 인덱싱(ensureBookFullyIndexed) 세
+// 경로가 모두 이 집합을 확인하고 넣는다.
+const VERSE_INDEX_KEYS = new Set();
+function pushToVerseIndex(entry) {
+  const dedupKey = entry.book + '|' + entry.key;
+  if (VERSE_INDEX_KEYS.has(dedupKey)) return false;
+  VERSE_INDEX_KEYS.add(dedupKey);
+  VERSE_INDEX.push(entry);
+  return true;
+}
 function buildVerseIndex() {
   const idx = [];
   document.querySelectorAll('.book-content[data-book]').forEach(bookContent => {
@@ -7293,12 +7304,63 @@ function buildVerseIndex() {
       const key = v.dataset.n;
       const [c, verse] = key.split('-');
       const vt = v.querySelector('.vtext');
-      idx.push({ key: key, book: bookId, chapter: c, verse: verse, text: vt ? vt.textContent : '' });
+      const entry = { key: key, book: bookId, chapter: c, verse: verse, text: vt ? vt.textContent : '' };
+      VERSE_INDEX_KEYS.add(bookId + '|' + key);
+      idx.push(entry);
     });
   });
   return idx;
 }
 let VERSE_INDEX = buildVerseIndex();
+
+// 책 전체 절을 한 번에 인덱싱한다. 지도 탭은 이 인덱스로 "이 지명이 나오는 말씀"을 뽑아주는데,
+// 원래는 사용자가 실제로 넘겨본 장의 절만 VERSE_INDEX에 들어 있어서(정적 HTML은 초기 스캔,
+// 동적 페이지는 방문 시점에 buildDynamicPage에서 push), 사도행전처럼 전 장이 Supabase에서
+// 즉석으로 만들어지는 책은 지도를 처음 열었을 때 대부분의 마커가 "언급된 절 없음"으로 나왔다.
+// 지도 탭을 여는 시점에 한 번, 책 하나의 verses를 통째로 받아 VERSE_INDEX에 채워 넣는다.
+// 성능: Supabase 한 응답 최대 1000행 → range로 페이징한다(사도행전 1007행이면 2회, 앞으로
+// 창세기 1533·시편 2461처럼 큰 책도 2~3회면 끝). 인덱스는 책별로 한 번만 만들고 세션 동안
+// 재사용하므로 지도를 다시 열어도 재요청이 없다. 대략 2500행·30개 마커·별칭 5개면
+// substring 검사 ~375k회 — 100ms 안쪽으로 충분히 빠르다.
+const bookFullyIndexed = new Set();
+const bookIndexingPromises = {};
+async function ensureBookFullyIndexed(bookId) {
+  if (bookFullyIndexed.has(bookId)) return;
+  if (!sb) return;
+  if (bookIndexingPromises[bookId]) return bookIndexingPromises[bookId];
+  bookIndexingPromises[bookId] = (async () => {
+    const batchSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await sb
+        .from('verses')
+        .select('chapter, verse, text')
+        .eq('book_id', bookId)
+        .eq('translation_id', 'krv')
+        .order('chapter').order('verse')
+        .range(from, from + batchSize - 1);
+      if (error) { delete bookIndexingPromises[bookId]; return; } // 다음에 다시 시도할 수 있게 promise 정리
+      if (!data || data.length === 0) break;
+      data.forEach(row => {
+        const chapter = String(row.chapter);
+        const cacheKey = bookId + '-' + chapter;
+        if (!supabaseVerseCache[cacheKey]) supabaseVerseCache[cacheKey] = {};
+        supabaseVerseCache[cacheKey][row.verse] = row.text;
+        pushToVerseIndex({
+          key: chapter + '-' + row.verse,
+          book: bookId,
+          chapter: chapter,
+          verse: String(row.verse),
+          text: row.text
+        });
+      });
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
+    bookFullyIndexed.add(bookId);
+  })();
+  return bookIndexingPromises[bookId];
+}
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function escapeHtmlDict(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -7557,6 +7619,60 @@ function mapNumberIcon(num) {
     popupAnchor: [0, -26]
   });
 }
+// 지도 아래 "이 지명이 나오는 말씀" 목록 HTML — renderBookMap에서 처음 한 번, 그리고
+// ensureBookFullyIndexed가 이 책 절을 다 받아온 뒤 한 번 더 실행해서 목록을 갱신한다.
+// 표시용 이름(loc.name)이 본문에 그대로 안 나오는 지명도 있다(성경 지명은 본문에서
+// 여러 이름으로 불리는 경우가 흔함 — 예: "갈릴리 바다"가 "디베랴 바다"로도 나옴). 그런
+// 경우를 위해 search_aliases(선택 필드, 배열)를 두고, name과 별칭들 중 하나라도
+// 본문에 포함되면 매칭되게 한다. search_aliases가 없는 지명은 name 하나로만 검색된다.
+//
+// 겹침 규칙: 한 절이 여러 마커의 별칭에 걸리면, "가장 긴 문자열로 매치된 마커"만 그 절을
+// 가져간다(짧은 매치는 그 절에서 제외). 이렇게 하면 "안디옥"이 "비시디아 안디옥" 텍스트를
+// 가로채는 사고, 혹은 앞으로 "예루살렘"이 "신예루살렘"을 가로채는 사고를 마커/별칭을 하나하나
+// 손대지 않아도 자동으로 막을 수 있다. 동률(같은 길이의 별칭이 두 마커에 있을 때)이 아주 예외적으로
+// 나오면 그 절은 동률 마커 모두에 표시된다 — 어느 한쪽만 남기면 오히려 정보를 감추는 셈이라 이 규칙이 맞다.
+function buildMapLocListHtml(bookId, locations) {
+  const markerTerms = locations.map(loc =>
+    [loc.name, ...(Array.isArray(loc.search_aliases) ? loc.search_aliases : [])]
+  );
+  const markerHits = locations.map(() => []);
+  const bookVerses = VERSE_INDEX.filter(v => v.book === bookId);
+  bookVerses.forEach(v => {
+    // 이 절에서 각 마커가 매치시킨 별칭 중 가장 긴 것의 길이(매치 없으면 0)
+    const perMarkerBest = new Array(locations.length).fill(0);
+    let globalBest = 0;
+    markerTerms.forEach((terms, mi) => {
+      let localBest = 0;
+      terms.forEach(t => {
+        if (t.length > localBest && v.text.includes(t)) localBest = t.length;
+      });
+      perMarkerBest[mi] = localBest;
+      if (localBest > globalBest) globalBest = localBest;
+    });
+    if (globalBest === 0) return;
+    perMarkerBest.forEach((len, mi) => {
+      if (len === globalBest) markerHits[mi].push(v);
+    });
+  });
+
+  let html = '';
+  locations.forEach((loc, i) => {
+    const num = i + 1;
+    const hits = markerHits[i].slice(0, 3);
+    html += '<div class="map-loc-card">';
+    html += '<div class="map-loc-head"><span class="map-loc-num">' + num + '</span><span class="map-loc-name">' + escapeHtmlDict(loc.name) + '</span></div>';
+    if (hits.length) {
+      html += hits.map(h =>
+        '<div class="map-loc-verse"><span class="mlv-ref">' + h.chapter + ':' + h.verse + '</span>' + escapeHtmlDict(h.text) + '</div>'
+      ).join('');
+    } else {
+      html += '<div class="map-loc-empty">이 책 본문에서 이 지명이 직접 언급된 절은 찾지 못했습니다.</div>';
+    }
+    html += '</div>';
+  });
+  return html;
+}
+
 function renderBookMap(bookId) {
   const container = document.getElementById('leaflet-map');
   const captionEl = document.getElementById('leaflet-map-caption');
@@ -7590,7 +7706,6 @@ function renderBookMap(bookId) {
   leafletMarkerLayer.clearLayers();
 
   const bounds = [];
-  let listHtml = '';
   locations.forEach((loc, i) => {
     const num = i + 1;
     const info = LOCATION_INFO[loc.name] || {};
@@ -7607,27 +7722,22 @@ function renderBookMap(bookId) {
 
     L.marker([loc.lat, loc.lng], { icon: mapNumberIcon(num) }).addTo(leafletMarkerLayer).bindPopup(popupHtml);
     bounds.push([loc.lat, loc.lng]);
-
-    // 지도 아래 목록 — 번호·지명과, 이 책 본문에서 그 지명이 나오는 말씀.
-    // 표시용 이름(loc.name)이 본문에 그대로 안 나오는 지명도 있다(성경 지명은 본문에서
-    // 여러 이름으로 불리는 경우가 흔함 — 예: "갈릴리 바다"가 "디베랴 바다"로도 나옴). 그런
-    // 경우를 위해 search_aliases(선택 필드, 배열)를 두고, name과 별칭들 중 하나라도
-    // 본문에 포함되면 매칭되게 한다. search_aliases가 없는 지명은 기존과 동일하게
-    // name 하나로만 검색되므로 다른 책들의 기존 동작에는 영향이 없다.
-    const searchTerms = [loc.name, ...(Array.isArray(loc.search_aliases) ? loc.search_aliases : [])];
-    const hits = VERSE_INDEX.filter(v => v.book === bookId && searchTerms.some((term) => v.text.includes(term))).slice(0, 3);
-    listHtml += '<div class="map-loc-card">';
-    listHtml += '<div class="map-loc-head"><span class="map-loc-num">' + num + '</span><span class="map-loc-name">' + escapeHtmlDict(loc.name) + '</span></div>';
-    if (hits.length) {
-      listHtml += hits.map(h =>
-        '<div class="map-loc-verse"><span class="mlv-ref">' + h.chapter + ':' + h.verse + '</span>' + escapeHtmlDict(h.text) + '</div>'
-      ).join('');
-    } else {
-      listHtml += '<div class="map-loc-empty">이 책 본문에서 이 지명이 직접 언급된 절은 찾지 못했습니다.</div>';
-    }
-    listHtml += '</div>';
   });
-  if (listEl) listEl.innerHTML = listHtml;
+  if (listEl) listEl.innerHTML = buildMapLocListHtml(bookId, locations);
+
+  // 이 책 절 전체를 통째로 인덱싱해서 목록을 다시 그린다. 지도 탭을 열자마자 목록은
+  // 이미 있는 만큼으로 먼저 보이고, Supabase 응답이 도착하면 새 절이 반영된 목록으로 교체된다
+  // (이미 인덱싱된 책이면 즉시 resolve라서 사실상 재실행 한 번으로 끝난다).
+  ensureBookFullyIndexed(bookId).then(() => {
+    if (currentBook !== bookId) return; // 그 사이 다른 책으로 넘어갔으면 화면은 건드리지 않는다
+    const listElNow = document.getElementById('map-loc-list');
+    if (!listElNow) return;
+    const extrasNow = supabaseExtrasCache[bookId];
+    const locationsNow = (extrasNow && extrasNow.map_locations && extrasNow.map_locations.length > 0)
+      ? extrasNow.map_locations
+      : (MAP_LOCATIONS[bookId] || []);
+    listElNow.innerHTML = buildMapLocListHtml(bookId, locationsNow);
+  });
 
   setTimeout(() => {
     leafletMapInstance.invalidateSize();
