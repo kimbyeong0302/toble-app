@@ -379,6 +379,8 @@
   .map-zoom-btn:active { background: rgba(28,39,51,.8); }
   .map-popup { font-family: 'Noto Sans KR', sans-serif; font-size: 12.5px; max-width: 230px; line-height: 1.5; }
   .map-popup strong { display: block; font-size: 14px; margin-bottom: 4px; color: var(--accent); }
+  /* 팝업이 지도 컨테이너 밖으로 나가 잘리는 문제 방지 — 내용이 길면 스크롤로 표시 */
+  .leaflet-popup-content { max-height: 240px; overflow-y: auto; }
   .map-popup-geo { margin-top: 4px; }
   .mpg-row { margin-top: 4px; }
   .mpg-label {
@@ -7735,6 +7737,70 @@ const LOCATION_INFO = {
     climate: '지중해성 기후 — 여름은 덥고 건조, 겨울은 온화하고 비가 잦음',
     season: '고린도의 두 항구(서쪽 레카이온·동쪽 겐그레아) 중 에게해·소아시아·시리아·이집트 무역을 담당한 동쪽 관문 항구였다',
     note: '로마서 16:1의 여집사 뵈뵈가 섬긴 교회가 있던 곳으로, 그가 이 편지를 로마로 전달한 것으로 널리 여겨집니다.'
+  },
+  // 요한복음 지명 — 이름 뒤에 괄호 구별자가 붙어 별도 항목으로 관리
+  '베다니(나사로의 마을)': {
+    elevation: '해발 약 610~630m (감람산 동쪽 기슭)',
+    terrain: '예루살렘에서 동쪽으로 약 3km, 감람산(올리브산) 동쪽 비탈의 작은 마을 — 요한복음의 나사로·마르다·마리아가 살던 곳',
+    climate: '예루살렘과 비슷한 지중해성 산지 기후 — 여름은 건조하고 더우며, 겨울은 서늘하고 비가 옴',
+    season: '나사로 사건(요 11장)과 향유를 부은 사건(요 12:1)은 모두 유월절이 가깝던 봄(3~4월경)에 일어남',
+    note: '"베다니"는 히브리어 "베이트-아나야"(고통받는 자의 집) 또는 "베이트-테에나"(무화과의 집)에서 유래했다는 두 가지 설이 있습니다. 예수께서 예루살렘 방문 중 자주 머무신 곳입니다.'
+  },
+  '베다니(요단강 건너편)': {
+    elevation: '해발 약 -280~-320m (요단강 하류 부근)',
+    terrain: '요단강 동쪽 건너편 — 세례 요한이 세례를 주던 지점(요 1:28). 정확한 위치는 학계에서 논쟁 중이며, 오늘날 요르단의 알마그타스(카스르 알-야후드 대안) 지역으로 추정하는 견해가 유력',
+    climate: '요단 지구대 특유의 고온건조 기후 — 여름은 매우 무더움(35℃ 이상), 겨울은 온화',
+    season: '세례 요한이 활동하던 광야·요단강 일대는 예루살렘 성전 중심 종교 질서 밖의 공간으로, 광야 전통(엘리야, 엘리사)을 잇는 상징적 장소였다',
+    note: '일부 사본에는 "베다바라"(Bethabara)로 기록되어 있으며(KJV), 요 1:28의 이 베다니는 마르다·마리아 가족이 살던 예루살렘 인근 베다니(요 11장)와 완전히 다른 지점입니다.'
+  },
+  '벳새다': {
+    elevation: '해발 약 -200m 안팎 (갈릴리 호수 북동쪽 연안)',
+    terrain: '요단강이 갈릴리 호수로 유입되는 지점 북동쪽의 어업 마을 — 현재 에트-텔(Et-Tell) 유적지로 추정',
+    climate: '갈릴리 호수 인근 저지대라 연중 온화하고 따뜻한 편 — 여름은 무덥고(33~36℃), 겨울도 비교적 따뜻함',
+    season: '어업이 경제의 중심이었으며, 오병이어 기적(요 6장)이 일어난 들판과 가까운 위치',
+    note: '베드로·안드레·빌립의 고향(요 1:44). 히브리어로 "고기잡이의 집"이라는 뜻으로, 이름 자체가 어업 마을임을 시사합니다.'
+  },
+  '애논(살렘 근처)': {
+    elevation: '정확한 위치 불명 — 사마리아 산지 또는 스키도폴리스(벳-샨) 근처 요단 계곡 추정',
+    terrain: '요한복음은 "물이 많아"(요 3:23) 세례 주기에 적합한 곳이라고 명시 — 샘이나 하천이 풍부한 지역',
+    climate: '사마리아 산지라면 지중해성 기후, 요단 계곡 인근이라면 고온건조 기후',
+    season: '세례 요한의 후기 사역 거점으로, 예수께서 유대 지역에서 사역하시던 시기와 같은 때(요 3:22~23)',
+    note: '"애논"은 아람어로 "샘들"을 뜻하며, "살렘 근처"라는 단서 외에 정확한 위치를 확정할 만한 자료가 없어 학자들 간에 사마리아 산지설·스키도폴리스 남서쪽설 등이 제기됩니다.'
+  },
+  '실로암': {
+    elevation: '해발 약 620m (예루살렘 다윗 성 남단)',
+    terrain: '예루살렘 구시가지 남동쪽 끝, 기혼 샘과 히스기야 터널(약 533m)로 이어진 연못 — 다윗 성 내에서 유일하게 안정적인 담수 수원',
+    climate: '예루살렘과 동일한 지중해성 기후 — 연강수량 약 550~600mm, 건기(5~10월)와 우기(11~4월)가 뚜렷이 구분됨',
+    season: '초막절(수콧) 기간에 대제사장이 이 연못의 물을 금 그릇에 담아 성전 제단에 붓는 "물 붓기 의식"(니사크 하마임)을 거행했으며, 예수께서 이 시기에 "나를 믿는 자는 그 배에서 생수의 강이 흘러나오리라"(요 7:37~38)고 선언하신 것은 이 의식과 직접 연결되는 선언임',
+    note: '히스기야 왕이 아시리아 산헤립의 포위 공격에 대비해 기혼 샘 물을 성 안으로 끌어들이기 위해 판 터널(왕하 20:20; 대하 32:30)의 종착점. 날 때부터 소경이었던 사람이 예수의 지시로 이 연못에서 씻고 눈을 뜬 기적이 일어난 곳입니다(요 9:7).'
+  },
+  '에브라임': {
+    elevation: '해발 약 850~900m (예루살렘 북동쪽 산지)',
+    terrain: '예루살렘에서 북동쪽으로 약 20km, 유대 광야 가장자리와 농경지 사이의 산지 마을 — 구약의 "에브라임 성읍"(대하 13:19)과 동일시됨',
+    climate: '지중해성 기후이나 광야와 인접해 건조한 편 — 유대 산지보다 강수량이 약간 적음',
+    season: '예수께서 나사로 사건(요 11장) 이후 유대 당국의 체포를 피해 제자들과 이곳에 머물다가 마지막 유월절을 위해 예루살렘으로 오르셨음(요 11:54~57)',
+    note: '성경 외 자료로는 유세비우스의 오노마스티콘에 예루살렘 북쪽 베냐민 광야 인근이라는 언급이 있어, 현재의 타이베(Taybeh) 마을로 비정하는 견해가 유력합니다.'
+  },
+  '감람산': {
+    elevation: '해발 약 826m (최고봉 기준) — 예루살렘 성전산(약 743m)보다 약 80m 높아 예루살렘을 내려다봄',
+    terrain: '예루살렘 동쪽 기드론 골짜기 너머의 산 — 감람나무(올리브나무) 숲으로 유명하며, 서쪽 기슭에 겟세마네 동산이 있음',
+    climate: '예루살렘과 비슷하나 동쪽이라 비그늘 효과로 강수량이 약간 적은 편',
+    season: '봄(유월절 전후)에 예수의 예루살렘 입성·겟세마네·체포 사건이 모두 이 산 일대에서 일어남',
+    note: '스가랴 14:4("그 날에 그의 발이 예루살렘 앞 곧 동편 감람산에 서실 것이요")의 예언 무대로, 예수의 승천 장소이기도 합니다(행 1:12). "겟세마네"는 히브리어로 "기름 짜는 곳"을 뜻합니다.'
+  },
+  '골고다': {
+    elevation: '해발 약 750m 안팎 (예루살렘 성벽 외곽)',
+    terrain: '예루살렘 성벽 밖의 언덕 — "해골의 곳"(아람어 골골타, 라틴어 칼바리아)이라는 뜻으로, 노출된 바위가 해골처럼 보여서 또는 처형지로 오랫동안 사용된 것에서 유래했다는 두 가지 설이 있음',
+    climate: '예루살렘과 동일한 지중해성 기후',
+    season: '예수의 십자가 처형은 유월절 전날(요 19:14) 오전 9시경(마 15:25)에 시작되어 오후 3시(요 19:30)에 완료됨',
+    note: '정확한 위치에 대해 전통적으로 성묘교회(Church of the Holy Sepulchre, 4세기 콘스탄티누스 모친 헬레나의 전승)와 고든 갈보리(Gordon\'s Calvary, 19세기 영국 장군 C.G. Gordon의 제안)가 경쟁합니다. 현재 성묘교회 위치를 지지하는 고고학적 증거가 더 강한 것으로 학계에서 일반적으로 평가됩니다.'
+  },
+  '아리마대': {
+    elevation: '정확한 위치 불명 — 일반적으로 사마리아 산지 또는 유다 산지의 마을로 추정',
+    terrain: '구약의 라마타임-소빔(삼상 1:1)과 동일시되는 곳으로 추정되나 확실하지 않음 — 현재의 렌티스(Rentis) 또는 라마(Rama, 텔 에르-람) 등 여러 후보지가 제시됨',
+    climate: '지중해성 기후 — 유다 또는 사마리아 산지의 일반 기후',
+    season: '요셉(아리마대 사람)이 빌라도에게 예수의 시신을 달라고 한 것은 유월절 전날 해 지기 전(요 19:38) — 안식일에 시신이 십자가에 걸려 있으면 안 된다는 유대 법(신 21:22~23) 때문에 서둘러 장사가 진행됨',
+    note: '"아리마대"는 히브리어 "라마타임"의 단축형으로 추정됩니다. 사무엘상의 엘가나와 사무엘의 고향인 라마타임-소빔과 같은 곳으로 보기도 합니다. 요셉은 부유한 공의회 의원이었으며(막 15:43), 예수의 제자였지만 유대인이 두려워 숨기고 있었다고 요한은 전합니다(요 19:38).'
   }
 };
 
@@ -7847,6 +7913,7 @@ function renderBookMap(bookId) {
         climate:   li['기후'] || li.climate   || undefined,
         season:    li['절기'] || li.season    || undefined,
         note:      li['설명'] || li.description || li.note || undefined,
+        meaning:   li['지명뜻'] || li.meaning || undefined,
       };
     }
     if (!info) info = {};
@@ -7857,11 +7924,12 @@ function renderBookMap(bookId) {
     if (info.terrain) popupHtml += '<div class="mpg-row"><span class="mpg-label">지형</span>' + escapeHtmlDict(info.terrain) + '</div>';
     if (info.climate) popupHtml += '<div class="mpg-row"><span class="mpg-label">기후</span>' + escapeHtmlDict(info.climate) + '</div>';
     if (info.season) popupHtml += '<div class="mpg-row"><span class="mpg-label">절기</span>' + escapeHtmlDict(info.season) + '</div>';
+    if (info.meaning) popupHtml += '<div class="mpg-row"><span class="mpg-label">지명뜻</span>' + escapeHtmlDict(info.meaning) + '</div>';
     popupHtml += '</div>';
     if (info.note) popupHtml += '<div class="map-popup-note">' + escapeHtmlDict(info.note) + '</div>';
     popupHtml += '</div>';
 
-    L.marker([loc.lat, loc.lng], { icon: mapNumberIcon(num) }).addTo(leafletMarkerLayer).bindPopup(popupHtml);
+    L.marker([loc.lat, loc.lng], { icon: mapNumberIcon(num) }).addTo(leafletMarkerLayer).bindPopup(popupHtml, { maxWidth: 260, maxHeight: 260 });
     bounds.push([loc.lat, loc.lng]);
   });
   if (listEl) listEl.innerHTML = buildMapLocListHtml(bookId, locations);
