@@ -353,6 +353,15 @@
   .person .role { font-size: 11.5px; color: var(--accent); margin-bottom: 4px; }
   .person p { font-size: 12.5px; color: var(--ink); }
   .person .vref { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; }
+  .person-body { flex: 1; min-width: 0; }
+  .person-expand-btn { display: block; width: 100%; margin-top: 9px; padding: 6px 0 0; background: none; border: none; border-top: 1px solid var(--border); color: var(--accent); font-size: 11.5px; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; text-align: left; }
+  .person-profile { margin-top: 8px; }
+  .person-profile dl { margin: 0; }
+  .person-profile dt { font-size: 10.5px; font-weight: 700; color: var(--ink-soft); margin-top: 10px; margin-bottom: 2px; letter-spacing: 0.02em; }
+  .person-profile dd { font-size: 12px; color: var(--ink); margin: 0; line-height: 1.55; }
+  .person-profile .pq-label { font-size: 10.5px; font-weight: 700; color: var(--ink-soft); margin-top: 12px; margin-bottom: 4px; letter-spacing: 0.02em; }
+  .person-profile ul { margin: 0; padding-left: 14px; }
+  .person-profile li { font-size: 12px; color: var(--ink); margin-bottom: 3px; line-height: 1.5; }
 
   .map-caption { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
   .map-wrap { position: relative; }
@@ -6892,12 +6901,12 @@ function fetchSupabasePeopleForBook(bookId) {
   if (!sb || supabasePeopleCache[bookId] || supabasePeopleFetching.has(bookId)) return;
   supabasePeopleFetching.add(bookId);
   sb.from('people')
-    .select('name, role, verse_ref, body')
+    .select('name, role, verse_ref, body, character_profile')
     .eq('book_id', bookId)
     .then(({ data, error }) => {
       supabasePeopleFetching.delete(bookId);
       if (error || !data || data.length === 0) return; // 실패 시 기존 로컬 인물 데이터 유지
-      supabasePeopleCache[bookId] = data.map(row => ({ n: row.name, role: row.role, v: row.verse_ref, b: row.body }));
+      supabasePeopleCache[bookId] = data.map(row => ({ n: row.name, role: row.role, v: row.verse_ref, b: row.body, cp: row.character_profile || null }));
       if (bookId === currentBook) renderPeople(); // 이미 그려진 뒤에 도착했으면 다시 그려서 최신화
     });
 }
@@ -6906,11 +6915,42 @@ function renderPeople() {
   fetchSupabasePeopleForBook(currentBook);
   const list = supabasePeopleCache[currentBook] || BOOK_PEOPLE[currentBook] || PEOPLE_RUTH;
   peopleEl.innerHTML = '';
+  const CP_LABELS = [
+    ['identity_and_position',          '정체성과 위치'],
+    ['character_traits',               '성격'],
+    ['relationships',                  '관계'],
+    ['narrative_or_argument_function', '이야기/논증에서의 역할'],
+    ['theological_significance',       '신학적 의미'],
+    ['interpretive_caution',           '해석 시 주의할 점'],
+  ];
   list.forEach(p => {
     const d = document.createElement('div');
     d.className = 'person';
-    d.innerHTML = `<div class="avatar">${p.n[0]}</div>
-      <div><h3>${p.n}</h3><div class="role">${p.role}</div><p>${p.b}</p><div class="vref">등장: ${p.v}</div></div>`;
+    let cpHtml = '';
+    if (p.cp) {
+      const cp = p.cp;
+      const dlRows = CP_LABELS
+        .filter(([k]) => cp[k])
+        .map(([k, label]) => `<dt>${label}</dt><dd>${cp[k]}</dd>`)
+        .join('');
+      let ql = '';
+      if (cp.reading_questions && cp.reading_questions.length)
+        ql = `<div class="pq-label">생각해볼 질문</div><ul>${cp.reading_questions.map(q=>`<li>${q}</li>`).join('')}</ul>`;
+      cpHtml = `<div class="person-profile" style="display:none"><dl>${dlRows}</dl>${ql}</div>`
+             + `<button class="person-expand-btn">▸ 더 알아보기</button>`;
+    }
+    d.innerHTML = `<div class="avatar">${p.n[0]}</div>`
+      + `<div class="person-body"><h3>${p.n}</h3><div class="role">${p.role}</div><p>${p.b}</p>`
+      + `<div class="vref">등장: ${p.v}</div>${cpHtml}</div>`;
+    if (p.cp) {
+      const btn     = d.querySelector('.person-expand-btn');
+      const profile = d.querySelector('.person-profile');
+      btn.addEventListener('click', function() {
+        const hidden = profile.style.display === 'none';
+        profile.style.display = hidden ? '' : 'none';
+        btn.textContent = hidden ? '▾ 접기' : '▸ 더 알아보기';
+      });
+    }
     peopleEl.appendChild(d);
   });
 }
@@ -7798,7 +7838,18 @@ function renderBookMap(bookId) {
   const bounds = [];
   locations.forEach((loc, i) => {
     const num = i + 1;
-    const info = LOCATION_INFO[loc.name] || {};
+    let info = LOCATION_INFO[loc.name];
+    if (!info && loc.location_info) {
+      const li = loc.location_info;
+      info = {
+        elevation: li['고도'] || li.elevation || undefined,
+        terrain:   li['지형'] || li.terrain   || undefined,
+        climate:   li['기후'] || li.climate   || undefined,
+        season:    li['절기'] || li.season    || undefined,
+        note:      li['설명'] || li.description || li.note || undefined,
+      };
+    }
+    if (!info) info = {};
 
     // 마커 팝업 — 성경 시대 기준 지형·기후 정보 (본문 말씀은 여기 안 넣고 지도 아래 목록에서 보여줌)
     let popupHtml = '<div class="map-popup"><strong>' + num + '. ' + escapeHtmlDict(loc.name) + '</strong><div class="map-popup-geo">';
