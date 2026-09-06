@@ -3915,7 +3915,7 @@
 // ============================================================
 // 현재 보고 있는 책 (전역 상태) — 모든 저장 키·노트·인물 데이터가 이 값을 기준으로 갈라짐
 // ============================================================
-let currentBook = 'ruth';
+let currentBook = 'genesis';
 
 // ============================================================
 // Supabase 연동 — 콘텐츠(책/본문/노트/인물)와 사용자 데이터(하이라이트/메모/학습노트)를
@@ -8683,7 +8683,7 @@ function updatePreloadUI(pct, done, total, bookName, etaSec) {
 
 // ── 앱 진입 (restoreLastPosition) ────────────────────────────
 function startApp() {
-  const savedBookId = lsGet('last_book', 'ruth');
+  const savedBookId = lsGet('last_book', 'genesis');
   const savedBook = BOOKS.find(b => b.id === savedBookId && b.available);
   const targetBookId = savedBook ? savedBookId : currentBook;
   const savedPage = parseInt(lsGet('last_page_' + targetBookId, '1'), 10) || 1;
