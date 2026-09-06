@@ -7268,9 +7268,27 @@ const bookFullyIndexed = new Set();
 const bookIndexingPromises = {};
 async function ensureBookFullyIndexed(bookId) {
   if (bookFullyIndexed.has(bookId)) return;
-  if (!sb) return;
   if (bookIndexingPromises[bookId]) return bookIndexingPromises[bookId];
   bookIndexingPromises[bookId] = (async () => {
+    // IDB 우선: preload 완료 책은 IDB에서 읽어 VERSE_INDEX를 채운다 (로컬, 네트워크 불필요)
+    if (getPreloadState()[bookId] === 'done') {
+      const records = await idbGetAllChaptersForBook(bookId);
+      if (records.length > 0) {
+        records.forEach(rec => {
+          const ch = String(rec.chapter);
+          const cacheKey = bookId + '-' + ch;
+          if (!supabaseVerseCache[cacheKey]) supabaseVerseCache[cacheKey] = rec.verses;
+          Object.keys(rec.verses).forEach(v => {
+            pushToVerseIndex({ key: ch + '-' + v, book: bookId, chapter: ch, verse: v, text: rec.verses[v] });
+          });
+        });
+        bookFullyIndexed.add(bookId);
+        return;
+      }
+      // records = 0: preload 'done' 상태이지만 IDB 없음(구 정적 HTML 4권 등) → Supabase 폴백
+    }
+    // IDB 미스 또는 preload 미완료 → Supabase에서 직접 가져온다
+    if (!sb) { delete bookIndexingPromises[bookId]; return; }
     const batchSize = 1000;
     let from = 0;
     while (true) {
@@ -7281,20 +7299,14 @@ async function ensureBookFullyIndexed(bookId) {
         .eq('translation_id', 'krv')
         .order('chapter').order('verse')
         .range(from, from + batchSize - 1);
-      if (error) { delete bookIndexingPromises[bookId]; return; } // 다음에 다시 시도할 수 있게 promise 정리
+      if (error) { delete bookIndexingPromises[bookId]; return; }
       if (!data || data.length === 0) break;
       data.forEach(row => {
         const chapter = String(row.chapter);
         const cacheKey = bookId + '-' + chapter;
         if (!supabaseVerseCache[cacheKey]) supabaseVerseCache[cacheKey] = {};
         supabaseVerseCache[cacheKey][row.verse] = row.text;
-        pushToVerseIndex({
-          key: chapter + '-' + row.verse,
-          book: bookId,
-          chapter: chapter,
-          verse: String(row.verse),
-          text: row.text
-        });
+        pushToVerseIndex({ key: chapter + '-' + row.verse, book: bookId, chapter: chapter, verse: String(row.verse), text: row.text });
       });
       if (data.length < batchSize) break;
       from += batchSize;
@@ -7302,6 +7314,18 @@ async function ensureBookFullyIndexed(bookId) {
     bookFullyIndexed.add(bookId);
   })();
   return bookIndexingPromises[bookId];
+}
+
+// 사전 검색용 전체 색인. 앱 시작 후 백그라운드에서 한 번 실행한다.
+// IDB에 preload 데이터가 있으면 로컬 읽기만 하므로 ~수백ms 안에 완료된다.
+let _allBooksIndexingPromise = null;
+let _allBooksIndexedDone = false;
+function ensureAllBooksIndexed() {
+  if (_allBooksIndexingPromise) return _allBooksIndexingPromise;
+  _allBooksIndexingPromise = Promise.all(
+    BOOKS.filter(b => b.available).map(b => ensureBookFullyIndexed(b.id))
+  ).then(() => { _allBooksIndexedDone = true; });
+  return _allBooksIndexingPromise;
 }
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -7947,6 +7971,14 @@ function runDictSearch(qRaw) {
   }
   fetchKoreanDefinition(q);
 
+  // 전체 색인 미완료 시: 완료를 기다렸다가 자동 재검색
+  if (!_allBooksIndexedDone) {
+    if (tabsEl) tabsEl.innerHTML = '';
+    resultsEl.innerHTML = '<div class="struct-hint">성경 전체 본문을 색인하고 있습니다. 완료되면 자동으로 검색됩니다…</div>';
+    ensureAllBooksIndexed().then(() => { if (dictLastQuery === q) runDictSearch(q); });
+    return;
+  }
+
   dictVerseHits = VERSE_INDEX.filter(v => v.text.includes(q));
   dictNoteHits = [];
   Object.keys(BOOK_NOTES).forEach(bookId => {
@@ -8515,6 +8547,18 @@ async function idbGetChapter(bookId, chapter) {
     });
   } catch { return null; }
 }
+// 한 권의 모든 장을 IDB에서 한 번에 읽는다 (키 범위 쿼리: 1320회 → 66회로 단축)
+async function idbGetAllChaptersForBook(bookId) {
+  try {
+    const db = await openVerseDB();
+    return await new Promise((resolve) => {
+      const range = IDBKeyRange.bound(bookId + '-', bookId + '-￿');
+      const req = db.transaction('chapters', 'readonly').objectStore('chapters').getAll(range);
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  } catch { return []; }
+}
 async function idbPutChapter(bookId, chapter, verses) {
   try {
     const db = await openVerseDB();
@@ -8546,7 +8590,6 @@ function isPreloadComplete() {
 
 // ── 책 한 권 프리로드 ─────────────────────────────────────────
 async function preloadOneBook(bookId) {
-  if (STATIC_BOOK_IDS.has(bookId)) { markBookPreloaded(bookId); return true; }
   if (!sb) return false;
   try {
     const batchSize = 1000;
@@ -8563,18 +8606,19 @@ async function preloadOneBook(bookId) {
       data.forEach(row => {
         if (!chapterMap[row.chapter]) chapterMap[row.chapter] = {};
         chapterMap[row.chapter][row.verse] = row.text;
-        // 동시에 in-memory 캐시도 채운다
         const ck = bookId + '-' + row.chapter;
         if (!supabaseVerseCache[ck]) supabaseVerseCache[ck] = {};
         supabaseVerseCache[ck][row.verse] = row.text;
+        // 다운로드와 동시에 VERSE_INDEX에 추가 — 프리로드 중에도 사전 검색 가능
+        pushToVerseIndex({ key: String(row.chapter) + '-' + String(row.verse), book: bookId, chapter: String(row.chapter), verse: String(row.verse), text: row.text });
       });
       if (data.length < batchSize) break;
       from += batchSize;
     }
-    // IDB에 장별로 저장
     await Promise.all(Object.keys(chapterMap).map(ch =>
       idbPutChapter(bookId, Number(ch), chapterMap[ch])
     ));
+    bookFullyIndexed.add(bookId); // 다운로드 완료 = 인덱싱 완료
     markBookPreloaded(bookId);
     return true;
   } catch { return false; }
@@ -8647,14 +8691,21 @@ function startApp() {
     return result;
   };
 
-  if (isPreloadComplete()) { startApp(); return; }
+  if (isPreloadComplete()) {
+    startApp();
+    // IDB에서 66권 전체를 VERSE_INDEX에 채운다 (백그라운드, 사전 검색 준비)
+    setTimeout(ensureAllBooksIndexed, 200);
+    return;
+  }
 
   const isExistingUser = !!lsGet('last_book', null) && !localStorage.getItem(PRELOAD_LS_KEY);
   if (isExistingUser) {
     // 기존 사용자: 앱 진입 차단 없이 백그라운드 조용히 실행
-    // 정적 책은 바로 done 처리
+    // 정적 HTML 제거된 4권은 프리로드 미완료일 수 있으므로 done 처리만 해둔다
     STATIC_BOOK_IDS.forEach(id => { if (!getPreloadState()[id]) markBookPreloaded(id); });
     startApp();
+    // 색인과 다운로드를 병렬로: 이미 IDB에 있는 책은 빠르게, 없는 책은 Supabase 폴백
+    setTimeout(ensureAllBooksIndexed, 200);
     runPreload(() => {}, () => {}, () => {});
     return;
   }
@@ -8707,7 +8758,7 @@ function startApp() {
         enterBtn.hidden = false;
         // 2초 후 자동 진입, 또는 버튼 클릭
         let entered = false;
-        const enter = () => { if (entered) return; entered = true; if (screen) screen.hidden = true; startApp(); };
+        const enter = () => { if (entered) return; entered = true; if (screen) screen.hidden = true; startApp(); setTimeout(ensureAllBooksIndexed, 200); };
         enterBtn.addEventListener('click', enter);
         setTimeout(enter, 2000);
       }
@@ -8717,7 +8768,7 @@ function startApp() {
       if (enterBtn) {
         enterBtn.textContent = '지금 바로 시작하기';
         enterBtn.hidden = false;
-        enterBtn.addEventListener('click', () => { if (screen) screen.hidden = true; startApp(); });
+        enterBtn.addEventListener('click', () => { if (screen) screen.hidden = true; startApp(); setTimeout(ensureAllBooksIndexed, 200); });
       }
       const retryBtn = document.getElementById('preload-retry-btn');
       if (retryBtn) retryBtn.addEventListener('click', doRun, { once: true });
