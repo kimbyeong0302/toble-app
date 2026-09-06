@@ -940,7 +940,7 @@
         <input type="checkbox" id="mode-switch">
         <span class="ios-switch-track"><span class="ios-switch-thumb"></span></span>
       </label>
-      <div class="mode-note" id="mode-note">학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입</div>
+      <div class="mode-note" id="mode-note">깊이 더해가는 성경 연구</div>
     </div>
     <div class="notes-switch-row" id="notes-switch-row">
       <label class="ios-switch" title="학자 노트 표시 켜기/끄기">
@@ -4696,7 +4696,7 @@ function applyAppMode() {
   if (modeNoteEl) {
     modeNoteEl.textContent = appMode === 'reading'
       ? '읽기 모드 · 학자 노트가 본문 절 아래에 각주처럼 표시됩니다'
-      : '학습 모드 · 하이라이트 + 관찰→해석→적용 순서로 스스로 채워가는 프로토타입';
+      : '깊이 더해가는 성경 연구';
   }
 }
 const modeSwitchInput = document.getElementById('mode-switch');
@@ -5428,7 +5428,7 @@ let studyPanelRenderSeq = 0; // renderDefaultPanel()/renderStudyFlow()가 서로
 
 const DEFAULT_PANEL = `
   <div class="default-guide">
-    <p><span class="mark2">✦</span> 표시가 있는 절을 누르면 관찰 → 해석 → 적용 순서로 스스로 채워가는 학습 카드가 열립니다. 각 단계를 마쳐야 다음 단계와 학자 노트가 열립니다.</p>
+    <p><span class="mark2">✦</span> 표시가 있는 절을 누르면 관찰 → 해석 → 적용 순서로 직접 작성하는 학습 카드가 열립니다. 각 단계를 마쳐야 다음 단계와 학자 노트가 열립니다.</p>
     <p style="margin-top:10px;">본문 전체의 흐름을 스스로 나눠보고 싶다면 왼쪽 위 <strong>"구조"</strong> 탭에서 나만의 개요를 만들어볼 수 있습니다.</p>
   </div>`;
 renderDefaultPanel();
