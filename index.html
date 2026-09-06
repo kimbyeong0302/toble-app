@@ -4986,7 +4986,14 @@ function fetchSupabaseHighlightsForBook(bookId) {
       data.forEach(row => {
         map[row.chapter + '-' + row.verse] = { word_colors: row.word_colors || {}, is_full_verse: !!row.is_full_verse };
       });
-      supabaseHighlightCache[bookId] = map;
+      // 낙관적 업데이트가 이미 들어가 있는 절은 건드리지 않고, 아직 없는 절만 서버 데이터로 채운다.
+      // (fetch 중 사용자가 먼저 칠한 하이라이트가 서버 데이터로 덮어씌워지는 race condition 방지)
+      const existing = supabaseHighlightCache[bookId];
+      if (existing && Object.keys(existing).length > 0) {
+        Object.keys(map).forEach(n => { if (!(n in existing)) existing[n] = map[n]; });
+      } else {
+        supabaseHighlightCache[bookId] = map;
+      }
       if (bookId === currentBook) reapplyAllHighlightsForCurrentBook();
     });
 }
@@ -5218,7 +5225,7 @@ function setHlTool(tool) {
 }
 function applyHighlightToSelectedVerses(tool) {
   selectedVerses.forEach(key => {
-    const verseEl = versesEl.querySelector('.verse[data-n="' + key + '"]');
+    const verseEl = versesEl.querySelector('.book-content[data-book="' + currentBook + '"] .verse[data-n="' + key + '"]');
     if (!verseEl) return;
     if (tool === 'erase') {
       saveWordHighlights(key, {});
@@ -5509,7 +5516,7 @@ document.querySelectorAll('.side-tabs button').forEach(btn => {
       const key = keys.length === 1 ? keys[0] : buildCompositeKey(keys);
       clearSelection();
       if (name === 'note') {
-        const verseEls = keys.map(k => versesEl.querySelector('.verse[data-n="' + k + '"]')).filter(Boolean);
+        const verseEls = keys.map(k => versesEl.querySelector('.book-content[data-book="' + currentBook + '"] .verse[data-n="' + k + '"]')).filter(Boolean);
         openStudyFlowForVerses(verseEls, key);
       } else {
         openMemoForVerse(key);
