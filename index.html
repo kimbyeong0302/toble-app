@@ -6046,6 +6046,10 @@ async function showPage(n) {
     void shownPageEl.offsetWidth;
     shownPageEl.classList.add(n > prevPage ? 'page-flip-next' : 'page-flip-prev');
   }
+  // 이 showPage 호출이 끝나기 전에 사용자가 다른 장/책으로 이동했으면
+  // UI를 덮어쓰지 않는다 — setBook() 내 showPage(1)과 호출자 showPage(chapter)의
+  // 경쟁으로 발생하는 "1장으로 되돌아가는 버그"와 "placeholder 잘못 노출 버그"를 막는다.
+  if (currentBook !== bookIdAtCall || currentPage !== n) return;
   const placeholder = bookContent.querySelector('.page-placeholder');
   if (placeholder) {
     placeholder.hidden = found;
@@ -6194,7 +6198,9 @@ function setBook(bookId) {
   if (dictResults) dictResults.innerHTML = '<div class="struct-hint">검색어를 입력해보세요.</div>';
   const dictInputEl = document.getElementById('dict-input');
   if (dictInputEl) dictInputEl.value = '';
-  showPage(1);
+  // showPage는 호출자(chapter 클릭, goToNext/Prev, startApp 등)가 직접 호출한다.
+  // 여기서도 showPage(1)을 부르면 호출자의 showPage(chapter)와 async 경쟁이 발생해
+  // placeholder 잘못 표시 / sheet-location 장 번호 오표시 버그가 생긴다.
 }
 
 
