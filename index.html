@@ -763,6 +763,34 @@
     background: var(--note-bg); border-radius: 8px; font-size: 12px; color: var(--ink); line-height: 1.6;
   }
   .version-note.show { display: block; }
+  /* ── 역본 배지 + 팝업 ───────────────────────────── */
+  .version-badge {
+    background: none; border: 1px solid var(--line); padding: 1px 8px 2px; border-radius: 10px;
+    cursor: pointer; color: var(--ink-soft); font-size: 12px; font-family: inherit;
+    transition: border-color .15s, color .15s; vertical-align: middle;
+  }
+  .version-badge:hover, .version-badge:focus { border-color: var(--accent); color: var(--ink); outline: none; }
+  .version-popup {
+    position: fixed; z-index: 320; min-width: 158px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.15); overflow: hidden;
+  }
+  .vpop-row {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 13px 16px; font-size: 14px; color: var(--ink);
+    background: none; border: none; font-family: inherit; cursor: pointer; text-align: left;
+  }
+  .vpop-row:hover { background: var(--hover, rgba(0,0,0,.05)); }
+  .vpop-chevron { color: var(--ink-soft); font-size: 16px; margin-left: 12px; }
+  .vpop-sep { height: 1px; background: var(--line); }
+  .vpop-back {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    padding: 10px 14px; font-size: 13px; color: var(--accent);
+    background: none; border: none; border-bottom: 1px solid var(--line);
+    font-family: inherit; cursor: pointer; text-align: left;
+  }
+  .vpop-back:hover { background: var(--hover, rgba(0,0,0,.05)); }
+  #vpop-versions .version-bar { margin: 8px 10px 10px; }
   .vtext-alt {
     display: none; font-family: 'Noto Sans KR', sans-serif; font-size: 13.5px; color: var(--ink-soft);
     margin: 2px 10px 0 32px; padding-left: 8px; border-left: 2px solid var(--line); line-height: 1.6;
@@ -934,7 +962,18 @@
     </div>
     <button id="book-nav-btn" class="book-nav-btn"><span class="bnb-name">룻기</span><span class="bnb-chevron">▾</span></button>
     <div class="bnb-chapter" id="bnb-chapter">1장</div>
-    <div class="sub">개역한글판 · 4장 85절 · 메길로트(다섯 두루마리)</div>
+    <div class="sub"><button class="version-badge" id="version-badge">개역한글</button><span id="sub-book-info"> · 4장 · 역사서</span></div>
+    <div id="version-popup" class="version-popup" hidden>
+      <div id="vpop-menu">
+        <button class="vpop-row" id="vpop-btn-select">역본 선택<span class="vpop-chevron">›</span></button>
+        <div class="vpop-sep"></div>
+        <button class="vpop-row" id="vpop-btn-compare">대조 보기<span class="vpop-chevron">›</span></button>
+      </div>
+      <div id="vpop-versions" hidden>
+        <button class="vpop-back" id="vpop-back-btn">‹ 뒤로</button>
+        <div class="version-bar" id="version-bar"></div>
+      </div>
+    </div>
     <div class="mode-switch-row">
       <label class="ios-switch" title="학습 모드 / 읽기 모드 전환">
         <input type="checkbox" id="mode-switch">
@@ -1047,8 +1086,7 @@
           <button class="hl-toggle-btn" id="hl-toggle-btn">숨기기</button>
         </div>
       </div>
-      <div class="version-bar" id="version-bar"></div>
-      <div class="compare-toggle-row">
+      <div class="compare-toggle-row" id="compare-toggle-row" style="display:none;">
         <label><input type="checkbox" id="compare-toggle"> 다른 역본과 대조해서 보기</label>
       </div>
       <div class="version-bar" id="compare-version-bar" style="display:none;"></div>
@@ -4548,9 +4586,15 @@ function renderVersionBar() {
         return;
       }
       primaryVersion = id;
+      updateSubVersionLabel();
       renderVersionBar();
     });
   });
+}
+
+function updateSubVersionLabel() {
+  const badge = document.getElementById('version-badge');
+  if (badge) badge.textContent = (VERSIONS[primaryVersion] || {}).label || primaryVersion;
 }
 
 function renderCompareVersionBar() {
@@ -4607,6 +4651,50 @@ document.getElementById('compare-toggle').addEventListener('change', (e) => {
 });
 
 renderVersionBar();
+
+// ── 역본 팝업 ────────────────────────────────────────────────
+(function () {
+  const popup  = document.getElementById('version-popup');
+  const badge  = document.getElementById('version-badge');
+  const menuEl = document.getElementById('vpop-menu');
+  const versionsEl = document.getElementById('vpop-versions');
+
+  function positionPopup() {
+    const r = badge.getBoundingClientRect();
+    popup.style.top  = (r.bottom + 6) + 'px';
+    popup.style.left = Math.max(10, r.left - 4) + 'px';
+  }
+  function openPopup() {
+    menuEl.hidden = false; versionsEl.hidden = true;
+    popup.hidden = false;
+    positionPopup();
+  }
+  function closePopup() { popup.hidden = true; }
+
+  badge.addEventListener('click', function (e) { e.stopPropagation(); openPopup(); });
+
+  document.getElementById('vpop-btn-select').addEventListener('click', function () {
+    menuEl.hidden = true; versionsEl.hidden = false;
+    renderVersionBar();
+  });
+
+  document.getElementById('vpop-btn-compare').addEventListener('click', function () {
+    closePopup();
+    const row = document.getElementById('compare-toggle-row');
+    if (row) row.style.display = '';
+    const toggle = document.getElementById('compare-toggle');
+    if (toggle && !toggle.checked) { toggle.checked = true; toggle.dispatchEvent(new Event('change')); }
+  });
+
+  document.getElementById('vpop-back-btn').addEventListener('click', function () {
+    menuEl.hidden = false; versionsEl.hidden = true;
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!popup.hidden && !popup.contains(e.target) && e.target !== badge) closePopup();
+  });
+  window.addEventListener('scroll', function () { if (!popup.hidden) positionPopup(); }, { passive: true });
+})();
 
 // ============================================================
 // 콘텐츠 트랙 (학술 / 본문중심)
@@ -6178,11 +6266,12 @@ function setBook(bookId) {
   const book = BOOKS.find(b => b.id === bookId);
   const bnb = document.querySelector('#book-nav-btn .bnb-name');
   if (bnb && book) bnb.textContent = book.name;
-  const subEl = document.querySelector('header .sub');
-  if (subEl && book) {
-    const totalVerses = { ruth: 85, mark: 678, matthew: 1071 }[bookId] || '';
-    const extra = bookId === 'ruth' ? ' · 메길로트(다섯 두루마리)' : ' · 복음서';
-    subEl.textContent = `개역한글판 · ${book.chapters}장 ${totalVerses}절${extra}`;
+  const vBadge = document.getElementById('version-badge');
+  if (vBadge) vBadge.textContent = (VERSIONS[primaryVersion] || {}).label || primaryVersion;
+  const subInfo = document.getElementById('sub-book-info');
+  if (subInfo && book) {
+    const cat = book.category || '';
+    subInfo.textContent = ` · ${book.chapters}장${cat ? ' · ' + cat : ''}`;
   }
 
   // 학습 노트/하이라이트 도구/트랙 UI를 초기 상태로
