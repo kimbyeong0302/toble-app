@@ -280,7 +280,13 @@
     font-family: 'Noto Serif KR', serif; font-size: 18px; font-weight: 700;
     color: var(--ink); text-align: center; white-space: nowrap;
     padding: 2px 14px 10px; background: var(--card);
+    cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
   }
+  .sheet-location::after {
+    content: '▾'; font-size: 12px; color: var(--accent); opacity: .8; font-family: sans-serif;
+  }
+  .sheet-location:hover { color: var(--accent); }
   .side-tabs { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
   .tab-row { display: flex; gap: 6px; justify-content: center; }
   .side-tabs button { flex: 0 0 72px; width: 72px; min-height: 40px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-soft); padding: 10px 4px; border-radius: 18px; font-size: 12.5px; font-family: inherit; cursor: pointer; transition: all .15s; text-align: center; }
@@ -6321,6 +6327,9 @@ function renderChapterColumn(book) {
 }
 
 function openBookModal() {
+  // 모달을 여는 시점에 현재 책과 동기화 — sheet-location 클릭 등 어디서 열어도 정확한 책이 선택됨
+  const curBookName = (BOOKS.find(b => b.id === currentBook) || {}).name;
+  if (curBookName) selectedBookName = curBookName;
   renderBookColumn();
   renderChapterColumn(BOOKS.find(b => b.name === selectedBookName));
   bookModal.classList.add('open');
@@ -6330,6 +6339,7 @@ function closeBookModal() {
 }
 
 document.getElementById('book-nav-btn').addEventListener('click', openBookModal);
+document.getElementById('sheet-location').addEventListener('click', openBookModal);
 document.getElementById('book-modal-close').addEventListener('click', closeBookModal);
 bookModal.addEventListener('click', (e) => { if (e.target === bookModal) closeBookModal(); });
 
